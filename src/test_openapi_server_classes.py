@@ -156,6 +156,14 @@ for response_file_name in files_to_test:
     datetime_now = str(datetime.now())
     print(f"INFO: {datetime_now}: OpenAPI objects creation complete in {t1-t0} seconds")
 
+    print(f"INFO: {datetime_now}: Deleting OpenAPI objects")
+    t0 = timeit.default_timer()
+    response = None
+    t1 = timeit.default_timer()
+
+    datetime_now = str(datetime.now())
+    print(f"INFO: {datetime_now}: OpenAPI objects hierarchy deletion complete in {t1-t0} seconds")
+
 
 
 
