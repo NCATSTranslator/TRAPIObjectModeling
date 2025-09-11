@@ -1,0 +1,4 @@
+pydantic
+reasoner-pydantic
+dataclasses-json
+orjson
