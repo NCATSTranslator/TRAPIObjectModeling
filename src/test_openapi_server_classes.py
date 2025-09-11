@@ -6,6 +6,7 @@ import timeit
 from datetime import datetime
 import requests
 import json
+import gzip
 
 datetime_now = str(datetime.now())
 print(f"INFO: {datetime_now}: Starting import of OpenAPI classes")
@@ -106,47 +107,54 @@ t1 = timeit.default_timer()
 datetime_now = str(datetime.now())
 print(f"INFO: {datetime_now}: Import complete in {t1-t0} seconds")
 
-response_file_name = 'response1.json'
-response_id = '354033'
-response_id = '3750385e-61b4-405e-ad0d-09845ea0c545'
+files_to_test = [ '../data/exampleTrapi/small.json', '../data/exampleTrapi/medium.json', '../data/exampleTrapi/large.json.gz' ]
 
-t0 = timeit.default_timer()
-if os.path.exists(response_file_name):
-    print(f"INFO: {datetime_now}: Starting read of local JSON file of size {os.path.getsize(response_file_name)/1024/1024} MB")
-    with open(response_file_name) as infile:
-        response_dict = json.load(infile)
-    t1 = timeit.default_timer()
-    print(f"INFO: {datetime_now}: Read JSON file into dicts and lists in {t1-t0} seconds")
-
-else:
-    endpoint_url = f"https://arax.ncats.io/beta/api/arax/v1.4/response/{response_id}"
-    print(f"INFO: {datetime_now}: Starting download of response from arax.ncats.io")
-    response_content = requests.get(endpoint_url, headers={'accept': 'application/json'})
-    status_code = response_content.status_code
-    if status_code != 200:
-        print("ERROR returned with status "+str(status_code))
-        print(response_content)
-        exit()
-    t1 = timeit.default_timer()
-    print(f"INFO: {datetime_now}: Downloaded example response of size {len(response_content.text)} in {t1-t0} seconds")
-
+for response_file_name in files_to_test:
     t0 = timeit.default_timer()
-    response_dict = response_content.json()
+    if os.path.exists(response_file_name):
+        print(f"INFO: {datetime_now}: Starting read of local JSON file {response_file_name} of size {os.path.getsize(response_file_name)/1024/1024} MB")
+        if response_file_name.endswith('.gz'):
+            with gzip.open(response_file_name, 'rt', encoding='utf-8') as infile:
+                response_dict = json.load(infile)
+        else:
+            with open(response_file_name) as infile:
+                response_dict = json.load(infile)
+        t1 = timeit.default_timer()
+        print(f"INFO: {datetime_now}: Read JSON file into dicts and lists in {t1-t0} seconds")
+
+    else:
+        print(f"ERROR: Unable to find test file {response_file_name}. Code to download data is disabled")
+        exit()
+        response_id = '354033'
+        #response_id = '3750385e-61b4-405e-ad0d-09845ea0c545'
+        endpoint_url = f"https://arax.ncats.io/beta/api/arax/v1.4/response/{response_id}"
+        print(f"INFO: {datetime_now}: Starting download of response from arax.ncats.io")
+        response_content = requests.get(endpoint_url, headers={'accept': 'application/json'})
+        status_code = response_content.status_code
+        if status_code != 200:
+            print("ERROR returned with status "+str(status_code))
+            print(response_content)
+            exit()
+        t1 = timeit.default_timer()
+        print(f"INFO: {datetime_now}: Downloaded example response of size {len(response_content.text)} in {t1-t0} seconds")
+
+        t0 = timeit.default_timer()
+        response_dict = response_content.json()
+        t1 = timeit.default_timer()
+        print(f"INFO: {datetime_now}: Converted text to dicts and lists in {t1-t0} seconds")
+
+        with open(response_file_name, 'w') as outfile:
+            json.dump(response_dict, outfile, indent=4)
+
+    print(f"INFO: {datetime_now}: Have in hand a message with {len(response_dict['message']['results'])} results")
+
+    print(f"INFO: {datetime_now}: Unmarshaling dicts and lists into OpenAPI objects")
+    t0 = timeit.default_timer()
+    response = Response().from_dict(response_dict)
     t1 = timeit.default_timer()
-    print(f"INFO: {datetime_now}: Converted text to dicts and lists in {t1-t0} seconds")
 
-    with open(response_file_name, 'w') as outfile:
-        json.dump(response_dict, outfile, indent=4)
-
-print(f"INFO: {datetime_now}: Have in hand a message with {len(response_dict['message']['results'])} results")
-
-print(f"INFO: {datetime_now}: Unmarshaling dicts and lists into OpenAPI objects")
-t0 = timeit.default_timer()
-response = Response().from_dict(response_dict)
-t1 = timeit.default_timer()
-
-datetime_now = str(datetime.now())
-print(f"INFO: {datetime_now}: OpenAPI objects creation complete in {t1-t0} seconds")
+    datetime_now = str(datetime.now())
+    print(f"INFO: {datetime_now}: OpenAPI objects creation complete in {t1-t0} seconds")
 
 
 
