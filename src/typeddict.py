@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from collections.abc import Hashable
 from enum import Enum
 from typing import Any, NewType, NotRequired, TypedDict
 
@@ -25,7 +24,7 @@ class Query(TypedDict):
 
     message: Message
     log_level: NotRequired[LogLevel | None]
-    workflow: NotRequired[list[Hashable] | None]
+    workflow: NotRequired[list[dict[str, Any]] | None]
     submitter: NotRequired[str | None]
     bypass_cache: NotRequired[bool]
 
@@ -60,7 +59,7 @@ class Response(TypedDict):
     status: NotRequired[str | None]
     description: NotRequired[str | None]
     logs: NotRequired[list[LogEntry]]
-    workflow: NotRequired[list[Hashable] | None]
+    workflow: NotRequired[list[dict[str, Any]] | None]
     parameters: NotRequired[Parameters | None]
     schema_version: NotRequired[str | None]
     biolink_version: NotRequired[str | None]
@@ -305,7 +304,7 @@ AttributeConstraint = TypedDict(
         "name": str,
         "not": NotRequired[bool],
         "operator": str,
-        "value": Hashable,
+        "value": Any,
         "unit_id": NotRequired[str | None],
         "unit_name": NotRequired[str | None],
     },
