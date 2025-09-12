@@ -3,3 +3,5 @@ reasoner-pydantic
 dataclasses-json
 orjson
 mashumaro
+requests
+six
