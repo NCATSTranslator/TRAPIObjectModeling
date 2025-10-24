@@ -1,2 +1,0 @@
-orjson>=3.11.3
-pydantic>=2.12.0
