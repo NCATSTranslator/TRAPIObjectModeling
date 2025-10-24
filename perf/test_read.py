@@ -1,20 +1,17 @@
 import gzip
-import logging
 import time
 from pathlib import Path
 
 import orjson
 from pydantic import TypeAdapter
 
-LOG = logging.getLogger(__name__)
-
-LOG.info("Starting import of dataclass definitions")
+print("Starting import of dataclass definitions")
 t0 = time.perf_counter()
 
 from trapi_object_modeling.response import Response  # noqa: E402
 
 t1 = time.perf_counter()
-print(f"Import conplete in {t1 - t0} seconds.")
+print(f"Import complete in {t1 - t0} seconds.")
 
 
 TEST_FILES = [
@@ -48,7 +45,7 @@ for response_path in TEST_FILES:
     adapter = TypeAdapter(Response)
 
     t0 = time.perf_counter()
-    LOG.info("Validating using pydantic TypeAdapter...")
-    adapter.validate_python(response_dict)
+    print("Validating using pydantic TypeAdapter...")
+    response = adapter.validate_python(response_dict)
     t1 = time.perf_counter()
     print(f"Validation took {t1 - t0} seconds.")
