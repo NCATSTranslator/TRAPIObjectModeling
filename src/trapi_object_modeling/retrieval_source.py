@@ -5,9 +5,7 @@ from enum import Enum
 from pydantic import ConfigDict
 from pydantic.dataclasses import dataclass
 
-from trapi_object_modeling.shared import (
-    CURIE,
-)
+from trapi_object_modeling.shared import CURIE
 
 
 class ResourceRoleEnum(str, Enum):

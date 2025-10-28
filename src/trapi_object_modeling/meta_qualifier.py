@@ -3,9 +3,7 @@ from __future__ import annotations
 from pydantic import ConfigDict
 from pydantic.dataclasses import dataclass
 
-from trapi_object_modeling.shared import (
-    CURIE,
-)
+from trapi_object_modeling.shared import CURIE
 
 
 @dataclass(kw_only=True, config=ConfigDict(extra="ignore"))
