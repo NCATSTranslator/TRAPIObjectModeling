@@ -1,9 +1,11 @@
 # TRAPIObjectModeling
+
 A repository for code and issues related to efforts to develop and benchmark a successor for reasoner-pydantic to be used in the new Translator architecture.
 
 ## TODO
 
-- Write pytests to check that parsing and dumping works
+- [x] Fix performance issues caused by `Attribute`, `RetrievalSource`, and (less so) `Qualifier`
+- [ ] Write pytests to check that parsing and dumping works
 - [ ] Go through and add examples/etc. using pydantic field annotations
 - [ ] Link all concepts together as appropriate
 - [ ] Create an `__init__.py` so all items may be imported directly

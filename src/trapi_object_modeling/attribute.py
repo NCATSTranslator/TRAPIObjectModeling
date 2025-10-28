@@ -1,11 +1,9 @@
 from __future__ import annotations
 
-from pydantic import AnyHttpUrl, ConfigDict, JsonValue
+from pydantic import ConfigDict, JsonValue, SkipValidation
 from pydantic.dataclasses import dataclass
 
-from trapi_object_modeling.shared import (
-    CURIE,
-)
+from trapi_object_modeling.shared import CURIE
 
 
 @dataclass(kw_only=True, config=ConfigDict(extra="ignore"))
@@ -40,7 +38,8 @@ class Attribute:
     party ontology term.
     """
 
-    value: JsonValue
+    # JSON value inherently doesn't need validation if you're validating from JSON
+    value: SkipValidation[JsonValue]
     """Value of the attribute. May be any data type, including a list."""
 
     value_type_id: CURIE | None = None
@@ -58,7 +57,7 @@ class Attribute:
     Use a CURIE or namespace designator for this resource where possible.
     """
 
-    value_url: AnyHttpUrl | None = None
+    value_url: str | None = None
     """Human-consumable URL linking to a web document that provides additional information about an attribute's value (not the node or the edge fom which it hangs)."""
 
     description: str | None = None

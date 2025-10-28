@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Annotated
 
-from pydantic import AnyHttpUrl, ConfigDict, Field
+from pydantic import ConfigDict, Field
 from pydantic.dataclasses import dataclass
 
 from trapi_object_modeling.log_entry import LogEntry
@@ -27,5 +27,5 @@ class AsyncQueryStatusResponse:
     still activity.
     """
 
-    response_url: AnyHttpUrl | None = None
+    response_url: str | None = None
     """Optional URL that can be queried to restrieve the full TRAPI Response."""

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from enum import Enum
 
-from pydantic import AnyHttpUrl, ConfigDict
+from pydantic import ConfigDict
 from pydantic.dataclasses import dataclass
 
 from trapi_object_modeling.shared import (
@@ -54,7 +54,7 @@ class RetrievalSource:
     which both provided it with records of this single fact.
     """
 
-    source_record_urls: list[AnyHttpUrl] | None = None
+    source_record_urls: list[str] | None = None
     """A URL linking to a specific web page or document provided by the source, that contains a record of the knowledge expressed in the Edge.
 
     If the knowledge is contained in more than one web page on

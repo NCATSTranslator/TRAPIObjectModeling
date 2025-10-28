@@ -1,13 +1,3 @@
-"""Shared values that are used in multiple other definitions.
-
-Most dataclass args should be as follows:
-(We're not supplying these as a dictionary or something for re-use because type checking doesn't understand)
-allow extra:
-@dataclass( kw_only=True, config=ConfigDict(extra="allow"))
-ignore extra:
-@dataclass( kw_only=True, config=ConfigDict(extra="ignore"))
-"""
-
 from __future__ import annotations
 
 from enum import Enum

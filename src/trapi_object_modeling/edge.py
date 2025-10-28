@@ -8,10 +8,7 @@ from pydantic.dataclasses import dataclass
 from trapi_object_modeling.attribute import Attribute
 from trapi_object_modeling.qualifier import Qualifier
 from trapi_object_modeling.retrieval_source import RetrievalSource
-from trapi_object_modeling.shared import (
-    CURIE,
-    BiolinkPredicate,
-)
+from trapi_object_modeling.shared import CURIE, BiolinkPredicate
 
 
 @dataclass(kw_only=True, config=ConfigDict(extra="ignore"))

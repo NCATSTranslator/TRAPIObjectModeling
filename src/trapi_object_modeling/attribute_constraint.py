@@ -3,7 +3,7 @@ from __future__ import annotations
 from enum import Enum
 from typing import Annotated
 
-from pydantic import ConfigDict, Field, JsonValue
+from pydantic import ConfigDict, Field, JsonValue, SkipValidation
 from pydantic.dataclasses import dataclass
 
 from trapi_object_modeling.shared import (
@@ -123,7 +123,8 @@ class AttributeConstraint:
     describes an "is a" subclass relationship for the parent QNode.
     """
 
-    value: JsonValue
+    # JSON value inherently doesn't need validation if you're validating from JSON
+    value: SkipValidation[JsonValue]
     """Value of the attribute.
 
     May be any data type, including a list.

@@ -1,9 +1,9 @@
 from __future__ import annotations
 
 from enum import Enum
-from typing import Annotated, Literal
+from typing import Annotated, Literal, override
 
-from pydantic import ConfigDict, Field, JsonValue
+from pydantic import ConfigDict, Field, JsonValue, SkipValidation
 from pydantic.dataclasses import dataclass
 
 from trapi_object_modeling.shared import CURIE, QEdgeID, QNodeID
@@ -54,14 +54,24 @@ class WorkflowOperation:
 
     runner_parameters: RunnerParameters | None = None
 
+    @property
+    def unique(self) -> bool:
+        """Asserts operation may produce different results depending on the agent."""
+        return False
+
 
 @dataclass(kw_only=True, config=ConfigDict(extra="ignore"))
 class OperationAnnotate(WorkflowOperation):
     """This operation adds attributes to knowledge graph elements."""
 
     id: Literal["annotate"]
-    unique: JsonValue = None
-    parameters: JsonValue = None
+    parameters: dict[str, SkipValidation[JsonValue]]
+
+    @property
+    @override
+    def unique(self) -> bool:
+        """Asserts operation may produce different results depending on the agent."""
+        return True
 
 
 @dataclass(kw_only=True, config=ConfigDict(extra="ignore"))
@@ -82,9 +92,13 @@ class OperationAnnotateEdges(WorkflowOperation):
     """This operation adds attributes to knowledge graph edges."""
 
     id: Literal["annotate_edges"]
-    unique: JsonValue = None
-
     parameters: AnnotateEdgesParameters | None = None
+
+    @property
+    @override
+    def unique(self) -> bool:
+        """Asserts operation may produce different results depending on the agent."""
+        return True
 
 
 @dataclass(kw_only=True, config=ConfigDict(extra="ignore"))
@@ -105,8 +119,13 @@ class OperationAnnotateNodes(WorkflowOperation):
     """This operation adds attributes to knowledge graph nodes."""
 
     id: Literal["annotate_nodes"]
-    unique: JsonValue = None
     parameters: AnnotateNodesParameters | None = None
+
+    @property
+    @override
+    def unique(self) -> bool:
+        """Asserts operation may produce different results depending on the agent."""
+        return True
 
 
 @dataclass(kw_only=True, config=ConfigDict(extra="ignore"))
@@ -114,7 +133,7 @@ class OperationBind(WorkflowOperation):
     """This operation adds results binding kgraph elements to qgraph elements."""
 
     id: Literal["bind"]
-    parameters: JsonValue = None
+    parameters: dict[str, SkipValidation[JsonValue]]
 
 
 @dataclass(kw_only=True, config=ConfigDict(extra="ignore"))
@@ -122,7 +141,7 @@ class OperationCompleteResults(WorkflowOperation):
     """This operation combines partial results into complete results."""
 
     id: Literal["complete_results"]
-    parameters: JsonValue = None
+    parameters: dict[str, SkipValidation[JsonValue]]
 
 
 @dataclass(kw_only=True, config=ConfigDict(extra="ignore"))
@@ -145,8 +164,13 @@ class OperationEnrichResults(WorkflowOperation):
     """
 
     id: Literal["enrich_results"]
-    unique: JsonValue = None
     parameters: EnrichResultsParameters
+
+    @property
+    @override
+    def unique(self) -> bool:
+        """Asserts operation may produce different results depending on the agent."""
+        return True
 
 
 @dataclass(kw_only=True, config=ConfigDict(extra="ignore"))
@@ -175,11 +199,16 @@ class FillDenyListParameters(AllowList):
 
 @dataclass(kw_only=True, config=ConfigDict(extra="ignore"))
 class OperationFill(WorkflowOperation):
-    """This operation adds knodes and kedges. Any constraints attached to QNodes and QEdges specified in the TRAPI must be respected."""
+    """This operation adds knodes and kedges. SkipValidation[JsonValue] constraints attached to QNodes and QEdges specified in the TRAPI must be respected."""
 
     id: Literal["fill"]
-    unique: JsonValue = None
     parameters: FillAllowListParameters | FillDenyListParameters
+
+    @property
+    @override
+    def unique(self) -> bool:
+        """Asserts operation may produce different results depending on the agent."""
+        return True
 
 
 @dataclass(kw_only=True, config=ConfigDict(extra="ignore"))
@@ -187,7 +216,7 @@ class OperationFilterKgraph(WorkflowOperation):
     """This operation removes kgraph elements (nodes and/or edges)."""
 
     id: Literal["filter_kgraph"]
-    parameters: JsonValue = None
+    parameters: dict[str, SkipValidation[JsonValue]]
 
 
 class AboveOrBelowEnum(str, Enum):
@@ -243,7 +272,9 @@ class FilterKgraphDiscreteKedgeAttributeParameters(OperationParameters):
     edge_attribute: Annotated[str, Field(examples=["provided_by"])]
     """The name of the edge attribute to filter on."""
 
-    remove_value: Annotated[JsonValue, Field(examples=["infores:semmeddb"])]
+    remove_value: Annotated[
+        SkipValidation[JsonValue], Field(examples=["infores:semmeddb"])
+    ]
     """The value for which all edges containing this value in the specified edge_attribute should be removed."""
 
     qedge_keys: Annotated[list[QEdgeID] | None, Field(examples=["[e01]"])]
@@ -278,7 +309,9 @@ class FilterKgraphDiscreteKnodeAttributeParameters(OperationParameters):
     node_attribute: Annotated[str, Field(examples=["molecule_type"])]
     """The name of the node attribute to filter on."""
 
-    remove_value: Annotated[JsonValue, Field(examples=["small_molecule"])]
+    remove_value: Annotated[
+        SkipValidation[JsonValue], Field(examples=["small_molecule"])
+    ]
     """The value for which all edges containing this value in the specified edge_attribute should be removed."""
 
     qnode_keys: Annotated[list[QNodeID] | None, Field(examples=["[n01]"])]
@@ -307,7 +340,7 @@ class OperationFilterKgraphOrphans(WorkflowOperation):
     """This operation removes kgraph elements that are not referenced by any results."""
 
     id: Literal["filter_kgraph_orphans"]
-    parameters: JsonValue = None
+    parameters: dict[str, SkipValidation[JsonValue]]
 
 
 @dataclass(kw_only=True, config=ConfigDict(extra="ignore"))
@@ -447,7 +480,7 @@ class OperationFilterResults(WorkflowOperation):
     """This operation allows the TRAPI server to remove elements from the list of results."""
 
     id: Literal["filter_results"]
-    parameters: JsonValue = None
+    parameters: dict[str, SkipValidation[JsonValue]]
 
 
 @dataclass(kw_only=True, config=ConfigDict(extra="ignore"))
@@ -469,26 +502,36 @@ class OperationFilterResultsTopN(WorkflowOperation):
 class OperationLookup(WorkflowOperation):
     """This operation adds knodes/kedges and (complete) results.
 
-    It is equivalent to the workflow fill + bind + complete_results. Any constraints
+    It is equivalent to the workflow fill + bind + complete_results. SkipValidation[JsonValue] constraints
     attached to QNodes and QEdges specified in the TRAPI must be respected.
     """
 
     id: Literal["lookup"]
-    unique: JsonValue = None
-    parameters: JsonValue = None
+    parameters: dict[str, SkipValidation[JsonValue]]
+
+    @property
+    @override
+    def unique(self) -> bool:
+        """Asserts operation may produce different results depending on the agent."""
+        return True
 
 
 @dataclass(kw_only=True, config=ConfigDict(extra="ignore"))
 class OperationLookupAndScore(WorkflowOperation):
     """This operation adds knodes/kedges, (complete) results, and scores (to the results).
 
-    It is equivalent to the workflow fill + bind + complete_results + score. Any
+    It is equivalent to the workflow fill + bind + complete_results + score. SkipValidation[JsonValue]
     constraints attached to QNodes and QEdges specified in the TRAPI must be respected.
     """
 
     id: Literal["lookup_and_score"]
-    unique: JsonValue = None
-    parameters: JsonValue = None
+    parameters: dict[str, SkipValidation[JsonValue]]
+
+    @property
+    @override
+    def unique(self) -> bool:
+        """Asserts operation may produce different results depending on the agent."""
+        return True
 
 
 @dataclass(kw_only=True, config=ConfigDict(extra="ignore"))
@@ -496,7 +539,7 @@ class OperationOverlay(WorkflowOperation):
     """This operation adds additional qedges and/or kedges and/or result edge bindings."""
 
     id: Literal["overlay"]
-    parameters: JsonValue = None
+    parameters: dict[str, SkipValidation[JsonValue]]
 
 
 @dataclass(kw_only=True, config=ConfigDict(extra="ignore"))
@@ -567,7 +610,7 @@ class OperationOverlayConnectKnodes(WorkflowOperation):
     """
 
     id: Literal["overlay_connect_knodes"]
-    parameters: JsonValue = None
+    parameters: dict[str, SkipValidation[JsonValue]]
 
 
 @dataclass(kw_only=True, config=ConfigDict(extra="ignore"))
@@ -607,8 +650,13 @@ class OperationRestate(WorkflowOperation):
     """This operation modifies the query graph."""
 
     id: Literal["restate"]
-    unique: JsonValue = None
-    parameters: JsonValue = None
+    parameters: dict[str, SkipValidation[JsonValue]]
+
+    @property
+    @override
+    def unique(self) -> bool:
+        """Asserts operation may produce different results depending on the agent."""
+        return True
 
 
 @dataclass(kw_only=True, config=ConfigDict(extra="ignore"))
@@ -616,8 +664,13 @@ class OperationScore(WorkflowOperation):
     """This operation adds scores to results."""
 
     id: Literal["score"]
-    unique: JsonValue = None
-    parameters: JsonValue = None
+    parameters: dict[str, SkipValidation[JsonValue]]
+
+    @property
+    @override
+    def unique(self) -> bool:
+        """Asserts operation may produce different results depending on the agent."""
+        return True
 
 
 @dataclass(kw_only=True, config=ConfigDict(extra="ignore"))
@@ -625,7 +678,7 @@ class OperationSortResults(WorkflowOperation):
     """This operation allows the TRAPI server to sort the elements of the list of results."""
 
     id: Literal["sort_results"]
-    parameters: JsonValue = None
+    parameters: dict[str, SkipValidation[JsonValue]]
 
 
 @dataclass(kw_only=True, config=ConfigDict(extra="ignore"))
