@@ -4,10 +4,11 @@ from pydantic import ConfigDict
 from pydantic.dataclasses import dataclass
 
 from trapi_object_modeling.shared import CURIE
+from trapi_object_modeling.utils.object_base import TOMBaseObject
 
 
 @dataclass(kw_only=True, config=ConfigDict(extra="ignore"))
-class MetaQualifier:
+class MetaQualifier(TOMBaseObject):
     """An element describing a set of values that can be served for a given qualifier type."""
 
     qualifier_type_id: CURIE

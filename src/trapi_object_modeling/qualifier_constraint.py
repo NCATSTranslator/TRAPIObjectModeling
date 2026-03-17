@@ -4,10 +4,11 @@ from pydantic import ConfigDict
 from pydantic.dataclasses import dataclass
 
 from trapi_object_modeling.qualifier import Qualifier
+from trapi_object_modeling.utils.object_base import TOMBaseObject
 
 
 @dataclass(kw_only=True, config=ConfigDict(extra="ignore"))
-class QualifierConstraint:
+class QualifierConstraint(TOMBaseObject):
     """Defines a query constraint based on the qualifier_types and qualifier_values of a set of Qualifiers attached to an edge.
 
     For example, it can constrain a

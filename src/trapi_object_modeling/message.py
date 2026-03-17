@@ -8,10 +8,11 @@ from trapi_object_modeling.knowledge_graph import KnowledgeGraph
 from trapi_object_modeling.query_graph import PathfinderQueryGraph, QueryGraph
 from trapi_object_modeling.result import Result
 from trapi_object_modeling.shared import AuxGraphID
+from trapi_object_modeling.utils.object_base import TOMBaseObject
 
 
 @dataclass(kw_only=True, config=ConfigDict(extra="ignore"))
-class Message:
+class Message(TOMBaseObject):
     """The message object holds the main content of a Query or a Response in three properties: query_graph, results, and knowledge_graph.
 
     The query_graph property contains the query configuration, the results

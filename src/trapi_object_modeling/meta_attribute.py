@@ -4,10 +4,11 @@ from pydantic import ConfigDict
 from pydantic.dataclasses import dataclass
 
 from trapi_object_modeling.shared import CURIE
+from trapi_object_modeling.utils.object_base import TOMBaseObject
 
 
 @dataclass(kw_only=True, config=ConfigDict(extra="ignore"))
-class MetaAttribute:
+class MetaAttribute(TOMBaseObject):
     """An element describing a type of attribute that can be served."""
 
     attribute_type_id: CURIE

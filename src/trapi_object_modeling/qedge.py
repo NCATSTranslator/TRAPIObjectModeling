@@ -12,10 +12,11 @@ from trapi_object_modeling.shared import (
     KnowledgeTypeEnum,
     QNodeID,
 )
+from trapi_object_modeling.utils.object_base import TOMBaseObject
 
 
 @dataclass(kw_only=True, config=ConfigDict(extra="allow"))
-class QEdge:
+class QEdge(TOMBaseObject):
     """An edge in the QueryGraph used as a filter pattern specification in a query.
 
     If the optional predicate property is not specified,

@@ -5,10 +5,11 @@ from pydantic.dataclasses import dataclass
 
 from trapi_object_modeling.attribute import Attribute
 from trapi_object_modeling.shared import EdgeID
+from trapi_object_modeling.utils.object_base import TOMBaseObject
 
 
 @dataclass(kw_only=True, config=ConfigDict(extra="allow"))
-class EdgeBinding:
+class EdgeBinding(TOMBaseObject):
     """A instance of EdgeBinding is a single KnowledgeGraph Edge mapping, identified by the corresponding 'id' object key identifier of the Edge within the Knowledge Graph.
 
     Instances of EdgeBinding may include extra annotation

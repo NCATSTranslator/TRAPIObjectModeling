@@ -6,10 +6,11 @@ from pydantic import ConfigDict, Field
 from pydantic.dataclasses import dataclass
 
 from trapi_object_modeling.meta_attribute import MetaAttribute
+from trapi_object_modeling.utils.object_base import TOMBaseObject
 
 
 @dataclass(kw_only=True, config=ConfigDict(extra="ignore"))
-class MetaNode:
+class MetaNode(TOMBaseObject):
     """Description of a node category provided by this TRAPI web service."""
 
     id_prefixes: Annotated[list[str], Field(min_length=1)]

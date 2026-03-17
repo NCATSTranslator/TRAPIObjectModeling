@@ -4,10 +4,11 @@ from pydantic import ConfigDict, JsonValue, SkipValidation
 from pydantic.dataclasses import dataclass
 
 from trapi_object_modeling.shared import CURIE
+from trapi_object_modeling.utils.object_base import TOMBaseObject
 
 
 @dataclass(kw_only=True, config=ConfigDict(extra="ignore"))
-class Attribute:
+class Attribute(TOMBaseObject):
     """Generic attribute for a node or an edge that expands the key-value pair concept by including fields for additional metadata.
 
     These fields can be used to describe the source of the statement made in a key-value

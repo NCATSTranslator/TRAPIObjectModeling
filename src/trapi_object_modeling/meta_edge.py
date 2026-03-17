@@ -12,10 +12,11 @@ from trapi_object_modeling.shared import (
     BiolinkPredicate,
     KnowledgeTypeEnum,
 )
+from trapi_object_modeling.utils.object_base import TOMBaseObject
 
 
 @dataclass(kw_only=True, config=ConfigDict(extra="ignore"))
-class MetaEdge:
+class MetaEdge(TOMBaseObject):
     """Edge in a meta knowledge map describing relationship between a subject Biolink class and an object Biolink class."""
 
     subject: BiolinkEntity

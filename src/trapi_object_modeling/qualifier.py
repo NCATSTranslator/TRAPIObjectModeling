@@ -6,10 +6,11 @@ from pydantic import ConfigDict, Field
 from pydantic.dataclasses import dataclass
 
 from trapi_object_modeling.shared import CURIE
+from trapi_object_modeling.utils.object_base import TOMBaseObject
 
 
 @dataclass(kw_only=True, config=ConfigDict(extra="ignore"))
-class Qualifier:
+class Qualifier(TOMBaseObject):
     """An additional nuance attached to an assertion."""
 
     qualifier_type_id: Annotated[CURIE, Field(pattern=r"^biolink:[a-z][a-z_]*$")]

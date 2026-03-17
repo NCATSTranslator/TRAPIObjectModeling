@@ -7,10 +7,11 @@ from pydantic.dataclasses import dataclass
 
 from trapi_object_modeling.attribute import Attribute
 from trapi_object_modeling.shared import BiolinkEntity
+from trapi_object_modeling.utils.object_base import TOMBaseObject
 
 
 @dataclass(kw_only=True, config=ConfigDict(extra="ignore"))
-class Node:
+class Node(TOMBaseObject):
     """A node in the KnowledgeGraph which represents some biomedical concept.
 
     Nodes are identified by the keys in the KnowledgeGraph Node mapping.

@@ -6,6 +6,7 @@ from pydantic import ConfigDict
 from pydantic.dataclasses import dataclass
 
 from trapi_object_modeling.shared import CURIE
+from trapi_object_modeling.utils.object_base import TOMBaseObject
 
 
 class ResourceRoleEnum(str, Enum):
@@ -28,7 +29,7 @@ class ResourceRoleEnum(str, Enum):
 
 
 @dataclass(kw_only=True, config=ConfigDict(extra="allow"))
-class RetrievalSource:
+class RetrievalSource(TOMBaseObject):
     """Provides information about how a particular InformationResource served as a source from which knowledge expressed in an Edge, or data used to generate this knowledge, was retrieved."""
 
     resource_id: CURIE

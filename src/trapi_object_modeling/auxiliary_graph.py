@@ -7,10 +7,11 @@ from pydantic.dataclasses import dataclass
 
 from trapi_object_modeling.attribute import Attribute
 from trapi_object_modeling.shared import EdgeID
+from trapi_object_modeling.utils.object_base import TOMBaseObject
 
 
 @dataclass(kw_only=True, config=ConfigDict(extra="allow"))
-class AuxiliaryGraph:
+class AuxiliaryGraph(TOMBaseObject):
     """A single AuxiliaryGraph instance that is used by Knowledge Graph Edges, Result Analysis support graphs, and Path Bindings.
 
     Edges comprising an Auxiliary Graph are a subset of the

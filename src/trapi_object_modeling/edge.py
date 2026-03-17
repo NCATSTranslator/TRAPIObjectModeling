@@ -9,10 +9,11 @@ from trapi_object_modeling.attribute import Attribute
 from trapi_object_modeling.qualifier import Qualifier
 from trapi_object_modeling.retrieval_source import RetrievalSource
 from trapi_object_modeling.shared import CURIE, BiolinkPredicate
+from trapi_object_modeling.utils.object_base import TOMBaseObject
 
 
 @dataclass(kw_only=True, config=ConfigDict(extra="ignore"))
-class Edge:
+class Edge(TOMBaseObject):
     """A specification of the semantic relationship linking two concepts that are expressed as nodes in the knowledge "thought" graph resulting from a query upon the underlying knowledge source."""
 
     predicate: BiolinkPredicate

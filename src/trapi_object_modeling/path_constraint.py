@@ -6,10 +6,11 @@ from pydantic import ConfigDict, Field
 from pydantic.dataclasses import dataclass
 
 from trapi_object_modeling.shared import BiolinkEntity
+from trapi_object_modeling.utils.object_base import TOMBaseObject
 
 
 @dataclass(kw_only=True, config=ConfigDict(extra="allow"))
-class PathConstraint:
+class PathConstraint(TOMBaseObject):
     """A constraint for paths. ARAs must comply with constraints when finding paths."""
 
     intermediate_categories: (

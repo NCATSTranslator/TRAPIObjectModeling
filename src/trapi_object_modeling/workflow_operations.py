@@ -7,10 +7,11 @@ from pydantic import ConfigDict, Field, JsonValue, SkipValidation
 from pydantic.dataclasses import dataclass
 
 from trapi_object_modeling.shared import CURIE, QEdgeID, QNodeID
+from trapi_object_modeling.utils.object_base import TOMBaseObject
 
 
 @dataclass(kw_only=True, config=ConfigDict(extra="ignore"))
-class AllowList:
+class AllowList(TOMBaseObject):
     """List of operation providers (by infores ID) that may be used to complete operation."""
 
     allowlist: Annotated[list[CURIE], Field(min_length=1, examples=["infores:aragorn"])]
@@ -22,7 +23,7 @@ class AllowList:
 
 
 @dataclass(kw_only=True, config=ConfigDict(extra="ignore"))
-class DenyList:
+class DenyList(TOMBaseObject):
     """List of operation providers (by infores ID) that may not be used to complete operation."""
 
     denylist: Annotated[list[CURIE], Field(min_length=1, examples=["infores:aragorn"])]
@@ -44,12 +45,12 @@ class AscendingOrDescending(str, Enum):
 
 
 @dataclass(kw_only=True, config=ConfigDict(extra="ignore"))
-class OperationParameters:
+class OperationParameters(TOMBaseObject):
     """Base class for various operation parameters."""
 
 
 @dataclass(kw_only=True, config=ConfigDict(extra="ignore"))
-class WorkflowOperation:
+class WorkflowOperation(TOMBaseObject):
     """Base class for types of workflow operation to execute."""
 
     runner_parameters: RunnerParameters | None = None
@@ -186,7 +187,7 @@ class FillAllowListParameters(AllowList):
 
 
 @dataclass(kw_only=True, config=ConfigDict(extra="ignore"))
-class FillDenyListParameters(AllowList):
+class FillDenyListParameters(DenyList):
     """DenyList Parameters for the Fill operation."""
 
     qedge_keys: Annotated[list[QEdgeID], Field(examples=["e00"])]

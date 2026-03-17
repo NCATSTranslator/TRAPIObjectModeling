@@ -6,6 +6,7 @@ from enum import Enum
 from pydantic import ConfigDict
 from pydantic.dataclasses import dataclass
 
+from trapi_object_modeling.utils.object_base import TOMBaseObject
 
 
 class LogLevel(str, Enum):
@@ -25,7 +26,7 @@ class LogLevel(str, Enum):
 
 
 @dataclass(kw_only=True, config=ConfigDict(extra="allow"))
-class LogEntry:
+class LogEntry(TOMBaseObject):
     """The LogEntry object contains information useful for tracing and debugging across Translator components.
 
     Although an individual component (for example, an ARA or KP) may have its

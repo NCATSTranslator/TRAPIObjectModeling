@@ -6,10 +6,11 @@ from pydantic.dataclasses import dataclass
 from trapi_object_modeling.edge import Edge
 from trapi_object_modeling.node import Node
 from trapi_object_modeling.shared import CURIE, EdgeID
+from trapi_object_modeling.utils.object_base import TOMBaseObject
 
 
 @dataclass(kw_only=True, config=ConfigDict(extra="allow"))
-class KnowledgeGraph:
+class KnowledgeGraph(TOMBaseObject):
     """The knowledge graph associated with a set of results.
 
     The instances of Node and Edge defining this graph represent instances of

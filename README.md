@@ -13,7 +13,7 @@ The time to beat in the original implementation was 0.007s Small, 0.05s Med, and
 - [ ] Create an `__init__.py` so all items may be imported directly
 - [ ] Add hash methods for everything which needs to be hashable
 - [ ] Add utility methods to parity with reasoner-pydantic
-- [ ] Create a utility mixin so each object can be parsed/dumped without creating a new type adapter
+- [x] Create a utility mixin so each object can be parsed/dumped without creating a new type adapter
 - [ ] Create advanced validation methods for higher levels of validation
 - [ ] Add regex validation where it's used in the spec
 - [ ] Add advanced validation and utility methods for CURIEs and biolink interactions

@@ -10,10 +10,11 @@ from trapi_object_modeling.shared import (
     BiolinkPredicate,
     QNodeID,
 )
+from trapi_object_modeling.utils.object_base import TOMBaseObject
 
 
 @dataclass(kw_only=True, config=ConfigDict(extra="allow"))
-class QPath:
+class QPath(TOMBaseObject):
     """A path in the QueryGraph used for pathfinder queries.
 
     Both subject and object MUST reference QNodes that have a CURIE in their ids field.

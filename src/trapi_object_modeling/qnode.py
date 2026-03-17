@@ -8,6 +8,7 @@ from pydantic.dataclasses import dataclass
 
 from trapi_object_modeling.attribute_constraint import AttributeConstraint
 from trapi_object_modeling.shared import CURIE, BiolinkEntity
+from trapi_object_modeling.utils.object_base import TOMBaseObject
 
 
 class SetInterpetationEnum(str, Enum):
@@ -24,7 +25,7 @@ class SetInterpetationEnum(str, Enum):
 
 
 @dataclass(kw_only=True, config=ConfigDict(extra="allow"))
-class QNode:
+class QNode(TOMBaseObject):
     """A node in the QueryGraph used to represent an entity in a query.
 
     If a CURIE is not specified, any nodes matching the category

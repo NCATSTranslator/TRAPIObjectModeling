@@ -5,10 +5,11 @@ from pydantic.dataclasses import dataclass
 
 from trapi_object_modeling.attribute import Attribute
 from trapi_object_modeling.shared import CURIE
+from trapi_object_modeling.utils.object_base import TOMBaseObject
 
 
 @dataclass(kw_only=True, config=ConfigDict(extra="allow"))
-class NodeBinding:
+class NodeBinding(TOMBaseObject):
     """An instance of NodeBinding is a single KnowledgeGraph Node mapping, identified by the corresponding 'id' object key identifier of the Node within the Knowledge Graph.
 
     Instances of NodeBinding may include extra annotation in the form of additional properties

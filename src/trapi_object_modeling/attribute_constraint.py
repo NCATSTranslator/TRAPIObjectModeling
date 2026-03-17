@@ -7,6 +7,7 @@ from pydantic import ConfigDict, Field, JsonValue, SkipValidation
 from pydantic.dataclasses import dataclass
 
 from trapi_object_modeling.shared import CURIE
+from trapi_object_modeling.utils.object_base import TOMBaseObject
 
 
 class OperatorEnum(str, Enum):
@@ -72,7 +73,7 @@ class OperatorEnum(str, Enum):
     unsafe_hash=True,
     config=ConfigDict(extra="ignore", serialize_by_alias=True),
 )
-class AttributeConstraint:
+class AttributeConstraint(TOMBaseObject):
     """Generic query constraint for a query node or query edge."""
 
     id: CURIE

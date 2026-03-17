@@ -3,8 +3,9 @@ from __future__ import annotations
 from pydantic import ConfigDict
 from pydantic.dataclasses import dataclass
 
-from trapi_object_modeling.log_level import LogLevel
+from trapi_object_modeling.log_entry import LogLevel
 from trapi_object_modeling.message import Message
+from trapi_object_modeling.utils.object_base import TOMBaseObject
 from trapi_object_modeling.workflow_operations import WorkflowOperation
 
 # FIX: need to somehow warn or guard against this
@@ -13,7 +14,7 @@ from trapi_object_modeling.workflow_operations import WorkflowOperation
 
 
 @dataclass(kw_only=True, config=ConfigDict(extra="allow"))
-class Query:
+class Query(TOMBaseObject):
     """The Query class is used to package a user request for information.
 
     A Query object consists of a required Message object with optional
@@ -46,7 +47,7 @@ class Query:
     the source of queries for development and issue resolution.
     """
 
-    bypass_cache: bool | None = None
+    bypass_cache: bool = False
     """Set to true in order to request that the agent obtain
     fresh information from its sources in all cases where
     it has a viable choice between requesting fresh information
