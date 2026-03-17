@@ -27,7 +27,3 @@ In some sections (such as `knowledge_type`), only certain values are used by exi
 ### Lenient interpretation of `additionalProperties: false`
 
 In OpenAPI, `additionalProperties` governs whether an object may have extra properties not defined in the spec. It can be either `true` or `false`. In Pydantic, we can use `allow`, `ignore`, or `forbid`. I have elected to use `ignore` in places where the yaml specification states `additionalProperties: false` such that disallowed extra properties are dropped, rather than raising a validation error, prioritizing answering queries over policing their correctness. However, this does mean that disallowed extra properties are dropped silently, which could make spotting certain problems in non-TOM applications harder.
-
-### Use of `NewType`
-
-Several items have made use of python's `NewType` functionality, where you'd normally expect a string. These are intended to reduce the possibility of mistakes, and can be swapped out with classes that contain more explicit validation in the future if we desire (you'll notice a `curie.py` that doesn't do anything...that was a digression toward trying to properly spec a CURIE validator from the original specs). These newtypes may present an annoyance to the developer, so it's worth discussing if they're worthwhile.
