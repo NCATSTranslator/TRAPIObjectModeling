@@ -14,7 +14,7 @@ class MetaAttribute:
     """Type of an attribute provided by this TRAPI web service (preferably the CURIE of a Biolink association slot)."""
 
     attribute_source: str | None = None
-    """Type of an attribute provided by this TRAPI web service (preferably the CURIE of a Biolink association slot)."""
+    """Source of an attribute provided by this TRAPI web service."""
 
     original_attribute_names: list[str] | None
     """Names of an the attribute as provided by the source."""

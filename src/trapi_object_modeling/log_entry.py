@@ -1,11 +1,27 @@
 from __future__ import annotations
 
 import datetime
+from enum import Enum
 
 from pydantic import ConfigDict
 from pydantic.dataclasses import dataclass
 
-from trapi_object_modeling.log_level import LogLevel
+
+
+class LogLevel(str, Enum):
+    """Standardized log levels."""
+
+    ERROR = "ERROR"
+    """The log presents an error which may affect response integrity."""
+
+    WARNING = "WARNING"
+    """The log presents some state which may affect response quality."""
+
+    INFO = "INFO"
+    """The log presents information about query execution that may be useful to users."""
+
+    DEBUG = "DEBUG"
+    """The log presents information about query execution that may be useful to devs."""
 
 
 @dataclass(kw_only=True, config=ConfigDict(extra="allow"))

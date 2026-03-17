@@ -4,6 +4,8 @@ A repository for code and issues related to efforts to develop and benchmark a s
 
 ## TODO
 
+The time to beat in the original implementation was 0.007s Small, 0.05s Med, and 1.1s Large. Additional implementation may lengthen these, but it should be kept close.
+
 - [x] Fix performance issues caused by `Attribute`, `RetrievalSource`, and (less so) `Qualifier`
 - [ ] Write pytests to check that parsing and dumping works
 - [ ] Go through and add examples/etc. using pydantic field annotations
