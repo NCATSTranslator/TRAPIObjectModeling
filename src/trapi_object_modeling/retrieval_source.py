@@ -1,12 +1,24 @@
 from __future__ import annotations
 
 from enum import Enum
+from typing import Any, override
 
 from pydantic import ConfigDict
 from pydantic.dataclasses import dataclass
 
-from trapi_object_modeling.shared import CURIE
-from trapi_object_modeling.utils.object_base import TOMBaseObject
+from trapi_object_modeling.shared import Infores
+from trapi_object_modeling.utils.object_base import (
+    Location,
+    SemanticValidationError,
+    SemanticValidationErrorList,
+    SemanticValidationResult,
+    SemanticValidationWarningList,
+    TOMBaseObject,
+)
+from trapi_object_modeling.utils.semantic_validation import (
+    extend_location,
+    validate_url,
+)
 
 
 class ResourceRoleEnum(str, Enum):
@@ -32,7 +44,7 @@ class ResourceRoleEnum(str, Enum):
 class RetrievalSource(TOMBaseObject):
     """Provides information about how a particular InformationResource served as a source from which knowledge expressed in an Edge, or data used to generate this knowledge, was retrieved."""
 
-    resource_id: CURIE
+    resource_id: Infores
     """The CURIE for an Information Resource that served as a source of knowledge expressed in an Edge, or a source of data used to generate this knowledge."""
 
     resource_role: ResourceRoleEnum
@@ -43,7 +55,7 @@ class RetrievalSource(TOMBaseObject):
     'aggregator' or 'supporting data' sources.
     """
 
-    upstream_resource_ids: list[CURIE] | None = None
+    upstream_resource_ids: list[Infores] | None = None
     """An upstream InformationResource from which the resource being described directly retrieved a record of the knowledge expressed in the Edge, or data used to generate this knowledge.
 
     This is an array because there are cases where a merged Edge
@@ -62,3 +74,32 @@ class RetrievalSource(TOMBaseObject):
     pages for 'Imatinib' and its protein target KIT, both of which hold
     the claim that 'the KIT protein is a therapeutic target for Imatinib'.
     """
+
+    @override
+    def semantic_validate(
+        self, location: Location | None = None, **kwargs: Any
+    ) -> SemanticValidationResult:
+        warnings, errors = (
+            SemanticValidationWarningList(),
+            SemanticValidationErrorList(),
+        )
+        if (
+            self.upstream_resource_ids is not None
+            and self.resource_id in self.upstream_resource_ids
+        ):
+            errors.append(
+                SemanticValidationError(
+                    f"resoure_id {self.resource_id} cannot be present in upstream_resource_ids.",
+                    extend_location(location, "upstream_resource_ids"),
+                )
+            )
+
+        if self.source_record_urls is not None:
+            for url in self.source_record_urls:
+                new_warn, new_err = validate_url(
+                    url, location=extend_location(location, "callback")
+                )
+                warnings.extend(new_warn)
+                errors.extend(new_err)
+
+        return warnings, errors

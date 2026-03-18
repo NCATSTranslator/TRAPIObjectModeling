@@ -1,10 +1,25 @@
 from __future__ import annotations
 
+from typing import Any, override
+
 from pydantic import ConfigDict, JsonValue, SkipValidation
 from pydantic.dataclasses import dataclass
 
 from trapi_object_modeling.shared import CURIE
-from trapi_object_modeling.utils.object_base import TOMBaseObject
+from trapi_object_modeling.utils.object_base import (
+    Location,
+    SemanticValidationErrorList,
+    SemanticValidationResult,
+    SemanticValidationWarningList,
+    TOMBaseObject,
+)
+from trapi_object_modeling.utils.semantic_validation import (
+    extend_location,
+    get_list_locations,
+    validate_many,
+    validate_url,
+    validation_pipeline,
+)
 
 
 @dataclass(kw_only=True, config=ConfigDict(extra="ignore"))
@@ -66,3 +81,35 @@ class Attribute(TOMBaseObject):
 
     attributes: list[Attribute] | None = None
     """A list of attributes providing further information about the parent attribute (for example to provide provenance information about the parent attribute)."""
+
+    @property
+    def attributes_list(self) -> list[Attribute]:
+        """Get the attributes as a guaranteed list, even if they are represented as None."""
+        return self.attributes if self.attributes is not None else []
+
+    @override
+    def semantic_validate(
+        self,
+        location: Location | None = None,
+        **kwargs: Any,
+    ) -> SemanticValidationResult:
+        warnings, errors = (
+            SemanticValidationWarningList(),
+            SemanticValidationErrorList(),
+        )
+
+        if self.value_url is not None:
+            _, new_err = validate_url(
+                self.value_url, extend_location(location, "value_url")
+            )
+            errors.extend(new_err)
+
+        return validation_pipeline(
+            (warnings, errors),
+            validate_many(
+                *self.attributes_list,
+                locations=get_list_locations(
+                    self.attributes_list, extend_location(location, "attributes")
+                ),
+            ),
+        )

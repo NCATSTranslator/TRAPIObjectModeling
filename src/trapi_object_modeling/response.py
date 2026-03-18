@@ -7,7 +7,19 @@ from pydantic.dataclasses import dataclass
 
 from trapi_object_modeling.log_entry import LogEntry
 from trapi_object_modeling.message import Message
-from trapi_object_modeling.utils.object_base import TOMBaseObject
+from trapi_object_modeling.utils.config import TRAPI_CONFIG
+from trapi_object_modeling.utils.object_base import (
+    Location,
+    SemanticValidationResult,
+    SemanticValidationWarning,
+    TOMBaseObject,
+)
+from trapi_object_modeling.utils.semantic_validation import (
+    extend_location,
+    get_list_locations,
+    validate_many,
+    validation_pipeline,
+)
 from trapi_object_modeling.workflow_operations import WorkflowOperation
 
 

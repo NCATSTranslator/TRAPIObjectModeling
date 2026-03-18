@@ -1,13 +1,42 @@
 from __future__ import annotations
 
-from pydantic import ConfigDict
+from enum import Enum
+from typing import Annotated, Any, override
+
+from pydantic import ConfigDict, Field
 from pydantic.dataclasses import dataclass
 
-from trapi_object_modeling.qedge import QEdge
-from trapi_object_modeling.qnode import QNode
-from trapi_object_modeling.qpath import QPath
-from trapi_object_modeling.shared import QEdgeID, QNodeID, QPathID
-from trapi_object_modeling.utils.object_base import TOMBaseObject
+from trapi_object_modeling.attribute_constraint import AttributeConstraint
+from trapi_object_modeling.path_constraint import PathConstraint
+from trapi_object_modeling.qualifier_constraint import QualifierConstraint
+from trapi_object_modeling.shared import (
+    CURIE,
+    BiolinkEntity,
+    BiolinkPredicate,
+    KnowledgeTypeEnum,
+    QEdgeID,
+    QNodeID,
+    QPathID,
+)
+from trapi_object_modeling.utils.object_base import (
+    Location,
+    SemanticValidationError,
+    SemanticValidationErrorList,
+    SemanticValidationResult,
+    SemanticValidationWarningList,
+    TOMBaseObject,
+)
+from trapi_object_modeling.utils.semantic_validation import (
+    always_valid,
+    extend_location,
+    get_dict_locations,
+    get_list_locations,
+    validate_category,
+    validate_many,
+    validate_node_exists,
+    validate_predicate,
+    validation_pipeline,
+)
 
 
 @dataclass(kw_only=True, config=ConfigDict(extra="allow"))
@@ -27,6 +56,34 @@ class BaseQueryGraph(TOMBaseObject):
     on bound nodes.
     """
 
+    def validate_qnodes_exist(
+        self, qnodes: list[QNodeID], location: Location | None = None
+    ) -> SemanticValidationResult:
+        """Check that every given QNodeID is present in the nodes."""
+        warnings, errors = (
+            SemanticValidationWarningList(),
+            SemanticValidationErrorList(),
+        )
+        for qnode_id in qnodes:
+            if qnode_id not in self.nodes:
+                errors.append(
+                    SemanticValidationError(
+                        f"QNode {qnode_id} is not present in query_graph.",
+                        location or (),
+                    )
+                )
+
+        return warnings, errors
+
+    @override
+    def semantic_validate(
+        self, location: Location | None = None, **kwargs: Any
+    ) -> SemanticValidationResult:
+        return validate_many(
+            *self.nodes.values(),
+            location=get_dict_locations(self.nodes, extend_location(location, "nodes")),
+        )
+
 
 @dataclass(kw_only=True, config=ConfigDict(extra="allow"))
 class QueryGraph(BaseQueryGraph):
@@ -39,6 +96,40 @@ class QueryGraph(BaseQueryGraph):
     identifiers and the corresponding values include the constraints
     on bound edges, in addition to specifying the subject and object QNodes.
     """
+
+    def validate_qedges_exist(
+        self, qedges: list[QEdgeID], location: Location | None = None
+    ) -> SemanticValidationResult:
+        """Check that every given QEdgeID is present in the edges."""
+        warnings, errors = (
+            SemanticValidationWarningList(),
+            SemanticValidationErrorList(),
+        )
+        for qedge_id in qedges:
+            if qedge_id not in self.edges:
+                errors.append(
+                    SemanticValidationError(
+                        f"QEdge {qedge_id} is not present in query_graph.",
+                        location or (),
+                    )
+                )
+
+        return warnings, errors
+
+    @override
+    def semantic_validate(
+        self, location: Location | None = None, **kwargs: Any
+    ) -> SemanticValidationResult:
+        return validation_pipeline(
+            super().semantic_validate(location, **kwargs),
+            validate_many(
+                *self.edges.values(),
+                locations=get_dict_locations(
+                    self.edges, extend_location(location, "edges")
+                ),
+                qgraph=self,
+            ),
+        )
 
 
 @dataclass(kw_only=True, config=ConfigDict(extra="allow"))

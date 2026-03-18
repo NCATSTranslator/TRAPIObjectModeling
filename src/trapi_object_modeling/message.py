@@ -1,14 +1,28 @@
 from __future__ import annotations
 
+from typing import Any, override
+
 from pydantic import ConfigDict
 from pydantic.dataclasses import dataclass
 
-from trapi_object_modeling.auxiliary_graph import AuxiliaryGraph
+from trapi_object_modeling.auxiliary_graph import AuxiliaryGraphsDict
 from trapi_object_modeling.knowledge_graph import KnowledgeGraph
 from trapi_object_modeling.query_graph import PathfinderQueryGraph, QueryGraph
 from trapi_object_modeling.result import Result
-from trapi_object_modeling.shared import AuxGraphID
-from trapi_object_modeling.utils.object_base import TOMBaseObject
+from trapi_object_modeling.utils.object_base import (
+    Location,
+    SemanticValidationResult,
+    TOMBaseObject,
+)
+from trapi_object_modeling.utils.semantic_validation import (
+    always_valid,
+    extend_location,
+    get_dict_locations,
+    get_list_locations,
+    valid_if_missing,
+    validate_many,
+    validation_pipeline,
+)
 
 
 @dataclass(kw_only=True, config=ConfigDict(extra="ignore"))
@@ -40,8 +54,51 @@ class Message(TOMBaseObject):
     knowledge_graph: KnowledgeGraph | None = None
     """KnowledgeGraph object that contains lists of nodes and edges in the thought graph corresponding to the message."""
 
-    auxiliary_graphs: dict[AuxGraphID, AuxiliaryGraph] | None = None
+    auxiliary_graphs: AuxiliaryGraphsDict | None = None
     """Dictionary of AuxiliaryGraph instances that are used by Knowledge Graph Edges and Result Analyses.
 
     These are referenced elsewhere by the dictionary key.
     """
+
+    @property
+    def results_list(self) -> list[Result]:
+        """Get the results as a guaranteed list, even if they are represented as None."""
+        return self.results if self.results is not None else []
+
+    @override
+    def semantic_validate(
+        self, location: Location | None = None, **kwargs: Any
+    ) -> SemanticValidationResult:
+        return validation_pipeline(
+            valid_if_missing(
+                self.knowledge_graph, extend_location(location, "knowledge_graph")
+            ),
+            valid_if_missing(
+                self.query_graph, extend_location(location, "query_graph")
+            ),
+            # An edge is not invalid because it isn't used, a message is invalid because it has unused edges
+            # (except that these are warnings)
+            # TODO: check all kgraph is used
+            # TODO: check all aux_graphs are used
+            (
+                validate_many(
+                    *self.auxiliary_graphs.values(),
+                    locations=get_dict_locations(
+                        self.auxiliary_graphs,
+                        extend_location(location, "auxiliary_graphs"),
+                    ),
+                    kgraph=self.knowledge_graph,
+                )
+                if self.auxiliary_graphs is not None
+                else always_valid()
+            ),
+            validate_many(
+                *self.results_list,
+                locations=get_list_locations(
+                    self.results_list, extend_location(location, "results")
+                ),
+                qgraph=self.query_graph,
+                kgraph=self.knowledge_graph,
+                aux_graphs=self.auxiliary_graphs,
+            ),
+        )

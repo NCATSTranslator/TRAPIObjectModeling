@@ -1,11 +1,23 @@
 from __future__ import annotations
 
+from typing import Any, override
+
 from pydantic import ConfigDict
 from pydantic.dataclasses import dataclass
 
 from trapi_object_modeling.log_entry import LogLevel
 from trapi_object_modeling.message import Message
-from trapi_object_modeling.utils.object_base import TOMBaseObject
+from trapi_object_modeling.utils.object_base import (
+    Location,
+    SemanticValidationResult,
+    TOMBaseObject,
+)
+from trapi_object_modeling.utils.semantic_validation import (
+    extend_location,
+    get_list_locations,
+    validate_many,
+    validation_pipeline,
+)
 from trapi_object_modeling.workflow_operations import WorkflowOperation
 
 # FIX: need to somehow warn or guard against this
@@ -56,3 +68,22 @@ class Query(TOMBaseObject):
     The agent receiving this flag MUST also include it in TRAPI sent to
     downstream sources (e.g., ARS -> ARAs -> KPs).
     """
+
+    @property
+    def workflow_list(self) -> list[WorkflowOperation]:
+        """Get the workflow operations as a guaranteed list, even if they are represented as None."""
+        return self.workflow if self.workflow is not None else []
+
+    @override
+    def semantic_validate(
+        self, location: Location | None = None, **kwargs: Any
+    ) -> SemanticValidationResult:
+        return validation_pipeline(
+            self.message.semantic_validate(),
+            validate_many(
+                *self.workflow_list,
+                locations=get_list_locations(
+                    self.workflow_list, extend_location(location, "workflow")
+                ),
+            ),
+        )

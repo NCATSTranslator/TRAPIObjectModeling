@@ -1,13 +1,30 @@
 from __future__ import annotations
 
+import itertools
+from typing import Any, override
+
 from pydantic import ConfigDict
 from pydantic.dataclasses import dataclass
 
 from trapi_object_modeling.attribute import Attribute
+from trapi_object_modeling.auxiliary_graph import AuxiliaryGraphsDict
 from trapi_object_modeling.edge_binding import EdgeBinding
+from trapi_object_modeling.knowledge_graph import KnowledgeGraph
 from trapi_object_modeling.path_binding import PathBinding
+from trapi_object_modeling.query_graph import PathfinderQueryGraph, QueryGraph
 from trapi_object_modeling.shared import CURIE, AuxGraphID, QEdgeID, QPathID
-from trapi_object_modeling.utils.object_base import TOMBaseObject
+from trapi_object_modeling.utils.object_base import (
+    Location,
+    SemanticValidationError,
+    SemanticValidationResult,
+    TOMBaseObject,
+)
+from trapi_object_modeling.utils.semantic_validation import (
+    extend_location,
+    get_list_locations,
+    validate_many,
+    validation_pipeline,
+)
 
 
 @dataclass(kw_only=True, config=ConfigDict(extra="allow"))
@@ -42,6 +59,48 @@ class BaseAnalysis(TOMBaseObject):
     attributes: list[Attribute] | None = None
     """The attributes of this particular Analysis."""
 
+    @property
+    def support_graphs_list(self) -> list[AuxGraphID]:
+        """Get the support graphs as a guaranteed list, even if they are represented as None."""
+        return self.support_graphs if self.support_graphs is not None else []
+
+    @property
+    def attributes_list(self) -> list[Attribute]:
+        """Get the attributes as a guaranteed list, even if they are represented as None."""
+        return self.attributes if self.attributes is not None else []
+
+    @override
+    def semantic_validate(
+        self,
+        location: Location | None = None,
+        aux_graphs: AuxiliaryGraphsDict | None = None,
+        **kwargs: Any,
+    ) -> SemanticValidationResult:
+        # TODO: ensure node attributes do not conflict with qnode constraints
+        # TODO: ensure node categories do not conflict with qnode categories
+        # TODO: ensure node ID does not conflict with qnode ID
+        warnings, errors = validate_many(
+            *self.attributes_list,
+            locations=get_list_locations(
+                self.attributes_list, location=extend_location(location, "attributes")
+            ),
+        )
+
+        if aux_graphs is None:
+            return warnings, errors
+
+        # Otherwise we can validate the referenced aux graphs exist
+        for i, aux_id in enumerate(self.support_graphs_list):
+            if aux_id not in aux_graphs:
+                errors.append(
+                    SemanticValidationError(
+                        f"Support graph {aux_id} not present in auxiliary_graphs.",
+                        (*(location or ()), "support_graphs", i),
+                    )
+                )
+
+        return warnings, errors
+
 
 @dataclass(kw_only=True, config=ConfigDict(extra="allow"))
 class Analysis(BaseAnalysis):
@@ -54,6 +113,51 @@ class Analysis(BaseAnalysis):
     resolve to multiple Knowledge Graph Edges.
     """
 
+    @override
+    def semantic_validate(
+        self,
+        location: Location | None = None,
+        aux_graphs: AuxiliaryGraphsDict | None = None,
+        qgraph: QueryGraph | None = None,
+        kgraph: KnowledgeGraph | None = None,
+        **kwargs: Any,
+    ) -> SemanticValidationResult:
+        # TODO: ensure edge qualifiers do not conflict with qedge qualifier constraints
+        # TODO: ensure edge attributes do not conflict with qedge attribute constraints
+        locations = list(
+            itertools.chain(
+                *[
+                    get_list_locations(
+                        bindings, location=extend_location(location, qedge)
+                    )
+                    for qedge, bindings in self.edge_bindings.items()
+                ]
+            )
+        )
+
+        warnings, errors = validation_pipeline(
+            super().semantic_validate(location, aux_graphs=aux_graphs),
+            validate_many(
+                *itertools.chain(*self.edge_bindings.values()),
+                locations=locations,
+                kgraph=kgraph,
+            ),
+        )
+
+        if qgraph is None:
+            return warnings, errors
+
+        for qedge_id in self.edge_bindings:
+            if qedge_id not in qgraph.edges:
+                errors.append(
+                    SemanticValidationError(
+                        f"QEdge {qedge_id} is not present in query_graph.",
+                        (*(location or ()), "edge_binding", qedge_id),
+                    )
+                )
+
+        return warnings, errors
+
 
 @dataclass(kw_only=True, config=ConfigDict(extra="allow"))
 class PathfinderAnalysis(BaseAnalysis):
@@ -61,3 +165,46 @@ class PathfinderAnalysis(BaseAnalysis):
 
     path_bindings: dict[QPathID, list[PathBinding]]
     """The dictionary of input Query Graph paths to Analysis paths, specifically only for pathfinder queries."""
+
+    @override
+    def semantic_validate(
+        self,
+        location: Location | None = None,
+        aux_graphs: AuxiliaryGraphsDict | None = None,
+        qgraph: PathfinderQueryGraph | None = None,
+        kgraph: KnowledgeGraph | None = None,
+        **kwargs: Any,
+    ) -> SemanticValidationResult:
+        locations = list(
+            itertools.chain(
+                *[
+                    get_list_locations(
+                        bindings, location=extend_location(location, qpath)
+                    )
+                    for qpath, bindings in self.path_bindings.items()
+                ]
+            )
+        )
+
+        warnings, errors = validation_pipeline(
+            super().semantic_validate(location, aux_graphs=aux_graphs),
+            validate_many(
+                *itertools.chain(*self.path_bindings.values()),
+                locations=locations,
+                kgraph=kgraph,
+            ),
+        )
+
+        if qgraph is None:
+            return warnings, errors
+
+        for qpath_id in self.path_bindings:
+            if qpath_id not in qgraph.paths:
+                errors.append(
+                    SemanticValidationError(
+                        f"QPath {qpath_id} is not present in query_graph.",
+                        (*(location or ()), "path_bindings", qpath_id),
+                    )
+                )
+
+        return warnings, errors

@@ -12,6 +12,9 @@ Via an external context definition, the CURIE prefix and colon may be replaced b
 prefix, such as http://identifiers.org/uniprot/, to form a full URI.
 """
 
+Infores = str
+"""A CURIE which begins with `infores:`"""
+
 EdgeID = str
 AuxGraphID = str
 

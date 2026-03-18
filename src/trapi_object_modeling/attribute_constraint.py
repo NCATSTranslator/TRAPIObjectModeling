@@ -1,13 +1,23 @@
 from __future__ import annotations
 
+import re
 from enum import Enum
-from typing import Annotated
+from typing import Annotated, Any, override
 
 from pydantic import ConfigDict, Field, JsonValue, SkipValidation
 from pydantic.dataclasses import dataclass
 
 from trapi_object_modeling.shared import CURIE
-from trapi_object_modeling.utils.object_base import TOMBaseObject
+from trapi_object_modeling.utils.object_base import (
+    Location,
+    SemanticValidationError,
+    SemanticValidationErrorList,
+    SemanticValidationResult,
+    SemanticValidationWarning,
+    SemanticValidationWarningList,
+    TOMBaseObject,
+)
+from trapi_object_modeling.utils.semantic_validation import extend_location
 
 
 class OperatorEnum(str, Enum):
@@ -151,3 +161,56 @@ class AttributeConstraint(TOMBaseObject):
     if possible. This property SHOULD be provided if a unit_id is
     provided. This is redundant but recommended for human readability.
     """
+
+    @override
+    def semantic_validate(
+        self, location: Location | None = None, **kwargs: Any
+    ) -> SemanticValidationResult:
+        warnings, errors = (
+            SemanticValidationWarningList(),
+            SemanticValidationErrorList(),
+        )
+
+        values = self.value if isinstance(self.value, list) else [self.value]
+        value_location = extend_location(location, "value")
+
+        if self.operator in (">", "<"):
+            bad = next((v for v in values if not isinstance(v, int | float)), None)
+            if bad is not None:
+                errors.append(
+                    SemanticValidationError(
+                        f"Operator `{self.operator}` requires numeric value, got {type(bad).__name__}.",
+                        value_location,
+                    )
+                )
+
+        elif self.operator == "matches":
+            for v in values:
+                if not isinstance(v, str):
+                    errors.append(
+                        SemanticValidationError(
+                            f"Operator `matches` requires string value, got {type(v).__name__}.",
+                            value_location,
+                        )
+                    )
+                    break
+                try:
+                    re.compile(v)
+                except re.error as e:
+                    errors.append(
+                        SemanticValidationError(
+                            f"Value `{v}` is not a valid regex: {e}.",
+                            value_location,
+                        )
+                    )
+
+        if (self.unit_id is None) != (self.unit_name is None):
+            present = "unit_name" if self.unit_name is not None else "unit_id"
+            warnings.append(
+                SemanticValidationWarning(
+                    "unit_id and unit_name SHOULD both be present.",
+                    extend_location(location, present),
+                )
+            )
+
+        return warnings, errors
