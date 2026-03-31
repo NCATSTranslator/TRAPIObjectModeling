@@ -1,8 +1,9 @@
-from typing import Any, ClassVar, Literal, Self, overload, override
 from abc import ABC, abstractmethod
+from typing import Any, ClassVar, Literal, Self, overload, override
 
 import ormsgpack
 from pydantic import TypeAdapter
+from stablehash import stablehash
 
 Location = tuple[str | int, ...]
 """A tuple of keys/indicies that can be used to find a specific value in nested JSON."""
@@ -146,3 +147,25 @@ class TOMBaseObject(ABC):
         """Simply check if an instance passes semantic validation, discarding validation messages."""
         _, errors = self.semantic_validate()
         return len(errors) == 0
+
+    ##### Misc. #####
+
+    def hash(self) -> str:
+        """Hash the object into a hex string."""
+        return stablehash(
+            (
+                self.__class__.__name__,
+                *self.__dict__.items(),
+                # TODO: Decide if extra should factor into hash?
+                # *getattr(self, "__pydantic_extra__", {}).items(),
+            )
+        ).hexdigest()
+
+    @override
+    def __hash__(self) -> int:
+        return int(self.hash(), base=16)
+
+    @override
+    def __eq__(self, other: object) -> bool:
+        """Check for equality between self an other, using hashes."""
+        return bool(isinstance(other, TOMBaseObject) and self.hash() == other.hash())

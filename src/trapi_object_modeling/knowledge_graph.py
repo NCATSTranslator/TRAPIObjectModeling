@@ -4,11 +4,18 @@ from typing import Annotated, Any, override
 
 from pydantic import ConfigDict, Field
 from pydantic.dataclasses import dataclass
+from stablehash import stablehash
 
 from trapi_object_modeling.attribute import Attribute
 from trapi_object_modeling.qualifier import Qualifier
-from trapi_object_modeling.retrieval_source import RetrievalSource
-from trapi_object_modeling.shared import CURIE, BiolinkEntity, BiolinkPredicate, EdgeID
+from trapi_object_modeling.retrieval_source import ResourceRoleEnum, RetrievalSource
+from trapi_object_modeling.shared import (
+    CURIE,
+    BiolinkEntity,
+    BiolinkPredicate,
+    EdgeID,
+    Infores,
+)
 from trapi_object_modeling.utils.object_base import (
     Location,
     SemanticValidationError,
@@ -132,6 +139,10 @@ class Node(TOMBaseObject):
     """
 
     @override
+    def hash(self) -> str:
+        return stablehash((self.name, self.is_set)).hexdigest()
+
+    @override
     def semantic_validate(
         self, location: Location | None = None, **kwargs: Any
     ) -> SemanticValidationResult:
@@ -184,6 +195,29 @@ class Edge(TOMBaseObject):
     def qualifiers_list(self) -> list[Qualifier]:
         """Get the qualifiers as a guaranteed list, even if they are represented as None."""
         return self.qualifiers if self.qualifiers is not None else []
+
+    @property
+    def primary_knowledge_source(self) -> RetrievalSource:
+        """The primary knowledge source of the edge."""
+        for source in self.sources:
+            if source.resource_role == ResourceRoleEnum.primary_knowledge_source:
+                return source
+
+        raise ValueError(
+            f"Edge {self.subject} -{self.predicate}-> {self.object} has no primary_knowledge_source!"
+        )
+
+    @override
+    def hash(self) -> str:
+        return stablehash(
+            (
+                self.subject,
+                self.object,
+                self.predicate,
+                self.qualifiers,
+                self.primary_knowledge_source.resource_id,
+            )
+        ).hexdigest()
 
     @override
     def semantic_validate(

@@ -5,6 +5,7 @@ from typing import Any, override
 
 from pydantic import ConfigDict
 from pydantic.dataclasses import dataclass
+from stablehash import stablehash
 
 from trapi_object_modeling.shared import Infores
 from trapi_object_modeling.utils.object_base import (
@@ -74,6 +75,10 @@ class RetrievalSource(TOMBaseObject):
     pages for 'Imatinib' and its protein target KIT, both of which hold
     the claim that 'the KIT protein is a therapeutic target for Imatinib'.
     """
+
+    @override
+    def hash(self) -> str:
+        return stablehash((self.resource_id, self.resource_role)).hexdigest()
 
     @override
     def semantic_validate(

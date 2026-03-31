@@ -87,6 +87,7 @@ class Attribute(TOMBaseObject):
         """Get the attributes as a guaranteed list, even if they are represented as None."""
         return self.attributes if self.attributes is not None else []
 
+
     @override
     def semantic_validate(
         self,

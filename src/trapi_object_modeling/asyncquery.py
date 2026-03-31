@@ -4,6 +4,7 @@ from typing import Annotated, Any, override
 
 from pydantic import ConfigDict, Field
 from pydantic.dataclasses import dataclass
+from stablehash import stablehash
 
 from trapi_object_modeling.log_entry import LogEntry
 from trapi_object_modeling.query import Query

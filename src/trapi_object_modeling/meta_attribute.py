@@ -4,6 +4,7 @@ from typing import Any, override
 
 from pydantic import ConfigDict
 from pydantic.dataclasses import dataclass
+from stablehash import stablehash
 
 from trapi_object_modeling.shared import CURIE
 from trapi_object_modeling.utils.object_base import (
@@ -32,6 +33,12 @@ class MetaAttribute(TOMBaseObject):
 
     constraint_name: str | None = None
     """Human-readable name or label for the constraint concept. Required whenever constraint_use is true."""
+
+    @override
+    def hash(self) -> str:
+        return stablehash(
+            (self.attribute_type_id, self.attribute_source, self.constraint_use)
+        ).hexdigest()
 
     @override
     def semantic_validate(

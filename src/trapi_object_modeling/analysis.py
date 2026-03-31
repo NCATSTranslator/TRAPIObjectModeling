@@ -5,6 +5,7 @@ from typing import Any, override
 
 from pydantic import ConfigDict
 from pydantic.dataclasses import dataclass
+from stablehash import stablehash
 
 from trapi_object_modeling.attribute import Attribute
 from trapi_object_modeling.auxiliary_graph import AuxiliaryGraphsDict
@@ -70,6 +71,12 @@ class BaseAnalysis(TOMBaseObject):
         return self.attributes if self.attributes is not None else []
 
     @override
+    def hash(self) -> str:
+        return stablehash(
+            (self.resource_id, self.score, self.support_graphs, self.scoring_method)
+        ).hexdigest()
+
+    @override
     def semantic_validate(
         self,
         location: Location | None = None,
@@ -112,6 +119,15 @@ class Analysis(BaseAnalysis):
     This value is an array of EdgeBindings since a given query edge may
     resolve to multiple Knowledge Graph Edges.
     """
+
+    @override
+    def hash(self) -> str:
+        return stablehash(
+            (
+                super().hash(),
+                self.edge_bindings,
+            )
+        ).hexdigest()
 
     @override
     def semantic_validate(
@@ -165,6 +181,15 @@ class PathfinderAnalysis(BaseAnalysis):
 
     path_bindings: dict[QPathID, list[PathBinding]]
     """The dictionary of input Query Graph paths to Analysis paths, specifically only for pathfinder queries."""
+
+    @override
+    def hash(self) -> str:
+        return stablehash(
+            (
+                super().hash(),
+                self.path_bindings,
+            )
+        ).hexdigest()
 
     @override
     def semantic_validate(

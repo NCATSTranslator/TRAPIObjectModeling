@@ -10,6 +10,7 @@ dependencies = [
     "ormsgpack>=1.11.0",
     "pydantic>=2.12.0",
     "pydantic-settings>=2.13.1",
+    "stablehash>=0.3.0",
 ]
 
 [dependency-groups]

@@ -40,6 +40,7 @@ class AsyncQueryStatusResponse(TOMBaseObject):
     response_url: str | None = None
     """Optional URL that can be queried to restrieve the full TRAPI Response."""
 
+
     @override
     def semantic_validate(
         self, location: Location | None = None, **kwargs: Any

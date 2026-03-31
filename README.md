@@ -27,3 +27,9 @@ In some sections (such as `knowledge_type`), only certain values are used by exi
 ### Lenient interpretation of `additionalProperties: false`
 
 In OpenAPI, `additionalProperties` governs whether an object may have extra properties not defined in the spec. It can be either `true` or `false`. In Pydantic, we can use `allow`, `ignore`, or `forbid`. I have elected to use `ignore` in places where the yaml specification states `additionalProperties: false` such that disallowed extra properties are dropped, rather than raising a validation error, prioritizing answering queries over policing their correctness. However, this does mean that disallowed extra properties are dropped silently, which could make spotting certain problems in non-TOM applications harder.
+
+
+### Differences from reasoner-pydantic
+
+- Knowledge Node hash does not take `attributes` or `categories` into account
+- MetaATtribute hash does not take into account name fields
