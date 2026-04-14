@@ -13,6 +13,7 @@ __all__ = [
     "AuxiliaryGraph",
     "BaseAnalysis",
     "BaseQueryGraph",
+    "Curie",
     "DenyList",
     "Edge",
     "EdgeBinding",
@@ -50,6 +51,8 @@ __all__ = [
     "TOMBaseObject",
     "TopOrBottomEnum",
     "WorkflowOperation",
+    "biolink",
+    "infores",
 ]
 
 from trapi_object_modeling.analysis import Analysis, BaseAnalysis, PathfinderAnalysis
@@ -90,7 +93,12 @@ from trapi_object_modeling.query_graph import (
 from trapi_object_modeling.response import Response
 from trapi_object_modeling.result import Result
 from trapi_object_modeling.retrieval_source import ResourceRoleEnum, RetrievalSource
-from trapi_object_modeling.shared import KnowledgeTypeEnum
+from trapi_object_modeling.shared import (
+    Curie,
+    KnowledgeTypeEnum,
+    biolink,
+    infores,
+)
 from trapi_object_modeling.utils.object_base import TOMBaseObject
 from trapi_object_modeling.workflow_operations import (
     AboveOrBelowEnum,
