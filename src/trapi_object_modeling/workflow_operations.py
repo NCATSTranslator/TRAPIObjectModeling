@@ -15,6 +15,7 @@ from trapi_object_modeling.utils.object_base import (
     TOMBaseObject,
 )
 from trapi_object_modeling.utils.semantic_validation import (
+    GraphWithEdges,
     always_valid,
     extend_location,
     validation_pipeline,
@@ -298,7 +299,7 @@ class FillAllowListParameters(AllowList):
     def semantic_validate(
         self,
         location: Location | None = None,
-        qgraph: QueryGraph | None = None,
+        qgraph: QueryGraph | PathfinderQueryGraph | None = None,
         **kwargs: Any,
     ) -> SemanticValidationResult:
         return validation_pipeline(
@@ -307,7 +308,7 @@ class FillAllowListParameters(AllowList):
                 qgraph.validate_qedges_exist(
                     self.qedge_keys_list, extend_location(location, "qedge_keys")
                 )
-                if qgraph is not None
+                if qgraph is not None and isinstance(qgraph, GraphWithEdges)
                 else always_valid()
             ),
         )
@@ -333,7 +334,7 @@ class FillDenyListParameters(DenyList):
     def semantic_validate(
         self,
         location: Location | None = None,
-        qgraph: QueryGraph | None = None,
+        qgraph: QueryGraph | PathfinderQueryGraph | None = None,
         **kwargs: Any,
     ) -> SemanticValidationResult:
         return validation_pipeline(
@@ -342,7 +343,7 @@ class FillDenyListParameters(DenyList):
                 qgraph.validate_qedges_exist(
                     self.qedge_keys_list, extend_location(location, "qedge_keys")
                 )
-                if qgraph is not None
+                if qgraph is not None and isinstance(qgraph, GraphWithEdges)
                 else always_valid()
             ),
         )
@@ -414,7 +415,7 @@ class FilterKgraphParametersBase(OperationParameters):
     def semantic_validate(
         self,
         location: Location | None = None,
-        qgraph: QueryGraph | None = None,
+        qgraph: QueryGraph | PathfinderQueryGraph | None = None,
         **kwargs: Any,
     ) -> SemanticValidationResult:
         return validation_pipeline(
@@ -423,7 +424,7 @@ class FilterKgraphParametersBase(OperationParameters):
                 qgraph.validate_qedges_exist(
                     self.qedge_keys_list, extend_location(location, "qedge_keys")
                 )
-                if qgraph is not None
+                if qgraph is not None and isinstance(qgraph, GraphWithEdges)
                 else always_valid()
             ),
             (
@@ -703,7 +704,7 @@ class OverlayComputeJaccardParameters(OperationParameters):
     def semantic_validate(
         self,
         location: Location | None = None,
-        qgraph: QueryGraph | None = None,
+        qgraph: QueryGraph | PathfinderQueryGraph | None = None,
         **kwargs: Any,
     ) -> SemanticValidationResult:
         return validation_pipeline(
@@ -769,7 +770,7 @@ class OverlayComputeNgdParameters(OperationParameters):
     def semantic_validate(
         self,
         location: Location | None = None,
-        qgraph: QueryGraph | None = None,
+        qgraph: QueryGraph | PathfinderQueryGraph | None = None,
         **kwargs: Any,
     ) -> SemanticValidationResult:
         return validation_pipeline(
@@ -831,7 +832,7 @@ class OverlayFisherExactTestParameters(OperationParameters):
     def semantic_validate(
         self,
         location: Location | None = None,
-        qgraph: QueryGraph | None = None,
+        qgraph: QueryGraph | PathfinderQueryGraph | None = None,
         **kwargs: Any,
     ) -> SemanticValidationResult:
         return validation_pipeline(
@@ -856,7 +857,9 @@ class OverlayFisherExactTestParameters(OperationParameters):
                 qgraph.validate_qedges_exist(
                     [self.rel_edge_key], extend_location(location, "rel_edge_key")
                 )
-                if qgraph is not None and self.rel_edge_key is not None
+                if qgraph is not None
+                and self.rel_edge_key is not None
+                and isinstance(qgraph, GraphWithEdges)
                 else always_valid()
             ),
         )
@@ -933,7 +936,7 @@ class SortResultsEdgeAttributeParameters(OperationParameters):
     def semantic_validate(
         self,
         location: Location | None = None,
-        qgraph: QueryGraph | None = None,
+        qgraph: QueryGraph | PathfinderQueryGraph | None = None,
         **kwargs: Any,
     ) -> SemanticValidationResult:
         return validation_pipeline(
@@ -942,7 +945,7 @@ class SortResultsEdgeAttributeParameters(OperationParameters):
                 qgraph.validate_qedges_exist(
                     self.qedge_keys, extend_location(location, "qedge_keys")
                 )
-                if qgraph is not None
+                if qgraph is not None and isinstance(qgraph, GraphWithEdges)
                 else always_valid()
             ),
         )
@@ -987,7 +990,7 @@ class SortResultNodeAttributeParameters(OperationParameters):
     def semantic_validate(
         self,
         location: Location | None = None,
-        qgraph: QueryGraph | None = None,
+        qgraph: QueryGraph | PathfinderQueryGraph | None = None,
         **kwargs: Any,
     ) -> SemanticValidationResult:
         return validation_pipeline(

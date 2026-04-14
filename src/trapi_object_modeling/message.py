@@ -120,4 +120,3 @@ class Message(TOMBaseObject):
 
         for result in self.results_list:
             result.normalize(mapping)
-

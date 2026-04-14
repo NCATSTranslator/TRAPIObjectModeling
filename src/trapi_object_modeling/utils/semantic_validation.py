@@ -1,4 +1,4 @@
-from typing import Any, Literal, Protocol
+from typing import Any, Literal, Protocol, runtime_checkable
 
 from pydantic import AnyUrl, TypeAdapter, ValidationError
 
@@ -215,10 +215,18 @@ def get_dict_locations(
     return locations
 
 
+@runtime_checkable
 class GraphWithNodes(Protocol):
     """A protocol for any graph object with a simple nodes dict."""
 
     nodes: dict[Any, Any]
+
+
+@runtime_checkable
+class GraphWithEdges(Protocol):
+    """A protocol for any graph object with an edges dict."""
+
+    edges: dict[Any, Any]
 
 
 class SubjectObjectMapping(Protocol):

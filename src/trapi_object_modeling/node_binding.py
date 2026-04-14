@@ -1,14 +1,16 @@
 from __future__ import annotations
 
-from typing import Any, override
+from typing import TYPE_CHECKING, Any, override
 
 from pydantic import ConfigDict
 from pydantic.dataclasses import dataclass
 
 from trapi_object_modeling.attribute import Attribute
-from trapi_object_modeling.knowledge_graph import KnowledgeGraph
-from trapi_object_modeling.query_graph import QueryGraph
 from trapi_object_modeling.shared import CURIE
+
+if TYPE_CHECKING:
+    from trapi_object_modeling.knowledge_graph import KnowledgeGraph
+    from trapi_object_modeling.query_graph import PathfinderQueryGraph, QueryGraph
 from trapi_object_modeling.utils.object_base import (
     Location,
     SemanticValidationResult,
@@ -59,7 +61,7 @@ class NodeBinding(TOMBaseObject):
     def semantic_validate(
         self,
         location: Location | None = None,
-        qgraph: QueryGraph | None = None,
+        qgraph: QueryGraph | PathfinderQueryGraph | None = None,
         kgraph: KnowledgeGraph | None = None,
         **kwargs: Any,
     ) -> SemanticValidationResult:

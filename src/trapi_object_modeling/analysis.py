@@ -1,19 +1,21 @@
 from __future__ import annotations
 
 import itertools
-from typing import Any, override
+from typing import TYPE_CHECKING, Any, override
 
 from pydantic import ConfigDict
 from pydantic.dataclasses import dataclass
 from stablehash import stablehash
 
 from trapi_object_modeling.attribute import Attribute
-from trapi_object_modeling.auxiliary_graph import AuxiliaryGraphsDict
 from trapi_object_modeling.edge_binding import EdgeBinding
-from trapi_object_modeling.knowledge_graph import KnowledgeGraph
 from trapi_object_modeling.path_binding import PathBinding
-from trapi_object_modeling.query_graph import PathfinderQueryGraph, QueryGraph
 from trapi_object_modeling.shared import CURIE, AuxGraphID, QEdgeID, QPathID
+
+if TYPE_CHECKING:
+    from trapi_object_modeling.auxiliary_graph import AuxiliaryGraphsDict
+    from trapi_object_modeling.knowledge_graph import KnowledgeGraph
+    from trapi_object_modeling.query_graph import PathfinderQueryGraph, QueryGraph
 from trapi_object_modeling.utils.object_base import (
     Location,
     SemanticValidationError,
@@ -21,6 +23,7 @@ from trapi_object_modeling.utils.object_base import (
     TOMBaseObject,
 )
 from trapi_object_modeling.utils.semantic_validation import (
+    GraphWithEdges,
     extend_location,
     get_list_locations,
     validate_many,
@@ -134,7 +137,7 @@ class Analysis(BaseAnalysis):
         self,
         location: Location | None = None,
         aux_graphs: AuxiliaryGraphsDict | None = None,
-        qgraph: QueryGraph | None = None,
+        qgraph: QueryGraph | PathfinderQueryGraph | None = None,
         kgraph: KnowledgeGraph | None = None,
         **kwargs: Any,
     ) -> SemanticValidationResult:
@@ -160,7 +163,7 @@ class Analysis(BaseAnalysis):
             ),
         )
 
-        if qgraph is None:
+        if qgraph is None or not isinstance(qgraph, GraphWithEdges):
             return warnings, errors
 
         for qedge_id in self.edge_bindings:

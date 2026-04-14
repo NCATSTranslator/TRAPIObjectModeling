@@ -27,6 +27,7 @@ from trapi_object_modeling.utils.object_base import (
     TOMBaseObject,
 )
 from trapi_object_modeling.utils.semantic_validation import (
+    GraphWithEdges,
     always_valid,
     extend_location,
     get_dict_locations,
@@ -361,7 +362,7 @@ class QEdge(TOMBaseObject):
     def semantic_validate(
         self,
         location: Location | None = None,
-        qgraph: QueryGraph | None = None,
+        qgraph: QueryGraph | PathfinderQueryGraph | None = None,
         **kwargs: Any,
     ) -> SemanticValidationResult:
         warnings, errors = validation_pipeline(
@@ -407,7 +408,7 @@ class QEdge(TOMBaseObject):
             ),
         )
 
-        if qgraph is None:
+        if qgraph is None or not isinstance(qgraph, GraphWithEdges):
             return warnings, errors
 
         if self.subject not in qgraph.edges:
@@ -474,7 +475,7 @@ class QPath(TOMBaseObject):
     def semantic_validate(
         self,
         location: Location | None = None,
-        qgraph: QueryGraph | None = None,
+        qgraph: QueryGraph | PathfinderQueryGraph | None = None,
         **kwargs: Any,
     ) -> SemanticValidationResult:
         return validation_pipeline(

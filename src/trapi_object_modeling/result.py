@@ -1,17 +1,19 @@
 from __future__ import annotations
 
 import itertools
-from typing import Annotated, Any, override
+from typing import TYPE_CHECKING, Annotated, Any, override
 
 from pydantic import ConfigDict, Field
 from pydantic.dataclasses import dataclass
 
 from trapi_object_modeling.analysis import Analysis, PathfinderAnalysis
-from trapi_object_modeling.auxiliary_graph import AuxiliaryGraphsDict
-from trapi_object_modeling.knowledge_graph import KnowledgeGraph
 from trapi_object_modeling.node_binding import NodeBinding
-from trapi_object_modeling.query_graph import QueryGraph
 from trapi_object_modeling.shared import EdgeID, QNodeID
+
+if TYPE_CHECKING:
+    from trapi_object_modeling.auxiliary_graph import AuxiliaryGraphsDict
+    from trapi_object_modeling.knowledge_graph import KnowledgeGraph
+    from trapi_object_modeling.query_graph import PathfinderQueryGraph, QueryGraph
 from trapi_object_modeling.utils.object_base import (
     Location,
     SemanticValidationResult,
@@ -51,7 +53,7 @@ class Result(TOMBaseObject):
     def semantic_validate(
         self,
         location: Location | None = None,
-        qgraph: QueryGraph | None = None,
+        qgraph: QueryGraph | PathfinderQueryGraph | None = None,
         kgraph: KnowledgeGraph | None = None,
         aux_graphs: AuxiliaryGraphsDict | None = None,
         **kwargs: Any,

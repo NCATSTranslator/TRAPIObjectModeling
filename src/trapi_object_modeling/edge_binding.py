@@ -1,13 +1,15 @@
 from __future__ import annotations
 
-from typing import Any, override
+from typing import TYPE_CHECKING, Any, override
 
 from pydantic import ConfigDict
 from pydantic.dataclasses import dataclass
 
 from trapi_object_modeling.attribute import Attribute
-from trapi_object_modeling.knowledge_graph import KnowledgeGraph
 from trapi_object_modeling.shared import EdgeID
+
+if TYPE_CHECKING:
+    from trapi_object_modeling.knowledge_graph import KnowledgeGraph
 from trapi_object_modeling.utils.object_base import (
     Location,
     SemanticValidationResult,
