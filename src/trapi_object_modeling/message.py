@@ -107,3 +107,17 @@ class Message(TOMBaseObject):
                 aux_graphs=self.auxiliary_graphs,
             ),
         )
+
+    def normalize(self) -> None:
+        """Normalize the knowledge_graph and update the results and auxiliary_graphs accordingly."""
+        if self.knowledge_graph is None:
+            return
+
+        mapping = self.knowledge_graph.normalize()
+
+        for auxg in self.auxiliary_graphs_dict.values():
+            auxg.normalize(mapping)
+
+        for result in self.results_list:
+            result.normalize(mapping)
+

@@ -11,7 +11,7 @@ from trapi_object_modeling.auxiliary_graph import AuxiliaryGraphsDict
 from trapi_object_modeling.knowledge_graph import KnowledgeGraph
 from trapi_object_modeling.node_binding import NodeBinding
 from trapi_object_modeling.query_graph import QueryGraph
-from trapi_object_modeling.shared import QNodeID
+from trapi_object_modeling.shared import EdgeID, QNodeID
 from trapi_object_modeling.utils.object_base import (
     Location,
     SemanticValidationResult,
@@ -92,3 +92,13 @@ class Result(TOMBaseObject):
                 aux_graphs=aux_graphs,
             ),
         )
+
+    def normalize(self, mapping: dict[EdgeID, EdgeID]) -> None:
+        """Normalize the result given a mapping of old:new EdgeIDs."""
+        for analysis in self.analyses:
+            if not isinstance(analysis, Analysis):
+                continue
+            for binding in itertools.chain(
+                *(bindings for bindings in analysis.edge_bindings.values())
+            ):
+                binding.id = mapping.get(binding.id, binding.id)

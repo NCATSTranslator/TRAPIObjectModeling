@@ -1,10 +1,12 @@
 from __future__ import annotations
 
+import re
 from typing import Any, override
 
 from pydantic import ConfigDict, JsonValue, SkipValidation
 from pydantic.dataclasses import dataclass
 
+from trapi_object_modeling.attribute_constraint import AttributeConstraint
 from trapi_object_modeling.shared import CURIE
 from trapi_object_modeling.utils.object_base import (
     Location,
@@ -113,3 +115,38 @@ class Attribute(TOMBaseObject):
                 ),
             ),
         )
+
+    def meets_constraint(self, constraint: AttributeConstraint) -> bool:
+        """Check if the given constraint is satisfied by the attribute."""
+        if constraint.id != self.attribute_type_id:
+            return False
+
+        if constraint.operator == "===":
+            result = self.value == constraint.value
+        else:
+            attr_vals = self.value if isinstance(self.value, list) else [self.value]
+            con_vals = (
+                constraint.value
+                if isinstance(constraint.value, list)
+                else [constraint.value]
+            )
+
+            match constraint.operator:
+                case "==":
+                    result = any(av == cv for av in attr_vals for cv in con_vals)
+                case ">" | "<":
+                    result = any(
+                        (av > cv if constraint.operator == ">" else av < cv)
+                        for av in attr_vals
+                        for cv in con_vals
+                        if isinstance(av, int | float) and isinstance(cv, int | float)
+                    )
+                case "matches":
+                    result = any(
+                        bool(re.search(cv, av))
+                        for cv in con_vals
+                        for av in attr_vals
+                        if isinstance(cv, str) and isinstance(av, str)
+                    )
+
+        return not result if constraint.negated else result

@@ -73,5 +73,9 @@ class AuxiliaryGraph(TOMBaseObject):
 
         return warnings, errors
 
+    def normalize(self, mapping: dict[EdgeID, EdgeID]) -> None:
+        """Normalize the auxiliary graph given a mapping of old:new EdgeIDs."""
+        self.edges = [mapping.get(edge_id, edge_id) for edge_id in self.edges]
+
 
 AuxiliaryGraphsDict = dict[AuxGraphID, AuxiliaryGraph]

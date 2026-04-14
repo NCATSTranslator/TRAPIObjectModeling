@@ -127,3 +127,10 @@ class RetrievalSource(TOMBaseObject):
                 errors.extend(new_err)
 
         return warnings, errors
+
+    def update(self, other: RetrievalSource) -> None:
+        """Update the first source in-place, merging information from the second."""
+        if other.upstream_resource_ids:
+            self.upstream_resource_ids = list(
+                set(self.upstream_resource_ids or []) | set(other.upstream_resource_ids)
+            )
