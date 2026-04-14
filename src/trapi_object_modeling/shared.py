@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from enum import Enum
+from typing import Literal
 
 QNodeID = str
 QEdgeID = str
@@ -39,3 +40,6 @@ class KnowledgeTypeEnum(str, Enum):
 
     inferred = "inferred"
     """Knowledge that is autonomously speculated by the reasoner through various means."""
+
+
+KnowledgeType = Literal["lookup", "inferred"]

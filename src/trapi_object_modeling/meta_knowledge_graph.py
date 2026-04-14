@@ -10,7 +10,7 @@ from trapi_object_modeling.meta_qualifier import MetaQualifier
 from trapi_object_modeling.shared import (
     BiolinkEntity,
     BiolinkPredicate,
-    KnowledgeTypeEnum,
+    KnowledgeType,
 )
 from trapi_object_modeling.utils.object_base import (
     Location,
@@ -139,9 +139,7 @@ class MetaEdge(TOMBaseObject):
     object: BiolinkEntity
     """Object node category of this relationship edge."""
 
-    knowledge_types: Annotated[list[KnowledgeTypeEnum] | None, Field(min_length=1)] = (
-        None
-    )
+    knowledge_types: Annotated[list[KnowledgeType] | None, Field(min_length=1)] = None
     """A list of knowledge_types that are supported by the service.
 
     If the knowledge_types is null, this means that only 'lookup'

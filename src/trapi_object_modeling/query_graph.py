@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from enum import Enum
-from typing import Annotated, Any, override
+from typing import Annotated, Any, Literal, override
 
 from pydantic import ConfigDict, Field
 from pydantic.dataclasses import dataclass
@@ -13,7 +13,7 @@ from trapi_object_modeling.shared import (
     CURIE,
     BiolinkEntity,
     BiolinkPredicate,
-    KnowledgeTypeEnum,
+    KnowledgeType,
     QEdgeID,
     QNodeID,
     QPathID,
@@ -192,6 +192,9 @@ class SetInterpetationEnum(str, Enum):
     """MANY means that member CURIEs MUST form one or more sets in the Results, and sets with more members are generally considered more desirable that sets with fewer members."""
 
 
+SetInterpetation = Literal["BATCH", "MANY", "ALL"]
+
+
 @dataclass(kw_only=True, config=ConfigDict(extra="allow"))
 class QNode(TOMBaseObject):
     """A node in the QueryGraph used to represent an entity in a query.
@@ -222,7 +225,7 @@ class QNode(TOMBaseObject):
     Use of 'deprecated' categories should be avoided.
     """
 
-    set_interpretation: SetInterpetationEnum | None = None
+    set_interpretation: SetInterpetation | None = None
     """Indicates how multiple CURIEs in the ids property MUST be interpreted.
 
     BATCH indicates that the query is intended to be
@@ -293,7 +296,7 @@ class QEdge(TOMBaseObject):
     or to a term that is a descendant of the QEdge predicate term.
     """
 
-    knowledge_type: KnowledgeTypeEnum | None = None
+    knowledge_type: KnowledgeType | None = None
     """Indicates the type of knowledge that the client wants from the server between the subject and object.
 
     If the value is 'lookup', then the client wants direct lookup information from

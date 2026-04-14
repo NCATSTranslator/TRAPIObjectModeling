@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from enum import Enum
-from typing import Any, override
+from typing import Any, Literal, override
 
 from pydantic import ConfigDict
 from pydantic.dataclasses import dataclass
@@ -41,6 +41,13 @@ class ResourceRoleEnum(str, Enum):
     """Source which provides supporting data, but doesn't primarily originate the knowledge."""
 
 
+ResourceRole = Literal[
+    "primary_knowledge_source",
+    "aggregator_knowledge_source",
+    "supporting_data_source",
+]
+
+
 @dataclass(kw_only=True, config=ConfigDict(extra="allow"))
 class RetrievalSource(TOMBaseObject):
     """Provides information about how a particular InformationResource served as a source from which knowledge expressed in an Edge, or data used to generate this knowledge, was retrieved."""
@@ -48,7 +55,7 @@ class RetrievalSource(TOMBaseObject):
     resource_id: Infores
     """The CURIE for an Information Resource that served as a source of knowledge expressed in an Edge, or a source of data used to generate this knowledge."""
 
-    resource_role: ResourceRoleEnum
+    resource_role: ResourceRole
     """The role played by the InformationResource in serving as a source for an Edge.
 
     Note that a given Edge should have one

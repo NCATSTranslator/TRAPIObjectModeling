@@ -97,6 +97,9 @@ class AscendingOrDescending(str, Enum):
     descending = "descending"
 
 
+AscendingOrDescendingValue = Literal["ascending", "descending"]
+
+
 @dataclass(kw_only=True, config=ConfigDict(extra="ignore"))
 class OperationParameters(TOMBaseObject):
     """Base class for various operation parameters."""
@@ -365,6 +368,9 @@ class AboveOrBelowEnum(str, Enum):
     below = "below"
 
 
+AboveOrBelow = Literal["above", "below"]
+
+
 @dataclass(kw_only=True, config=ConfigDict(extra="ignore"))
 class FilterKgraphParametersBase(OperationParameters):
     """A base class for filtering the kgraph with appropriate validation."""
@@ -430,7 +436,7 @@ class FilterKgraphContinuousKedgeAttributeParameters(FilterKgraphParametersBase)
     threshold: Annotated[float, Field(examples=["1.2"])]
     """The value to compare attribute values to."""
 
-    remove_above_or_below: AboveOrBelowEnum
+    remove_above_or_below: AboveOrBelow
 
 
 @dataclass(kw_only=True, config=ConfigDict(extra="ignore"))
@@ -516,7 +522,7 @@ class FilterKgraphPercentileParameters(FilterKgraphParametersBase):
     threshold: Annotated[float | None, Field(gt=0, le=100, examples=[96.8])] = 95
     """The percentile to threshold on."""
 
-    remove_above_or_below: AboveOrBelowEnum = AboveOrBelowEnum.below
+    remove_above_or_below: AboveOrBelow = "below"
     """Indicates whether to remove above or below the given threshold."""
 
 
@@ -536,6 +542,9 @@ class PlusOrMinusEnum(str, Enum):
     minus = "minus"
 
 
+PlusOrMinus = Literal["plus", "minus"]
+
+
 @dataclass(kw_only=True, config=ConfigDict(extra="ignore"))
 class FilterKgraphStdDevParameters(FilterKgraphParametersBase):
     """Parameters for the FilterKgraphStdDev operation."""
@@ -546,10 +555,10 @@ class FilterKgraphStdDevParameters(FilterKgraphParametersBase):
     num_sigma: Annotated[float | None, Field(gt=0, examples=[1.2])] = 1
     """The number of standard deviations to threshold on."""
 
-    remove_above_or_below: AboveOrBelowEnum | None = AboveOrBelowEnum.below
+    remove_above_or_below: AboveOrBelow | None = "below"
     """Indictes whether to remove above or below the given threshold."""
 
-    plus_or_minus_std_dev: PlusOrMinusEnum | None = PlusOrMinusEnum.plus
+    plus_or_minus_std_dev: PlusOrMinus | None = "plus"
     """Indicate whether or not the threshold should be found using plus or minus the standard deviation.
 
     E.g. when plus_or_minus_std_dev is set to plus will set the cutoff for filtering as
@@ -574,6 +583,9 @@ class TopOrBottomEnum(str, Enum):
     bottom = "bottom"
 
 
+TopOrBottom = Literal["top", "bottom"]
+
+
 @dataclass(kw_only=True, config=ConfigDict(extra="ignore"))
 class FilterKgraphTopNParameters(FilterKgraphParametersBase):
     """Parameters for the FilterKgraphTopN operation."""
@@ -584,7 +596,7 @@ class FilterKgraphTopNParameters(FilterKgraphParametersBase):
     max_edges: Annotated[int | None, Field(gt=0, examples=[10])] = 50
     """The number of edges to keep."""
 
-    keep_top_or_bottom: TopOrBottomEnum | None = TopOrBottomEnum.top
+    keep_top_or_bottom: TopOrBottom | None = "top"
     """Indicate whether or not the the top or bottom n values should be kept."""
 
 
@@ -899,7 +911,7 @@ class SortResultsEdgeAttributeParameters(OperationParameters):
     edge_attribute: Annotated[str, Field(examples=["normalized_google_distance"])]
     """The name of the edge attribute to order by."""
 
-    ascending_or_descending: AscendingOrDescending
+    ascending_or_descending: AscendingOrDescendingValue
 
     qedge_keys: Annotated[list[QEdgeID], Field(examples=["[e01]"])]
     """This indicates if you only want to consider edges with specific edge_keys.
@@ -948,7 +960,7 @@ class SortResultNodeAttributeParameters(OperationParameters):
     node_attribute: Annotated[str, Field(examples=["normalized_google_distance"])]
     """The name of the node attribute to order by."""
 
-    ascending_or_descending: AscendingOrDescending
+    ascending_or_descending: AscendingOrDescendingValue
 
     qnode_keys: Annotated[list[QNodeID] | None, Field(examples=["[e01]"])]
     """This indicates if you only want to consider nodes with specific node_keys.
@@ -999,7 +1011,7 @@ class OperationSortResultsNodeAttribute(WorkflowOperation):
 class SortResultsScoreParameters(OperationParameters):
     """Parameters for the SortResultsScore operation."""
 
-    ascending_or_descending: AscendingOrDescending
+    ascending_or_descending: AscendingOrDescendingValue
 
 
 @dataclass(kw_only=True, config=ConfigDict(extra="ignore"))

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import datetime
 from enum import Enum
-from typing import Any, override
+from typing import Any, Literal, override
 
 from pydantic import ConfigDict
 from pydantic.dataclasses import dataclass
@@ -31,6 +31,9 @@ class LogLevel(str, Enum):
     """The log presents information about query execution that may be useful to devs."""
 
 
+LogLevelValue = Literal["ERROR", "WARNING", "INFO", "DEBUG"]
+
+
 @dataclass(kw_only=True, config=ConfigDict(extra="allow"))
 class LogEntry(TOMBaseObject):
     """The LogEntry object contains information useful for tracing and debugging across Translator components.
@@ -53,7 +56,7 @@ class LogEntry(TOMBaseObject):
     (e.g. 2020-09-03T18:13:49-04:00).
     """
 
-    level: LogLevel | None = None
+    level: LogLevelValue | None = None
 
     code: str | None = None
     """One of a standardized set of short codes e.g. QueryNotTraversable, KPNotAvailable, KPResponseMalformed."""

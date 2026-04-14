@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import re
 from enum import Enum
-from typing import Annotated, Any, override
+from typing import Annotated, Any, Literal, override
 
 from pydantic import ConfigDict, Field, JsonValue, SkipValidation
 from pydantic.dataclasses import dataclass
@@ -77,6 +77,9 @@ class OperatorEnum(str, Enum):
     """
 
 
+Operator = Literal["==", "===", ">", "<", "matches"]
+
+
 @dataclass(
     kw_only=True,
     eq=True,
@@ -107,7 +110,7 @@ class AttributeConstraint(TOMBaseObject):
     negated: Annotated[bool | None, Field(alias="not")] = False
     """Negate the operator."""
 
-    operator: OperatorEnum
+    operator: Operator
     """Relationship between the database value and the constraint value for the specified id.
 
     The operators ==, >, and < mean is equal to, is greater than, and is less than,

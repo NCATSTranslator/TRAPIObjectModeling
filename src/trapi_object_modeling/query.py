@@ -5,7 +5,7 @@ from typing import Any, override
 from pydantic import ConfigDict
 from pydantic.dataclasses import dataclass
 
-from trapi_object_modeling.log_entry import LogLevel
+from trapi_object_modeling.log_entry import LogLevelValue
 from trapi_object_modeling.message import Message
 from trapi_object_modeling.utils.object_base import (
     Location,
@@ -46,7 +46,7 @@ class Query(TOMBaseObject):
     require non-empty results and knowledge_graph fields.
     """
 
-    log_level: LogLevel | None = None
+    log_level: LogLevelValue | None = None
     """The least critical level of logs to return."""
 
     workflow: list[WorkflowOperation] | None = None
