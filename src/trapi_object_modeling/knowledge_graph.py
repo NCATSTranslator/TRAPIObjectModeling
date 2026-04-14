@@ -14,7 +14,6 @@ from trapi_object_modeling.shared import (
     BiolinkEntity,
     BiolinkPredicate,
     EdgeID,
-    Infores,
 )
 from trapi_object_modeling.utils.object_base import (
     Location,
