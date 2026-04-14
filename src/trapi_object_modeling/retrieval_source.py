@@ -83,6 +83,18 @@ class RetrievalSource(TOMBaseObject):
     the claim that 'the KIT protein is a therapeutic target for Imatinib'.
     """
 
+    @property
+    def upstream_resource_ids_list(self) -> list[Infores]:
+        """Get the upstream resource IDs as a guaranteed list, even if they are represented as None."""
+        return (
+            self.upstream_resource_ids if self.upstream_resource_ids is not None else []
+        )
+
+    @property
+    def source_record_urls_list(self) -> list[str]:
+        """Get the source record URLs as a guaranteed list, even if they are represented as None."""
+        return self.source_record_urls if self.source_record_urls is not None else []
+
     @override
     def hash(self) -> str:
         return stablehash((self.resource_id, self.resource_role)).hexdigest()

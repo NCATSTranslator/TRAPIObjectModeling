@@ -65,6 +65,11 @@ class Message(TOMBaseObject):
         """Get the results as a guaranteed list, even if they are represented as None."""
         return self.results if self.results is not None else []
 
+    @property
+    def auxiliary_graphs_dict(self) -> AuxiliaryGraphsDict:
+        """Get the auxiliary_graphs as a guaranteed dict, even if they are represented as None."""
+        return self.auxiliary_graphs if self.auxiliary_graphs is not None else {}
+
     @override
     def semantic_validate(
         self, location: Location | None = None, **kwargs: Any

@@ -155,6 +155,11 @@ class AnnotateEdgesParameters(OperationParameters):
     If not included then all available data will be annotated.
     """
 
+    @property
+    def attributes_list(self) -> list[str]:
+        """Get the attributes as a guaranteed list, even if they are represented as None."""
+        return self.attributes if self.attributes is not None else []
+
 
 @dataclass(kw_only=True, config=ConfigDict(extra="ignore"))
 class OperationAnnotateEdges(WorkflowOperation):
@@ -181,6 +186,11 @@ class AnnotateNodesParameters(OperationParameters):
 
     If not included then all available data will be annotated.
     """
+
+    @property
+    def attributes_list(self) -> list[str]:
+        """Get the attributes as a guaranteed list, even if they are represented as None."""
+        return self.attributes if self.attributes is not None else []
 
 
 @dataclass(kw_only=True, config=ConfigDict(extra="ignore"))

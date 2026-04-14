@@ -34,6 +34,15 @@ class MetaAttribute(TOMBaseObject):
     constraint_name: str | None = None
     """Human-readable name or label for the constraint concept. Required whenever constraint_use is true."""
 
+    @property
+    def original_attribute_names_list(self) -> list[str]:
+        """Get the original attribute names as a guaranteed list, even if they are represented as None."""
+        return (
+            self.original_attribute_names
+            if self.original_attribute_names is not None
+            else []
+        )
+
     @override
     def hash(self) -> str:
         return stablehash(

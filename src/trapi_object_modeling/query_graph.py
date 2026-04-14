@@ -252,6 +252,11 @@ class QNode(TOMBaseObject):
     """
 
     @property
+    def ids_list(self) -> list[CURIE]:
+        """Get the IDs as a guaranteed list, even if they are represented as None."""
+        return self.ids if self.ids is not None else []
+
+    @property
     def categories_list(self) -> list[BiolinkEntity]:
         """Get the categories as a guaranteed list, even if they are represented as None."""
         return self.categories if self.categories is not None else []

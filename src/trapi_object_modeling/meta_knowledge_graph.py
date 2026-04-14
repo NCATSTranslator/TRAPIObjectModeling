@@ -166,6 +166,11 @@ class MetaEdge(TOMBaseObject):
     """
 
     @property
+    def knowledge_types_list(self) -> list[KnowledgeType]:
+        """Get the knowledge types as a guaranteed list, even if they are represented as None."""
+        return self.knowledge_types if self.knowledge_types is not None else []
+
+    @property
     def attributes_list(self) -> list[MetaAttribute]:
         """Get the meta attributes as a guaranteed list, even if they are represented as None."""
         return self.attributes if self.attributes is not None else []
