@@ -2,17 +2,12 @@ from __future__ import annotations
 
 import datetime
 from enum import Enum
-from typing import Any, Literal, override
+from typing import Literal
 
 from pydantic import ConfigDict
 from pydantic.dataclasses import dataclass
 
-from trapi_object_modeling.utils.object_base import (
-    Location,
-    SemanticValidationResult,
-    TOMBaseObject,
-)
-from trapi_object_modeling.utils.semantic_validation import always_valid
+from trapi_object_modeling.utils.object_base import TOMBaseObject
 
 
 class LogLevel(str, Enum):
@@ -63,9 +58,3 @@ class LogEntry(TOMBaseObject):
 
     message: str
     """A human-readable log message."""
-
-    @override
-    def semantic_validate(
-        self, location: Location | None = None, **kwargs: Any
-    ) -> SemanticValidationResult:
-        return always_valid()

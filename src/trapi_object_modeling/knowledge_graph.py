@@ -1,15 +1,18 @@
 from __future__ import annotations
 
 import itertools
-from typing import Annotated, Any, Literal, override
+from typing import Annotated, Literal, cast, override
 
 from pydantic import ConfigDict, Field
 from pydantic.dataclasses import dataclass
 from stablehash import stablehash
 
+from trapi_object_modeling.analysis import Analysis
 from trapi_object_modeling.attribute import Attribute
 from trapi_object_modeling.attribute_constraint import AttributeConstraint
+from trapi_object_modeling.auxiliary_graph import AuxiliaryGraphsDict
 from trapi_object_modeling.qualifier import Qualifier
+from trapi_object_modeling.result import Result
 from trapi_object_modeling.retrieval_source import ResourceRoleEnum, RetrievalSource
 from trapi_object_modeling.shared import (
     CURIE,
@@ -19,24 +22,13 @@ from trapi_object_modeling.shared import (
     Infores,
     biolink,
 )
-from trapi_object_modeling.utils.object_base import (
+from trapi_object_modeling.utils.object_base import TOMBaseObject
+from trapi_object_modeling.validation._util import (
     Location,
     SemanticValidationError,
     SemanticValidationErrorList,
     SemanticValidationResult,
     SemanticValidationWarningList,
-    TOMBaseObject,
-)
-from trapi_object_modeling.utils.semantic_validation import (
-    always_valid,
-    extend_location,
-    get_dict_locations,
-    get_list_locations,
-    validate_category,
-    validate_many,
-    validate_node_exists,
-    validate_predicate,
-    validation_pipeline,
 )
 
 
@@ -95,26 +87,6 @@ class KnowledgeGraph(TOMBaseObject):
 
         return warnings, errors
 
-    @override
-    def semantic_validate(
-        self, location: Location | None = None, **kwargs: Any
-    ) -> SemanticValidationResult:
-        return validation_pipeline(
-            validate_many(
-                *self.nodes.values(),
-                locations=get_dict_locations(
-                    self.nodes, extend_location(location, "nodes")
-                ),
-            ),
-            validate_many(
-                *self.edges.values(),
-                locations=get_dict_locations(
-                    self.edges, extend_location(location, "edges")
-                ),
-                kgraph=self,
-            ),
-        )
-
     def normalize(self) -> dict[EdgeID, EdgeID]:
         """Normalize the kgraph edge IDs and return a mapping of new:old."""
         mapping = dict[EdgeID, EdgeID]()
@@ -158,6 +130,69 @@ class KnowledgeGraph(TOMBaseObject):
 
         return mapping
 
+    def prune(self, aux_graphs: AuxiliaryGraphsDict, results: list[Result]) -> None:
+        """Remove any unused nodes or edges."""
+        bound_edges = set[EdgeID]()
+        bound_nodes = set[CURIE]()
+        for result in results:
+            for node_binding_set in result.node_bindings.values():
+                bound_nodes.update([binding.id for binding in node_binding_set])
+            for analysis in result.analyses:
+                if isinstance(analysis, Analysis):
+                    for edge_binding_set in analysis.edge_bindings.values():
+                        bound_edges.update([binding.id for binding in edge_binding_set])
+                else:
+                    for path_binding in itertools.chain(
+                        *(analysis.path_bindings.values())
+                    ):
+                        if path_binding.id in aux_graphs:
+                            bound_edges.update(aux_graphs[path_binding.id].edges)
+
+        checked_edges = set[EdgeID]()
+        edges_to_check = list(bound_edges)
+        while len(edges_to_check) > 0:
+            edge_id = edges_to_check.pop()
+
+            # Avoid infinite loops if edge and aux graph reference each other
+            if edge_id in checked_edges:
+                continue
+            checked_edges.add(edge_id)
+
+            edge = self.edges[edge_id]
+
+            bound_edges.add(edge_id)
+            bound_nodes.add(edge.subject)
+            bound_nodes.add(edge.object)
+
+            edge_aux_graphs = next(
+                (
+                    attr
+                    for attr in edge.attributes_list
+                    if attr.attribute_type_id == "biolink:support_graphs"
+                ),
+                None,
+            )
+            if edge_aux_graphs is None:
+                continue
+            # Have to cast because support graphs always has value of type list[str]
+            # But attribute value is generally of type Any
+            for aux_graph_id in cast(list[str], edge_aux_graphs.value):
+                edges_to_check.extend(edge for edge in aux_graphs[aux_graph_id].edges)
+
+        # prior_edge_count = len(self.edges)
+        # prior_node_count = len(self.nodes)
+
+        self.edges = {edge_id: self.edges[edge_id] for edge_id in bound_edges}
+        self.nodes = {curie: self.nodes[curie] for curie in bound_nodes}
+
+        # pruned_edges = prior_edge_count - len(self.edges)
+        # pruned_nodes = prior_node_count - len(self.nodes)
+
+        # TODO: logging setup?
+        # log.debug(
+        #     f"KG Pruning: {len(kgraph['nodes'])} (-{pruned_nodes}) nodes and {len(kgraph['edges'])} (-{pruned_edges}) edges remain."
+        # )
+
 
 @dataclass(kw_only=True, config=ConfigDict(extra="ignore"))
 class Node(TOMBaseObject):
@@ -187,23 +222,6 @@ class Node(TOMBaseObject):
     @override
     def hash(self) -> str:
         return stablehash((self.name, self.is_set)).hexdigest()
-
-    @override
-    def semantic_validate(
-        self, location: Location | None = None, **kwargs: Any
-    ) -> SemanticValidationResult:
-        return validation_pipeline(
-            *(
-                validate_category(category, extend_location(location, "categories"))
-                for category in self.categories
-            ),
-            validate_many(
-                *self.attributes,
-                location=get_list_locations(
-                    self.attributes, extend_location(location, "attributes")
-                ),
-            ),
-        )
 
     def meets_constraints(self, constraints: list[AttributeConstraint]) -> bool:
         """Check if all constraints are satisfied by the node's attributes."""
@@ -285,89 +303,6 @@ class Edge(TOMBaseObject):
             )
         ).hexdigest()
 
-    @override
-    def semantic_validate(
-        self,
-        location: Location | None = None,
-        kgraph: KnowledgeGraph | None = None,
-        **kwargs: Any,
-    ) -> SemanticValidationResult:
-        warnings, errors = validation_pipeline(
-            (
-                validate_node_exists(
-                    self,
-                    "subject",
-                    kgraph,
-                    "knowledge_graph",
-                    extend_location(location, "subject"),
-                )
-                if kgraph is not None
-                else always_valid()
-            ),
-            (
-                validate_node_exists(
-                    self,
-                    "object",
-                    kgraph,
-                    "knowledge_graph",
-                    extend_location(location, "object"),
-                )
-                if kgraph is not None
-                else always_valid()
-            ),
-            validate_predicate(self.predicate, extend_location(location, "predicate")),
-            validate_many(
-                *self.qualifiers_list,
-                locations=get_list_locations(
-                    self.qualifiers_list, extend_location(location, "qualifiers")
-                ),
-            ),
-            validate_many(
-                *self.sources,
-                locations=get_list_locations(
-                    self.sources, extend_location(location, "sources")
-                ),
-            ),
-            validate_many(
-                *self.attributes_list,
-                locations=get_list_locations(
-                    self.attributes_list, extend_location(location, "attributes")
-                ),
-            ),
-        )
-
-        if kgraph is None:
-            return warnings, errors
-
-        if self.subject not in kgraph.edges:
-            errors.append(
-                SemanticValidationError(
-                    f"Subject `{self.subject}` is not present in knowledge_graph.",
-                    extend_location(location, "subject"),
-                )
-            )
-        if self.object not in kgraph.edges:
-            errors.append(
-                SemanticValidationError(
-                    f"Object `{self.object}` is not present in knowledge_graph.",
-                    extend_location(location, "object"),
-                )
-            )
-
-        has_primary = any(
-            source.resource_role == ResourceRoleEnum.primary_knowledge_source
-            for source in self.sources
-        )
-        if not has_primary:
-            errors.append(
-                SemanticValidationError(
-                    "Edge is missing primary_knowledge_source.",
-                    extend_location(location, "sources"),
-                )
-            )
-
-        return warnings, errors
-
     def update(self, other: Edge) -> None:
         """Update the edge in-place with another edge."""
         if (not self.attributes) and other.attributes:
@@ -407,6 +342,11 @@ class Edge(TOMBaseObject):
             any(attr.meets_constraint(c) for attr in attrs_by_type.get(c.id, []))
             for c in constraints
         )
+
+    # def meets_qualifier_constraints(
+    #     self, constraints: list[QualifierConstraint]
+    # ) -> bool:
+    #     """Check if the edge satisfies the qualifier constraints."""
 
     def get_last_downstream_source(self) -> RetrievalSource | None:
         """Get the last/most downstream source in the chain."""

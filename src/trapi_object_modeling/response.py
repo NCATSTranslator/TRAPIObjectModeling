@@ -1,25 +1,11 @@
 from __future__ import annotations
 
-from typing import Any, override
-
 from pydantic import ConfigDict, Field
 from pydantic.dataclasses import dataclass
 
 from trapi_object_modeling.log_entry import LogEntry
 from trapi_object_modeling.message import Message
-from trapi_object_modeling.utils.config import TRAPI_CONFIG
-from trapi_object_modeling.utils.object_base import (
-    Location,
-    SemanticValidationResult,
-    SemanticValidationWarning,
-    TOMBaseObject,
-)
-from trapi_object_modeling.utils.semantic_validation import (
-    extend_location,
-    get_list_locations,
-    validate_many,
-    validation_pipeline,
-)
+from trapi_object_modeling.utils.object_base import TOMBaseObject
 from trapi_object_modeling.workflow_operations import WorkflowOperation
 
 
@@ -60,39 +46,3 @@ class Response(TOMBaseObject):
     def workflow_list(self) -> list[WorkflowOperation]:
         """Get the workflow operations as a guaranteed list, even if they are represented as None."""
         return self.workflow if self.workflow is not None else []
-
-    @override
-    def semantic_validate(
-        self, location: Location | None = None, **kwargs: Any
-    ) -> SemanticValidationResult:
-        warnings, errors = validation_pipeline(
-            self.message.semantic_validate(location),
-            validate_many(
-                *self.logs,
-                locations=get_list_locations(
-                    self.logs, extend_location(location, "logs")
-                ),
-            ),
-            validate_many(
-                *self.workflow_list,
-                locations=get_list_locations(
-                    self.workflow_list, extend_location(location, "workflow")
-                ),
-                qgraph=self.message.query_graph,
-            ),
-        )
-        if self.schema_version != TRAPI_CONFIG.schema_version:
-            warnings.append(
-                SemanticValidationWarning(
-                    f"Response schema_version `{self.schema_version}` does not match TOM schema_version `{TRAPI_CONFIG.schema_version}`.",
-                    extend_location(location, "schema_version"),
-                ),
-            )
-        if self.biolink_version != TRAPI_CONFIG.biolink_version:
-            warnings.append(
-                SemanticValidationWarning(
-                    f"Response biolink_version `{self.biolink_version}` does not match configured TOM biolink_version `{TRAPI_CONFIG.biolink_version}`."
-                )
-            )
-
-        return warnings, errors

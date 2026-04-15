@@ -1,24 +1,13 @@
 from __future__ import annotations
 
-from typing import Annotated, Any, override
+from typing import Annotated
 
 from pydantic import ConfigDict, Field
 from pydantic.dataclasses import dataclass
 
 from trapi_object_modeling.attribute import Attribute
-from trapi_object_modeling.knowledge_graph import KnowledgeGraph
 from trapi_object_modeling.shared import AuxGraphID, EdgeID
-from trapi_object_modeling.utils.object_base import (
-    Location,
-    SemanticValidationError,
-    SemanticValidationResult,
-    TOMBaseObject,
-)
-from trapi_object_modeling.utils.semantic_validation import (
-    extend_location,
-    get_list_locations,
-    validate_many,
-)
+from trapi_object_modeling.utils.object_base import TOMBaseObject
 
 
 @dataclass(kw_only=True, config=ConfigDict(extra="allow"))
@@ -44,34 +33,6 @@ class AuxiliaryGraph(TOMBaseObject):
 
     attributes: list[Attribute]
     """Attributes of the Auxiliary Graph."""
-
-    @override
-    def semantic_validate(
-        self,
-        location: Location | None = None,
-        kgraph: KnowledgeGraph | None = None,
-        **kwargs: Any,
-    ) -> SemanticValidationResult:
-        warnings, errors = validate_many(
-            *self.attributes,
-            locations=get_list_locations(
-                self.attributes, extend_location(location, "attributes")
-            ),
-        )
-
-        if kgraph is None:
-            return warnings, errors
-
-        for edge_id in self.edges:
-            if edge_id not in kgraph.edges:
-                errors.append(
-                    SemanticValidationError(
-                        f"Auxiliary references KEdge ID {edge_id} which is not present in knowledge_graph.",
-                        extend_location(location, "edges"),
-                    )
-                )
-
-        return warnings, errors
 
     def normalize(self, mapping: dict[EdgeID, EdgeID]) -> None:
         """Normalize the auxiliary graph given a mapping of old:new EdgeIDs."""

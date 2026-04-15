@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Annotated, Any, override
+from typing import Annotated
 
 from pydantic import ConfigDict, Field
 from pydantic.dataclasses import dataclass
@@ -12,24 +12,13 @@ from trapi_object_modeling.shared import (
     BiolinkPredicate,
     KnowledgeType,
 )
-from trapi_object_modeling.utils.object_base import (
+from trapi_object_modeling.utils.object_base import TOMBaseObject
+from trapi_object_modeling.validation._util import (
     Location,
     SemanticValidationError,
     SemanticValidationErrorList,
     SemanticValidationResult,
     SemanticValidationWarningList,
-    TOMBaseObject,
-)
-from trapi_object_modeling.utils.semantic_validation import (
-    always_valid,
-    extend_location,
-    get_dict_locations,
-    get_list_locations,
-    validate_association,
-    validate_category,
-    validate_many,
-    validate_predicate,
-    validation_pipeline,
 )
 
 
@@ -54,30 +43,6 @@ class MetaKnowledgeGraph(TOMBaseObject):
     A predicate is only exposed here if there is an edge
     for which the predicate is the most specific available.
     """
-
-    @override
-    def semantic_validate(
-        self, location: Location | None = None, **kwargs: Any
-    ) -> SemanticValidationResult:
-        return validation_pipeline(
-            *(
-                validate_category(cat, extend_location(location, "nodes"))
-                for cat in self.nodes
-            ),
-            validate_many(
-                *self.nodes.values(),
-                locations=get_dict_locations(
-                    self.nodes, extend_location(location, "nodes")
-                ),
-            ),
-            validate_many(
-                *self.edges,
-                locations=get_list_locations(
-                    self.edges, extend_location(location, "edges")
-                ),
-                metakg=self,
-            ),
-        )
 
     def validate_nodes_exist(
         self, nodes: list[BiolinkEntity], location: Location | None = None
@@ -113,17 +78,6 @@ class MetaNode(TOMBaseObject):
     def attributes_list(self) -> list[MetaAttribute]:
         """Get the meta attributes as a guaranteed list, even if they are represented as None."""
         return self.attributes if self.attributes is not None else []
-
-    @override
-    def semantic_validate(
-        self, location: Location | None = None, **kwargs: Any
-    ) -> SemanticValidationResult:
-        return validate_many(
-            *self.attributes_list,
-            locations=get_list_locations(
-                self.attributes_list, extend_location(location, "attributes")
-            ),
-        )
 
 
 @dataclass(kw_only=True, config=ConfigDict(extra="ignore"))
@@ -179,47 +133,3 @@ class MetaEdge(TOMBaseObject):
     def qualifiers_list(self) -> list[MetaQualifier]:
         """Get the meta qualifiers as a guaranteed list, even if they are represented as None."""
         return self.qualifiers if self.qualifiers is not None else []
-
-    @override
-    def semantic_validate(
-        self,
-        location: Location | None = None,
-        metakg: MetaKnowledgeGraph | None = None,
-        **kwargs: Any,
-    ) -> SemanticValidationResult:
-        return validation_pipeline(
-            validate_category(self.subject, extend_location(location, "subject")),
-            (
-                metakg.validate_nodes_exist(
-                    [self.subject], extend_location(location, "subject")
-                )
-                if metakg is not None
-                else always_valid()
-            ),
-            (
-                metakg.validate_nodes_exist(
-                    [self.object], extend_location(location, "object")
-                )
-                if metakg is not None
-                else always_valid()
-            ),
-            validate_category(self.object, extend_location(location, "object")),
-            validate_predicate(self.predicate, extend_location(location, "predicate")),
-            validate_many(
-                *self.attributes_list,
-                locations=get_list_locations(
-                    self.attributes_list, extend_location(location, "attributes")
-                ),
-            ),
-            validate_many(
-                *self.qualifiers_list,
-                locations=get_list_locations(
-                    self.qualifiers_list, extend_location(location, "qualifiers")
-                ),
-            ),
-            validate_association(
-                self.association, extend_location(location, "association")
-            )
-            if self.association is not None
-            else always_valid(),
-        )

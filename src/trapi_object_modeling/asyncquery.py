@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Annotated, Any, override
+from typing import Annotated, override
 
 from pydantic import ConfigDict, Field
 from pydantic.dataclasses import dataclass
@@ -8,17 +8,7 @@ from stablehash import stablehash
 
 from trapi_object_modeling.log_entry import LogEntry
 from trapi_object_modeling.query import Query
-from trapi_object_modeling.utils.object_base import (
-    Location,
-    SemanticValidationResult,
-    TOMBaseObject,
-)
-from trapi_object_modeling.utils.semantic_validation import (
-    always_valid,
-    extend_location,
-    validate_url,
-    validation_pipeline,
-)
+from trapi_object_modeling.utils.object_base import TOMBaseObject
 
 
 @dataclass(kw_only=True, config=ConfigDict(extra="allow"))
@@ -45,15 +35,6 @@ class AsyncQuery(Query):
             )
         ).hexdigest()
 
-    @override
-    def semantic_validate(
-        self, location: Location | None = None, **kwargs: Any
-    ) -> SemanticValidationResult:
-        return validation_pipeline(
-            super().semantic_validate(location, **kwargs),
-            validate_url(self.callback, location=extend_location(location, "callback")),
-        )
-
 
 @dataclass(kw_only=True, config=ConfigDict(extra="allow"))
 class AsyncQueryResponse(TOMBaseObject):
@@ -66,13 +47,7 @@ class AsyncQueryResponse(TOMBaseObject):
     """A brief human-readable description of the result of the async_query submission."""
 
     job_id: str
-    """An identifier for the submitted job that can be used with /async_query_status to receive an update on the status of the job."""
-
-    @override
-    def semantic_validate(
-        self, location: Location | None = None, **kwargs: Any
-    ) -> SemanticValidationResult:
-        return always_valid()
+    """An identifier for the submitted job that can be used with async_query_status to receive an update on the status of the job."""
 
 
 @dataclass(kw_only=True, config=ConfigDict(extra="allow"))
@@ -96,15 +71,3 @@ class AsyncQueryStatusResponse(TOMBaseObject):
 
     response_url: str | None = None
     """Optional URL that can be queried to restrieve the full TRAPI Response."""
-
-    @override
-    def semantic_validate(
-        self, location: Location | None = None, **kwargs: Any
-    ) -> SemanticValidationResult:
-        if self.response_url is not None:
-            return validate_url(
-                self.response_url, location=extend_location(location, "callback")
-            )
-
-        # Otherwise, nothing to validate
-        return always_valid()

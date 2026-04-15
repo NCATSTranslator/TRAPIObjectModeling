@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import itertools
-from typing import TYPE_CHECKING, Annotated, Any, override
+from typing import Annotated
 
 from pydantic import ConfigDict, Field
 from pydantic.dataclasses import dataclass
@@ -9,23 +9,7 @@ from pydantic.dataclasses import dataclass
 from trapi_object_modeling.analysis import Analysis, PathfinderAnalysis
 from trapi_object_modeling.node_binding import NodeBinding
 from trapi_object_modeling.shared import EdgeID, QNodeID
-
-if TYPE_CHECKING:
-    from trapi_object_modeling.auxiliary_graph import AuxiliaryGraphsDict
-    from trapi_object_modeling.knowledge_graph import KnowledgeGraph
-    from trapi_object_modeling.query_graph import PathfinderQueryGraph, QueryGraph
-from trapi_object_modeling.utils.object_base import (
-    Location,
-    SemanticValidationResult,
-    TOMBaseObject,
-)
-from trapi_object_modeling.utils.semantic_validation import (
-    always_valid,
-    extend_location,
-    get_list_locations,
-    validate_many,
-    validation_pipeline,
-)
+from trapi_object_modeling.utils.object_base import TOMBaseObject
 
 
 @dataclass(kw_only=True, config=ConfigDict(extra="allow"))
@@ -48,52 +32,6 @@ class Result(TOMBaseObject):
 
     analyses: list[Analysis | PathfinderAnalysis]
     """The list of all Analysis components that contribute to the result."""
-
-    @override
-    def semantic_validate(
-        self,
-        location: Location | None = None,
-        qgraph: QueryGraph | PathfinderQueryGraph | None = None,
-        kgraph: KnowledgeGraph | None = None,
-        aux_graphs: AuxiliaryGraphsDict | None = None,
-        **kwargs: Any,
-    ) -> SemanticValidationResult:
-        locations = list(
-            itertools.chain(
-                *[
-                    get_list_locations(
-                        bindings, location=extend_location(location, qnode)
-                    )
-                    for qnode, bindings in self.node_bindings.items()
-                ]
-            )
-        )
-
-        return validation_pipeline(
-            (
-                qgraph.validate_qnodes_exist(
-                    list(self.node_bindings.keys()),
-                    extend_location(location, "node_bindings"),
-                )
-                if qgraph is not None
-                else always_valid()
-            ),
-            validate_many(
-                *itertools.chain(*self.node_bindings.values()),
-                locations=locations,
-                qgraph=qgraph,
-                kgraph=kgraph,
-            ),
-            validate_many(
-                *self.analyses,
-                locations=get_list_locations(
-                    self.analyses, extend_location(location, "analyses")
-                ),
-                qgraph=qgraph,
-                kgraph=kgraph,
-                aux_graphs=aux_graphs,
-            ),
-        )
 
     def normalize(self, mapping: dict[EdgeID, EdgeID]) -> None:
         """Normalize the result given a mapping of old:new EdgeIDs."""

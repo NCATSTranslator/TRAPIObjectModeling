@@ -1,51 +1,9 @@
-from abc import ABC, abstractmethod
+from abc import ABC
 from typing import Any, ClassVar, Literal, Self, overload, override
 
 import ormsgpack
 from pydantic import TypeAdapter
 from stablehash import stablehash
-
-Location = tuple[str | int, ...]
-"""A tuple of keys/indicies that can be used to find a specific value in nested JSON."""
-
-
-class SemanticValidationError(Exception):
-    """An error that represents a Semantic Validation failure."""
-
-    message: str
-    location: Location
-
-    def __init__(
-        self, message: str, location: Location | None = None, *args: object
-    ) -> None:
-        """Initialize an instance."""
-        super().__init__(message, *args)
-        self.message = message
-        self.location = location if location is not None else ()
-
-
-class SemanticValidationWarning(Warning):
-    """An warning that is of concern, but doesn't fail semantic validation."""
-
-    message: str
-    location: Location
-
-    def __init__(
-        self, message: str, location: Location | None = None, *args: object
-    ) -> None:
-        """Initialize an instance."""
-        super().__init__(message, *args)
-        self.message = message
-        self.location = location if location is not None else ()
-
-
-SemanticValidationErrorList = list[SemanticValidationError]
-SemanticValidationWarningList = list[SemanticValidationWarning]
-
-
-SemanticValidationResult = tuple[
-    SemanticValidationWarningList, SemanticValidationErrorList
-]
 
 
 class TOMBaseObject(ABC):
@@ -123,30 +81,6 @@ class TOMBaseObject(ABC):
         except AttributeError:
             adapter = self.get_type_adapter()
         return ormsgpack.packb(adapter.dump_python(self, mode="json"))
-
-    ##### Semantic validation methods #####
-
-    @abstractmethod
-    def semantic_validate(
-        self, location: Location | None = None, **kwargs: Any
-    ) -> SemanticValidationResult:
-        """Check if an instance passes semantic validation.
-
-        Returns a tuple of warnings and errors.
-        It may be assumed that if the errors list is non-empty, validation failed.
-
-        If `location` is provided, it must be appended to all given error locations.
-
-        If a subclass depends on additional information to be validated
-        (for instance validating node bindings by checking those nodes exist in the kgraph),
-        then the `semantic_validate()` method MUST be able to proceed without the additional
-        information, so that stand-alone instances may be validated.
-        """
-
-    def passes_semantic_validation(self) -> bool:
-        """Simply check if an instance passes semantic validation, discarding validation messages."""
-        _, errors = self.semantic_validate()
-        return len(errors) == 0
 
     ##### Misc. #####
 

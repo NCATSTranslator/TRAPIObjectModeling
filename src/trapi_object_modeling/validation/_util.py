@@ -1,37 +1,138 @@
+"""Core validation infrastructure: singledispatch function and helpers."""
+
+from __future__ import annotations
+
+from functools import singledispatch
 from typing import Any, Literal, Protocol, runtime_checkable
 
 from pydantic import AnyUrl, TypeAdapter, ValidationError
 
 from trapi_object_modeling.shared import BiolinkEntity, BiolinkPredicate
 from trapi_object_modeling.utils import biolink
-from trapi_object_modeling.utils.object_base import (
-    Location,
-    SemanticValidationError,
-    SemanticValidationErrorList,
-    SemanticValidationResult,
-    SemanticValidationWarning,
-    SemanticValidationWarningList,
-    TOMBaseObject,
-)
+from trapi_object_modeling.utils.object_base import TOMBaseObject
+
+url_adapter = TypeAdapter(AnyUrl)
+
+Location = tuple[str | int, ...]
+"""A tuple of keys/indicies that can be used to find a specific value in nested JSON."""
 
 
-def extend_location(location: Location | None, new_end: str | int) -> Location:
-    """Extend a location, or start a new one if given None."""
-    return extend_location(location, new_end)
+class SemanticValidationError(Exception):
+    """An error that represents a Semantic Validation failure."""
+
+    message: str
+    location: Location
+
+    def __init__(
+        self, message: str, location: Location | None = None, *args: object
+    ) -> None:
+        """Initialize an instance."""
+        super().__init__(message, *args)
+        self.message = message
+        self.location = location if location is not None else ()
+
+
+class SemanticValidationWarning(Warning):
+    """An warning that is of concern, but doesn't fail semantic validation."""
+
+    message: str
+    location: Location
+
+    def __init__(
+        self, message: str, location: Location | None = None, *args: object
+    ) -> None:
+        """Initialize an instance."""
+        super().__init__(message, *args)
+        self.message = message
+        self.location = location if location is not None else ()
+
+
+SemanticValidationErrorList = list[SemanticValidationError]
+SemanticValidationWarningList = list[SemanticValidationWarning]
+
+SemanticValidationResult = tuple[
+    SemanticValidationWarningList, SemanticValidationErrorList
+]
+
+
+@runtime_checkable
+class GraphWithNodes(Protocol):
+    """A protocol for any graph object with a simple nodes dict."""
+
+    nodes: dict[Any, Any]
+
+
+@runtime_checkable
+class GraphWithEdges(Protocol):
+    """A protocol for any graph object with an edges dict."""
+
+    edges: dict[Any, Any]
+
+
+class SubjectObjectMapping(Protocol):
+    """A protocol for any edge-like mapping between a subject and an object."""
+
+    subject: str
+    object: str
+
+
+@singledispatch
+def semantic_validate(
+    obj: TOMBaseObject,  # pyright:ignore[reportUnusedParameter]
+    location: Location | None = None,  # pyright:ignore[reportUnusedParameter]
+    **kwargs: Any,  # pyright:ignore[reportUnusedParameter]
+) -> SemanticValidationResult:
+    """Validate a TOM object semantically.
+
+    Returns a tuple of warnings and errors.
+    An empty errors list means validation passed.
+
+    Context can be provided via keyword arguments:
+    - kgraph: KnowledgeGraph for cross-reference checks
+    - qgraph: QueryGraph or PathfinderQueryGraph for query binding checks
+    - aux_graphs: AuxiliaryGraphsDict for auxiliary graph existence checks
+    - metakg: MetaKnowledgeGraph for meta-level checks
+
+    When called without context, validates only what can be checked standalone.
+    """
+    return always_valid()
 
 
 def validate_many(
     *obj: TOMBaseObject, locations: list[Location] | None = None, **kwargs: Any
 ) -> SemanticValidationResult:
-    """Validate every TOMBaseObject item in a list, returning their combined feedback."""
-    warnings, errors = SemanticValidationResult()
+    """Validate every TOMBaseObject item, returning their combined feedback."""
+    warnings, errors = (
+        SemanticValidationWarningList(),
+        SemanticValidationErrorList(),
+    )
     for i, to_validate in enumerate(obj):
         location = locations[i] if locations is not None else None
-        new_warn, new_err = to_validate.semantic_validate(location=location, **kwargs)
+        new_warn, new_err = semantic_validate(to_validate, location=location, **kwargs)
         warnings.extend(new_warn)
         errors.extend(new_err)
 
     return warnings, errors
+
+
+def valid_if_missing(
+    obj: TOMBaseObject | None, location: Location | None = None, **kwargs: Any
+) -> SemanticValidationResult:
+    """Validate the value if it's not None, or return valid otherwise."""
+    if obj is None:
+        return SemanticValidationWarningList(), SemanticValidationErrorList()
+    return semantic_validate(obj, location, **kwargs)
+
+
+def passes_semantic_validation(obj: TOMBaseObject, **kwargs: Any) -> bool:
+    """Check if an instance passes semantic validation, discarding messages."""
+    _, errors = semantic_validate(obj, **kwargs)
+    return len(errors) == 0
+
+
+def extend_location(location: Location | None, new_end: str | int) -> Location:
+    """Extend a location, or start a new one if given None."""
+    return (*(location or ()), new_end)
 
 
 def validation_pipeline(
@@ -45,9 +146,6 @@ def validation_pipeline(
         errors.extend(new_err)
 
     return warnings, errors
-
-
-url_adapter = TypeAdapter(AnyUrl)
 
 
 def validate_url(
@@ -179,15 +277,6 @@ def validate_association(
     return warnings, errors
 
 
-def valid_if_missing(
-    obj: TOMBaseObject | None, location: Location | None = None, **kwargs: Any
-) -> SemanticValidationResult:
-    """Validate the value if it's not None, or return valid otherwise."""
-    if obj is None:
-        return always_valid()
-    return obj.semantic_validate(location, **kwargs)
-
-
 def always_valid() -> SemanticValidationResult:
     """Return empty lists because there is either no way for the object to be inavlid, or no way to check."""
     return SemanticValidationWarningList(), SemanticValidationErrorList()
@@ -213,27 +302,6 @@ def get_dict_locations(
         locations = [Location((*location, *loc)) for loc in locations]
 
     return locations
-
-
-@runtime_checkable
-class GraphWithNodes(Protocol):
-    """A protocol for any graph object with a simple nodes dict."""
-
-    nodes: dict[Any, Any]
-
-
-@runtime_checkable
-class GraphWithEdges(Protocol):
-    """A protocol for any graph object with an edges dict."""
-
-    edges: dict[Any, Any]
-
-
-class SubjectObjectMapping(Protocol):
-    """A protocol for any edge-like mapping between a subject and an object."""
-
-    subject: str
-    object: str
 
 
 def validate_node_exists(

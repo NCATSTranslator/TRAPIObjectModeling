@@ -1,25 +1,14 @@
 from __future__ import annotations
 
 from enum import Enum
-from typing import Any, Literal, override
+from typing import Literal, override
 
 from pydantic import ConfigDict
 from pydantic.dataclasses import dataclass
 from stablehash import stablehash
 
 from trapi_object_modeling.shared import Infores
-from trapi_object_modeling.utils.object_base import (
-    Location,
-    SemanticValidationError,
-    SemanticValidationErrorList,
-    SemanticValidationResult,
-    SemanticValidationWarningList,
-    TOMBaseObject,
-)
-from trapi_object_modeling.utils.semantic_validation import (
-    extend_location,
-    validate_url,
-)
+from trapi_object_modeling.utils.object_base import TOMBaseObject
 
 
 class ResourceRoleEnum(str, Enum):
@@ -98,35 +87,6 @@ class RetrievalSource(TOMBaseObject):
     @override
     def hash(self) -> str:
         return stablehash((self.resource_id, self.resource_role)).hexdigest()
-
-    @override
-    def semantic_validate(
-        self, location: Location | None = None, **kwargs: Any
-    ) -> SemanticValidationResult:
-        warnings, errors = (
-            SemanticValidationWarningList(),
-            SemanticValidationErrorList(),
-        )
-        if (
-            self.upstream_resource_ids is not None
-            and self.resource_id in self.upstream_resource_ids
-        ):
-            errors.append(
-                SemanticValidationError(
-                    f"resoure_id {self.resource_id} cannot be present in upstream_resource_ids.",
-                    extend_location(location, "upstream_resource_ids"),
-                )
-            )
-
-        if self.source_record_urls is not None:
-            for url in self.source_record_urls:
-                new_warn, new_err = validate_url(
-                    url, location=extend_location(location, "callback")
-                )
-                warnings.extend(new_warn)
-                errors.extend(new_err)
-
-        return warnings, errors
 
     def update(self, other: RetrievalSource) -> None:
         """Update the first source in-place, merging information from the second."""

@@ -1,17 +1,12 @@
 from __future__ import annotations
 
-from typing import Annotated, Any, override
+from typing import Annotated
 
 from pydantic import ConfigDict, Field
 from pydantic.dataclasses import dataclass
 
 from trapi_object_modeling.shared import CURIE
-from trapi_object_modeling.utils.object_base import (
-    Location,
-    SemanticValidationResult,
-    TOMBaseObject,
-)
-from trapi_object_modeling.utils.semantic_validation import always_valid
+from trapi_object_modeling.utils.object_base import TOMBaseObject
 
 
 @dataclass(kw_only=True, config=ConfigDict(extra="ignore"))
@@ -33,10 +28,3 @@ class Qualifier(TOMBaseObject):
     type is generally going to be constrained by the category
     of edge (i.e. biolink:Association subtype) of the (Q)Edge.
     """
-
-    @override
-    def semantic_validate(
-        self, location: Location | None = None, **kwargs: Any
-    ) -> SemanticValidationResult:
-        # TODO: Check qualifier_value is valid for qualifier_type_id?
-        return always_valid()

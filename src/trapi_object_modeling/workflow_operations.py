@@ -1,51 +1,13 @@
 from __future__ import annotations
 
-import functools
 from enum import Enum
-from typing import Annotated, Any, Literal, TypeVar, cast, override
+from typing import Annotated, Literal, override
 
 from pydantic import ConfigDict, Field, JsonValue, SkipValidation
 from pydantic.dataclasses import dataclass
 
-from trapi_object_modeling.query_graph import PathfinderQueryGraph, QueryGraph
 from trapi_object_modeling.shared import Infores, QEdgeID, QNodeID
-from trapi_object_modeling.utils.object_base import (
-    Location,
-    SemanticValidationResult,
-    TOMBaseObject,
-)
-from trapi_object_modeling.utils.semantic_validation import (
-    GraphWithEdges,
-    always_valid,
-    extend_location,
-    validation_pipeline,
-)
-
-C = TypeVar("C", bound=type[Any])
-
-
-def validate_parameters(cls: C) -> C:
-    """Ensure the class validates its `parameters` field."""
-
-    @functools.wraps(cls.semantic_validate)
-    def new_semantic_validate(
-        self: C,
-        location: Location,
-        **kwargs: Any,  # Technically wrong self but w/e
-    ) -> SemanticValidationResult:
-        warnings, errors = cls.semantic_validate(self, location, **kwargs)
-        new_warn, new_err = cast(
-            SemanticValidationResult,
-            self.parameters.semantic_validate(location, **kwargs),
-        )
-        warnings.extend(new_warn)
-        errors.extend(new_err)
-
-        return warnings, errors
-
-    cls.semantic_validate = new_semantic_validate
-
-    return cls
+from trapi_object_modeling.utils.object_base import TOMBaseObject
 
 
 @dataclass(kw_only=True, config=ConfigDict(extra="ignore"))
@@ -61,12 +23,6 @@ class AllowList(TOMBaseObject):
     infores ID's is available through the '/services' endpoint of the workflow runner.
     """
 
-    @override
-    def semantic_validate(
-        self, location: Location | None = None, **kwargs: Any
-    ) -> SemanticValidationResult:
-        return always_valid()
-
 
 @dataclass(kw_only=True, config=ConfigDict(extra="ignore"))
 class DenyList(TOMBaseObject):
@@ -80,12 +36,6 @@ class DenyList(TOMBaseObject):
     All others will be used. A full list of operation providers for each operation with
     infores ID's is available through the '/services' endpoint of the worflow runner.
     """
-
-    @override
-    def semantic_validate(
-        self, location: Location | None = None, **kwargs: Any
-    ) -> SemanticValidationResult:
-        return always_valid()
 
 
 RunnerParameters = AllowList | DenyList
@@ -105,12 +55,6 @@ AscendingOrDescendingValue = Literal["ascending", "descending"]
 class OperationParameters(TOMBaseObject):
     """Base class for various operation parameters."""
 
-    @override
-    def semantic_validate(
-        self, location: Location | None = None, **kwargs: Any
-    ) -> SemanticValidationResult:
-        return always_valid()
-
 
 @dataclass(kw_only=True, config=ConfigDict(extra="ignore"))
 class WorkflowOperation(TOMBaseObject):
@@ -122,12 +66,6 @@ class WorkflowOperation(TOMBaseObject):
     def unique(self) -> bool:
         """Asserts operation may produce different results depending on the agent."""
         return False
-
-    @override
-    def semantic_validate(
-        self, location: Location | None = None, **kwargs: Any
-    ) -> SemanticValidationResult:
-        return always_valid()
 
 
 @dataclass(kw_only=True, config=ConfigDict(extra="ignore"))
@@ -241,27 +179,8 @@ class EnrichResultsParameters(OperationParameters):
         """Return a guaranteed list of qnode_keys, empty if it is not defined."""
         return self.qnode_keys if self.qnode_keys is not None else []
 
-    @override
-    def semantic_validate(
-        self,
-        location: Location | None = None,
-        qgraph: QueryGraph | PathfinderQueryGraph | None = None,
-        **kwargs: Any,
-    ) -> SemanticValidationResult:
-        return validation_pipeline(
-            super().semantic_validate(location, **kwargs),
-            (
-                qgraph.validate_qnodes_exist(
-                    self.qnode_keys_list, extend_location(location, "qnode_keys")
-                )
-                if qgraph is not None
-                else always_valid()
-            ),
-        )
-
 
 @dataclass(kw_only=True, config=ConfigDict(extra="ignore"))
-@validate_parameters
 class OperationEnrichResults(WorkflowOperation):
     """Create new results by applying enrichment analysis to existing results.
 
@@ -295,24 +214,6 @@ class FillAllowListParameters(AllowList):
         """Return a guaranteed list of qedge_keys, empty if it is not defined."""
         return self.qedge_keys if self.qedge_keys is not None else []
 
-    @override
-    def semantic_validate(
-        self,
-        location: Location | None = None,
-        qgraph: QueryGraph | PathfinderQueryGraph | None = None,
-        **kwargs: Any,
-    ) -> SemanticValidationResult:
-        return validation_pipeline(
-            super().semantic_validate(location, **kwargs),
-            (
-                qgraph.validate_qedges_exist(
-                    self.qedge_keys_list, extend_location(location, "qedge_keys")
-                )
-                if qgraph is not None and isinstance(qgraph, GraphWithEdges)
-                else always_valid()
-            ),
-        )
-
 
 @dataclass(kw_only=True, config=ConfigDict(extra="ignore"))
 class FillDenyListParameters(DenyList):
@@ -330,27 +231,8 @@ class FillDenyListParameters(DenyList):
         """Return a guaranteed list of qedge_keys, empty if it is not defined."""
         return self.qedge_keys if self.qedge_keys is not None else []
 
-    @override
-    def semantic_validate(
-        self,
-        location: Location | None = None,
-        qgraph: QueryGraph | PathfinderQueryGraph | None = None,
-        **kwargs: Any,
-    ) -> SemanticValidationResult:
-        return validation_pipeline(
-            super().semantic_validate(location, **kwargs),
-            (
-                qgraph.validate_qedges_exist(
-                    self.qedge_keys_list, extend_location(location, "qedge_keys")
-                )
-                if qgraph is not None and isinstance(qgraph, GraphWithEdges)
-                else always_valid()
-            ),
-        )
-
 
 @dataclass(kw_only=True, config=ConfigDict(extra="ignore"))
-@validate_parameters
 class OperationFill(WorkflowOperation):
     """This operation adds knodes and kedges. SkipValidation[JsonValue] constraints attached to QNodes and QEdges specified in the TRAPI must be respected."""
 
@@ -411,31 +293,6 @@ class FilterKgraphParametersBase(OperationParameters):
         """Return a guaranteed list of qnode_keys, empty if it is not defined."""
         return self.qnode_keys if self.qnode_keys is not None else []
 
-    @override
-    def semantic_validate(
-        self,
-        location: Location | None = None,
-        qgraph: QueryGraph | PathfinderQueryGraph | None = None,
-        **kwargs: Any,
-    ) -> SemanticValidationResult:
-        return validation_pipeline(
-            super().semantic_validate(location, **kwargs),
-            (
-                qgraph.validate_qedges_exist(
-                    self.qedge_keys_list, extend_location(location, "qedge_keys")
-                )
-                if qgraph is not None and isinstance(qgraph, GraphWithEdges)
-                else always_valid()
-            ),
-            (
-                qgraph.validate_qnodes_exist(
-                    self.qnode_keys_list, extend_location(location, "qnode_keys")
-                )
-                if qgraph is not None
-                else always_valid()
-            ),
-        )
-
 
 @dataclass(kw_only=True, config=ConfigDict(extra="ignore"))
 class FilterKgraphContinuousKedgeAttributeParameters(FilterKgraphParametersBase):
@@ -451,7 +308,6 @@ class FilterKgraphContinuousKedgeAttributeParameters(FilterKgraphParametersBase)
 
 
 @dataclass(kw_only=True, config=ConfigDict(extra="ignore"))
-@validate_parameters
 class OperationFilterKgraphContinuousKedgeAttribute(WorkflowOperation):
     """This operation removes kgraph edges based on the value of a continuous edge attribute.
 
@@ -476,7 +332,6 @@ class FilterKgraphDiscreteKedgeAttributeParameters(FilterKgraphParametersBase):
 
 
 @dataclass(kw_only=True, config=ConfigDict(extra="ignore"))
-@validate_parameters
 class OperationFilterKgraphDiscreteKedgeAttribute(WorkflowOperation):
     """This operation removes kgraph edges which have a discrete attribute containing the specified value.
 
@@ -501,7 +356,6 @@ class FilterKgraphDiscreteKnodeAttributeParameters(FilterKgraphParametersBase):
 
 
 @dataclass(kw_only=True, config=ConfigDict(extra="ignore"))
-@validate_parameters
 class OperationFilterKgraphDiscreteKnodeAttribute(WorkflowOperation):
     """This operation removes kgraph nodes which have a discrete attribute containing the specified value.
 
@@ -538,7 +392,6 @@ class FilterKgraphPercentileParameters(FilterKgraphParametersBase):
 
 
 @dataclass(kw_only=True, config=ConfigDict(extra="ignore"))
-@validate_parameters
 class OperationFilterKgraphPercentile(WorkflowOperation):
     """This operation removes kgraph edges that have attribute values are below/above the given percentile."""
 
@@ -579,7 +432,6 @@ class FilterKgraphStdDevParameters(FilterKgraphParametersBase):
 
 
 @dataclass(kw_only=True, config=ConfigDict(extra="ignore"))
-@validate_parameters
 class OperationFilterKgraphStdDev(WorkflowOperation):
     """This operation removes kgraph edges that have attribute values are below/above the mean +/- n standard deviations."""
 
@@ -612,7 +464,6 @@ class FilterKgraphTopNParameters(FilterKgraphParametersBase):
 
 
 @dataclass(kw_only=True, config=ConfigDict(extra="ignore"))
-@validate_parameters
 class OperationFilterKgraphTopN(WorkflowOperation):
     """This operation removes kgraph edges that have attribute values are below/above the top/bottom n values."""
 
@@ -700,43 +551,8 @@ class OverlayComputeJaccardParameters(OperationParameters):
     virtual_relation_label: Annotated[QEdgeID, Field(examples=["J1"])]
     """The key of the query graph edge that corresponds to the knowledge graph edges that were added by this operation."""
 
-    @override
-    def semantic_validate(
-        self,
-        location: Location | None = None,
-        qgraph: QueryGraph | PathfinderQueryGraph | None = None,
-        **kwargs: Any,
-    ) -> SemanticValidationResult:
-        return validation_pipeline(
-            super().semantic_validate(location, **kwargs),
-            (
-                qgraph.validate_qnodes_exist(
-                    [self.intermediate_node_key],
-                    extend_location(location, "intermediate_node_key"),
-                )
-                if qgraph is not None
-                else always_valid()
-            ),
-            (
-                qgraph.validate_qnodes_exist(
-                    self.end_node_keys, extend_location(location, "end_node_keys")
-                )
-                if qgraph is not None
-                else always_valid()
-            ),
-            (
-                qgraph.validate_qnodes_exist(
-                    [self.virtual_relation_label],
-                    extend_location(location, "virtual_relation_label"),
-                )
-                if qgraph is not None
-                else always_valid()
-            ),
-        )
-
 
 @dataclass(kw_only=True, config=ConfigDict(extra="ignore"))
-@validate_parameters
 class OperationOverlayComputeJaccard(WorkflowOperation):
     """This operation computes the Jaccard Similarity which measures how many intermediate_node_key nodes are directly connected to both the end_node_keys nodes for all pairs of nodes with corresponding keys.
 
@@ -766,27 +582,8 @@ class OverlayComputeNgdParameters(OperationParameters):
     Must be be a list of at least 2 valid qnodes.
     """
 
-    @override
-    def semantic_validate(
-        self,
-        location: Location | None = None,
-        qgraph: QueryGraph | PathfinderQueryGraph | None = None,
-        **kwargs: Any,
-    ) -> SemanticValidationResult:
-        return validation_pipeline(
-            super().semantic_validate(location, **kwargs),
-            (
-                qgraph.validate_qnodes_exist(
-                    self.qnode_keys, extend_location(location, "qnode_keys")
-                )
-                if qgraph is not None
-                else always_valid()
-            ),
-        )
-
 
 @dataclass(kw_only=True, config=ConfigDict(extra="ignore"))
-@validate_parameters
 class OperationOverlayComputeNgd(WorkflowOperation):
     """This operation computes the normalized Google distance (co-occurrence frequency) in PubMed abstracts and adds virual edges between qnodes AND/OR knodes AND/OR results edge bindings.
 
@@ -828,45 +625,8 @@ class OverlayFisherExactTestParameters(OperationParameters):
     rel_edge_key: Annotated[QEdgeID | None, Field(examples=["e01"])]
     """A specific Qedge id connected to both subject nodes and object nodes in message KG (optional, otherwise all edges connected to both subject nodes and object nodes in message KG are considered)."""
 
-    @override
-    def semantic_validate(
-        self,
-        location: Location | None = None,
-        qgraph: QueryGraph | PathfinderQueryGraph | None = None,
-        **kwargs: Any,
-    ) -> SemanticValidationResult:
-        return validation_pipeline(
-            super().semantic_validate(location, **kwargs),
-            (
-                qgraph.validate_qnodes_exist(
-                    [self.subject_qnode_key],
-                    extend_location(location, "subject_qnode_key"),
-                )
-                if qgraph is not None
-                else always_valid()
-            ),
-            (
-                qgraph.validate_qnodes_exist(
-                    [self.object_qnode_key],
-                    extend_location(location, "object_qnode_key"),
-                )
-                if qgraph is not None
-                else always_valid()
-            ),
-            (
-                qgraph.validate_qedges_exist(
-                    [self.rel_edge_key], extend_location(location, "rel_edge_key")
-                )
-                if qgraph is not None
-                and self.rel_edge_key is not None
-                and isinstance(qgraph, GraphWithEdges)
-                else always_valid()
-            ),
-        )
-
 
 @dataclass(kw_only=True, config=ConfigDict(extra="ignore"))
-@validate_parameters
 class OperationOverlayFisherExactTest(WorkflowOperation):
     """Fisher exact test computes the Fisher's Exact Test p-values of the connection between a list of given nodes with specified query id (subject_qnode_key e.g. n01) to their adjacent nodes with specified query id (object_qnode_key e.g. n02) in the message knowledge graph.
 
@@ -932,27 +692,8 @@ class SortResultsEdgeAttributeParameters(OperationParameters):
     If not provided or empty, all edges will be looked at.
     """
 
-    @override
-    def semantic_validate(
-        self,
-        location: Location | None = None,
-        qgraph: QueryGraph | PathfinderQueryGraph | None = None,
-        **kwargs: Any,
-    ) -> SemanticValidationResult:
-        return validation_pipeline(
-            super().semantic_validate(location, **kwargs),
-            (
-                qgraph.validate_qedges_exist(
-                    self.qedge_keys, extend_location(location, "qedge_keys")
-                )
-                if qgraph is not None and isinstance(qgraph, GraphWithEdges)
-                else always_valid()
-            ),
-        )
-
 
 @dataclass(kw_only=True, config=ConfigDict(extra="ignore"))
-@validate_parameters
 class OperationSortResultsEdgeAttribute(WorkflowOperation):
     """This operation sorts the results by the given edge attribute.
 
@@ -986,27 +727,8 @@ class SortResultNodeAttributeParameters(OperationParameters):
         """Return a guaranteed list of qnode_keys, empty if it is not defined."""
         return self.qnode_keys if self.qnode_keys is not None else []
 
-    @override
-    def semantic_validate(
-        self,
-        location: Location | None = None,
-        qgraph: QueryGraph | PathfinderQueryGraph | None = None,
-        **kwargs: Any,
-    ) -> SemanticValidationResult:
-        return validation_pipeline(
-            super().semantic_validate(location, **kwargs),
-            (
-                qgraph.validate_qnodes_exist(
-                    self.qnode_keys_list, extend_location(location, "qnode_keys")
-                )
-                if qgraph is not None
-                else always_valid()
-            ),
-        )
-
 
 @dataclass(kw_only=True, config=ConfigDict(extra="ignore"))
-@validate_parameters
 class OperationSortResultsNodeAttribute(WorkflowOperation):
     """This operation sorts the results by the given node attribute.
 

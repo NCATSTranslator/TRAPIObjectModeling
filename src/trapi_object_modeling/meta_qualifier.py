@@ -1,17 +1,10 @@
 from __future__ import annotations
 
-from typing import Any, override
-
 from pydantic import ConfigDict
 from pydantic.dataclasses import dataclass
 
 from trapi_object_modeling.shared import CURIE
-from trapi_object_modeling.utils.object_base import (
-    Location,
-    SemanticValidationResult,
-    TOMBaseObject,
-)
-from trapi_object_modeling.utils.semantic_validation import always_valid
+from trapi_object_modeling.utils.object_base import TOMBaseObject
 
 
 @dataclass(kw_only=True, config=ConfigDict(extra="ignore"))
@@ -28,10 +21,3 @@ class MetaQualifier(TOMBaseObject):
     def applicable_values_list(self) -> list[str]:
         """Get the applicable values as a guaranteed list, even if they are represented as None."""
         return self.applicable_values if self.applicable_values is not None else []
-
-    @override
-    def semantic_validate(
-        self, location: Location | None = None, **kwargs: Any
-    ) -> SemanticValidationResult:
-        # TODO: use bmt to validate applicable values are valid for the qualifier type?
-        return always_valid()

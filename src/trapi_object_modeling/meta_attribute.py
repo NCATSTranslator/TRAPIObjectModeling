@@ -1,18 +1,13 @@
 from __future__ import annotations
 
-from typing import Any, override
+from typing import override
 
 from pydantic import ConfigDict
 from pydantic.dataclasses import dataclass
 from stablehash import stablehash
 
 from trapi_object_modeling.shared import CURIE
-from trapi_object_modeling.utils.object_base import (
-    Location,
-    SemanticValidationResult,
-    TOMBaseObject,
-)
-from trapi_object_modeling.utils.semantic_validation import always_valid
+from trapi_object_modeling.utils.object_base import TOMBaseObject
 
 
 @dataclass(kw_only=True, config=ConfigDict(extra="ignore"))
@@ -48,9 +43,3 @@ class MetaAttribute(TOMBaseObject):
         return stablehash(
             (self.attribute_type_id, self.attribute_source, self.constraint_use)
         ).hexdigest()
-
-    @override
-    def semantic_validate(
-        self, location: Location | None = None, **kwargs: Any
-    ) -> SemanticValidationResult:
-        return always_valid()

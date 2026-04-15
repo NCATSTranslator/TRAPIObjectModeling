@@ -53,6 +53,8 @@ __all__ = [
     "WorkflowOperation",
     "biolink",
     "infores",
+    "passes_semantic_validation",
+    "semantic_validate",
 ]
 
 from trapi_object_modeling.analysis import Analysis, BaseAnalysis, PathfinderAnalysis
@@ -100,6 +102,10 @@ from trapi_object_modeling.shared import (
     infores,
 )
 from trapi_object_modeling.utils.object_base import TOMBaseObject
+from trapi_object_modeling.validation import (
+    passes_semantic_validation,
+    semantic_validate,
+)
 from trapi_object_modeling.workflow_operations import (
     AboveOrBelowEnum,
     AllowList,

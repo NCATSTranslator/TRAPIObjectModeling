@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from enum import Enum
-from typing import Annotated, Any, Literal, override
+from typing import Annotated, Literal
 
 from pydantic import ConfigDict, Field
 from pydantic.dataclasses import dataclass
@@ -18,25 +18,13 @@ from trapi_object_modeling.shared import (
     QNodeID,
     QPathID,
 )
-from trapi_object_modeling.utils.object_base import (
+from trapi_object_modeling.utils.object_base import TOMBaseObject
+from trapi_object_modeling.validation._util import (
     Location,
     SemanticValidationError,
     SemanticValidationErrorList,
     SemanticValidationResult,
     SemanticValidationWarningList,
-    TOMBaseObject,
-)
-from trapi_object_modeling.utils.semantic_validation import (
-    GraphWithEdges,
-    always_valid,
-    extend_location,
-    get_dict_locations,
-    get_list_locations,
-    validate_category,
-    validate_many,
-    validate_node_exists,
-    validate_predicate,
-    validation_pipeline,
 )
 
 
@@ -76,15 +64,6 @@ class BaseQueryGraph(TOMBaseObject):
 
         return warnings, errors
 
-    @override
-    def semantic_validate(
-        self, location: Location | None = None, **kwargs: Any
-    ) -> SemanticValidationResult:
-        return validate_many(
-            *self.nodes.values(),
-            location=get_dict_locations(self.nodes, extend_location(location, "nodes")),
-        )
-
 
 @dataclass(kw_only=True, config=ConfigDict(extra="allow"))
 class QueryGraph(BaseQueryGraph):
@@ -117,21 +96,6 @@ class QueryGraph(BaseQueryGraph):
 
         return warnings, errors
 
-    @override
-    def semantic_validate(
-        self, location: Location | None = None, **kwargs: Any
-    ) -> SemanticValidationResult:
-        return validation_pipeline(
-            super().semantic_validate(location, **kwargs),
-            validate_many(
-                *self.edges.values(),
-                locations=get_dict_locations(
-                    self.edges, extend_location(location, "edges")
-                ),
-                qgraph=self,
-            ),
-        )
-
 
 @dataclass(kw_only=True, config=ConfigDict(extra="allow"))
 class PathfinderQueryGraph(BaseQueryGraph):
@@ -163,21 +127,6 @@ class PathfinderQueryGraph(BaseQueryGraph):
                 )
 
         return warnings, errors
-
-    @override
-    def semantic_validate(
-        self, location: Location | None = None, **kwargs: Any
-    ) -> SemanticValidationResult:
-        return validation_pipeline(
-            super().semantic_validate(location, **kwargs),
-            validate_many(
-                *self.paths.values(),
-                locations=get_dict_locations(
-                    self.paths, extend_location(location, "paths")
-                ),
-                qgraph=self,
-            ),
-        )
 
 
 class SetInterpetationEnum(str, Enum):
@@ -272,23 +221,6 @@ class QNode(TOMBaseObject):
         """Get the attribute constraints as a guaranteed list, even if they are represented as None."""
         return self.constraints if self.constraints is not None else []
 
-    @override
-    def semantic_validate(
-        self, location: Location | None = None, **kwargs: Any
-    ) -> SemanticValidationResult:
-        return validation_pipeline(
-            *(
-                validate_category(cat, extend_location(location, "categories"))
-                for cat in self.categories_list
-            ),
-            validate_many(
-                *self.constraints_list,
-                locations=get_list_locations(
-                    self.constraints_list, extend_location(location, "constraints")
-                ),
-            ),
-        )
-
 
 @dataclass(kw_only=True, config=ConfigDict(extra="allow"))
 class QEdge(TOMBaseObject):
@@ -358,76 +290,6 @@ class QEdge(TOMBaseObject):
             self.qualifier_constraints if self.qualifier_constraints is not None else []
         )
 
-    @override
-    def semantic_validate(
-        self,
-        location: Location | None = None,
-        qgraph: QueryGraph | PathfinderQueryGraph | None = None,
-        **kwargs: Any,
-    ) -> SemanticValidationResult:
-        warnings, errors = validation_pipeline(
-            (
-                validate_node_exists(
-                    self,
-                    "subject",
-                    qgraph,
-                    "query_graph",
-                    extend_location(location, "subject"),
-                )
-                if qgraph is not None
-                else always_valid()
-            ),
-            (
-                validate_node_exists(
-                    self,
-                    "object",
-                    qgraph,
-                    "query_graph",
-                    extend_location(location, "object"),
-                )
-                if qgraph is not None
-                else always_valid()
-            ),
-            *(
-                validate_predicate(predicate, extend_location(location, "predicates"))
-                for predicate in self.predicates_list
-            ),
-            validate_many(
-                *self.qualifier_constraints_list,
-                locations=get_list_locations(
-                    self.qualifier_constraints_list,
-                    extend_location(location, "qualifier_constraints"),
-                ),
-            ),
-            validate_many(
-                *self.attribute_constraints_list,
-                locations=get_list_locations(
-                    self.attribute_constraints_list,
-                    extend_location(location, "attribute_constraints"),
-                ),
-            ),
-        )
-
-        if qgraph is None or not isinstance(qgraph, GraphWithEdges):
-            return warnings, errors
-
-        if self.subject not in qgraph.edges:
-            errors.append(
-                SemanticValidationError(
-                    f"Subject `{self.subject}` is not present in query_graph.",
-                    extend_location(location, "subject"),
-                )
-            )
-        if self.object not in qgraph.edges:
-            errors.append(
-                SemanticValidationError(
-                    f"Object `{self.object}` is not present in query_graph.",
-                    extend_location(location, "object"),
-                )
-            )
-
-        return warnings, errors
-
 
 @dataclass(kw_only=True, config=ConfigDict(extra="allow"))
 class QPath(TOMBaseObject):
@@ -470,45 +332,3 @@ class QPath(TOMBaseObject):
     def constraints_list(self) -> list[PathConstraint]:
         """Get the constraints as a guaranteed list, even if they are represented as None."""
         return self.constraints if self.constraints is not None else []
-
-    @override
-    def semantic_validate(
-        self,
-        location: Location | None = None,
-        qgraph: QueryGraph | PathfinderQueryGraph | None = None,
-        **kwargs: Any,
-    ) -> SemanticValidationResult:
-        return validation_pipeline(
-            (
-                validate_node_exists(
-                    self,
-                    "subject",
-                    qgraph,
-                    "query_graph",
-                    extend_location(location, "subject"),
-                )
-                if qgraph is not None
-                else always_valid()
-            ),
-            (
-                validate_node_exists(
-                    self,
-                    "object",
-                    qgraph,
-                    "query_graph",
-                    extend_location(location, "object"),
-                )
-                if qgraph is not None
-                else always_valid()
-            ),
-            *(
-                validate_predicate(predicate, extend_location(location, "predicates"))
-                for predicate in self.predicates_list
-            ),
-            validate_many(
-                *self.constraints_list,
-                locations=get_list_locations(
-                    self.constraints_list, extend_location(location, "constraints")
-                ),
-            ),
-        )

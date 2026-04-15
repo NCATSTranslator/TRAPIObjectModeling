@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from typing import Any, override
-
 from pydantic import ConfigDict
 from pydantic.dataclasses import dataclass
 
@@ -9,20 +7,7 @@ from trapi_object_modeling.auxiliary_graph import AuxiliaryGraphsDict
 from trapi_object_modeling.knowledge_graph import KnowledgeGraph
 from trapi_object_modeling.query_graph import PathfinderQueryGraph, QueryGraph
 from trapi_object_modeling.result import Result
-from trapi_object_modeling.utils.object_base import (
-    Location,
-    SemanticValidationResult,
-    TOMBaseObject,
-)
-from trapi_object_modeling.utils.semantic_validation import (
-    always_valid,
-    extend_location,
-    get_dict_locations,
-    get_list_locations,
-    valid_if_missing,
-    validate_many,
-    validation_pipeline,
-)
+from trapi_object_modeling.utils.object_base import TOMBaseObject
 
 
 @dataclass(kw_only=True, config=ConfigDict(extra="ignore"))
@@ -70,44 +55,6 @@ class Message(TOMBaseObject):
         """Get the auxiliary_graphs as a guaranteed dict, even if they are represented as None."""
         return self.auxiliary_graphs if self.auxiliary_graphs is not None else {}
 
-    @override
-    def semantic_validate(
-        self, location: Location | None = None, **kwargs: Any
-    ) -> SemanticValidationResult:
-        return validation_pipeline(
-            valid_if_missing(
-                self.knowledge_graph, extend_location(location, "knowledge_graph")
-            ),
-            valid_if_missing(
-                self.query_graph, extend_location(location, "query_graph")
-            ),
-            # An edge is not invalid because it isn't used, a message is invalid because it has unused edges
-            # (except that these are warnings)
-            # TODO: check all kgraph is used
-            # TODO: check all aux_graphs are used
-            (
-                validate_many(
-                    *self.auxiliary_graphs.values(),
-                    locations=get_dict_locations(
-                        self.auxiliary_graphs,
-                        extend_location(location, "auxiliary_graphs"),
-                    ),
-                    kgraph=self.knowledge_graph,
-                )
-                if self.auxiliary_graphs is not None
-                else always_valid()
-            ),
-            validate_many(
-                *self.results_list,
-                locations=get_list_locations(
-                    self.results_list, extend_location(location, "results")
-                ),
-                qgraph=self.query_graph,
-                kgraph=self.knowledge_graph,
-                aux_graphs=self.auxiliary_graphs,
-            ),
-        )
-
     def normalize(self) -> None:
         """Normalize the knowledge_graph and update the results and auxiliary_graphs accordingly."""
         if self.knowledge_graph is None:
@@ -120,3 +67,9 @@ class Message(TOMBaseObject):
 
         for result in self.results_list:
             result.normalize(mapping)
+
+    def prune_kg(self) -> None:
+        """Prune the knowledge_graph."""
+        if self.knowledge_graph is None:
+            return
+        self.knowledge_graph.prune(self.auxiliary_graphs_dict, self.results_list)

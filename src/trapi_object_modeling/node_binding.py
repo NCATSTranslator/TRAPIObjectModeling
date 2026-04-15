@@ -1,28 +1,11 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, override
-
 from pydantic import ConfigDict
 from pydantic.dataclasses import dataclass
 
 from trapi_object_modeling.attribute import Attribute
 from trapi_object_modeling.shared import CURIE
-
-if TYPE_CHECKING:
-    from trapi_object_modeling.knowledge_graph import KnowledgeGraph
-    from trapi_object_modeling.query_graph import PathfinderQueryGraph, QueryGraph
-from trapi_object_modeling.utils.object_base import (
-    Location,
-    SemanticValidationResult,
-    TOMBaseObject,
-)
-from trapi_object_modeling.utils.semantic_validation import (
-    always_valid,
-    extend_location,
-    get_list_locations,
-    validate_many,
-    validation_pipeline,
-)
+from trapi_object_modeling.utils.object_base import TOMBaseObject
 
 
 @dataclass(kw_only=True, config=ConfigDict(extra="allow"))
@@ -56,32 +39,3 @@ class NodeBinding(TOMBaseObject):
     and should only be used for properties that vary from result to
     result.
     """
-
-    @override
-    def semantic_validate(
-        self,
-        location: Location | None = None,
-        qgraph: QueryGraph | PathfinderQueryGraph | None = None,
-        kgraph: KnowledgeGraph | None = None,
-        **kwargs: Any,
-    ) -> SemanticValidationResult:
-        return validation_pipeline(
-            (
-                kgraph.validate_nodes_exist([self.id], extend_location(location, "id"))
-                if kgraph is not None
-                else always_valid()
-            ),
-            (
-                qgraph.validate_qnodes_exist(
-                    [self.query_id], extend_location(location, "query_id")
-                )
-                if qgraph is not None and self.query_id is not None
-                else always_valid()
-            ),
-            validate_many(
-                *self.attributes,
-                locations=get_list_locations(
-                    self.attributes, extend_location(location, "attributes")
-                ),
-            ),
-        )
