@@ -15,6 +15,6 @@ from translator_tom.validation._util import (
 def _validate_meta_qualifier(  # pyright: ignore[reportUnusedFunction]
     obj: MetaQualifier,  # pyright: ignore[reportUnusedParameter]
     location: Location | None = None,  # pyright: ignore[reportUnusedParameter]
-    **kwargs: Any,  # pyright: ignore[reportUnusedParameter]
+    **_: Any,
 ) -> SemanticValidationResult:
     return always_valid()

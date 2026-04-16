@@ -28,7 +28,6 @@ from translator_tom.validation._util import (
 def _validate_base_query_graph(
     obj: QueryGraph | PathfinderQueryGraph,
     location: Location | None,
-    **kwargs: Any,  # pyright: ignore[reportUnusedParameter]
 ) -> SemanticValidationResult:
     """Shared validation for all query graph types (node validation)."""
     return validate_many(
@@ -39,10 +38,12 @@ def _validate_base_query_graph(
 
 @semantic_validate.register(QueryGraph)
 def _validate_query_graph(  # pyright: ignore[reportUnusedFunction]
-    obj: QueryGraph, location: Location | None = None, **kwargs: Any
+    obj: QueryGraph,
+    location: Location | None = None,
+    **_: Any,
 ) -> SemanticValidationResult:
     return validation_pipeline(
-        _validate_base_query_graph(obj, location, **kwargs),
+        _validate_base_query_graph(obj, location),
         validate_many(
             *obj.edges.values(),
             locations=get_dict_locations(obj.edges, extend_location(location, "edges")),
@@ -53,10 +54,12 @@ def _validate_query_graph(  # pyright: ignore[reportUnusedFunction]
 
 @semantic_validate.register(PathfinderQueryGraph)
 def _validate_pathfinder_query_graph(  # pyright: ignore[reportUnusedFunction]
-    obj: PathfinderQueryGraph, location: Location | None = None, **kwargs: Any
+    obj: PathfinderQueryGraph,
+    location: Location | None = None,
+    **_: Any,
 ) -> SemanticValidationResult:
     return validation_pipeline(
-        _validate_base_query_graph(obj, location, **kwargs),
+        _validate_base_query_graph(obj, location),
         validate_many(
             *obj.paths.values(),
             locations=get_dict_locations(obj.paths, extend_location(location, "paths")),
@@ -69,7 +72,7 @@ def _validate_pathfinder_query_graph(  # pyright: ignore[reportUnusedFunction]
 def _validate_qnode(  # pyright: ignore[reportUnusedFunction]
     obj: QNode,
     location: Location | None = None,
-    **kwargs: Any,  # pyright: ignore[reportUnusedParameter]
+    **_: Any,
 ) -> SemanticValidationResult:
     return validation_pipeline(
         *(
@@ -87,10 +90,12 @@ def _validate_qnode(  # pyright: ignore[reportUnusedFunction]
 
 @semantic_validate.register(QEdge)
 def _validate_qedge(  # pyright: ignore[reportUnusedFunction]
-    obj: QEdge, location: Location | None = None, **kwargs: Any
+    obj: QEdge,
+    location: Location | None = None,
+    *,
+    qgraph: QueryGraph | PathfinderQueryGraph | None = None,
+    **_: Any,
 ) -> SemanticValidationResult:
-    qgraph: QueryGraph | PathfinderQueryGraph | None = kwargs.get("qgraph")
-
     warnings, errors = validation_pipeline(
         *(
             validate_predicate(predicate, extend_location(location, "predicates"))
@@ -145,10 +150,12 @@ def _validate_qedge(  # pyright: ignore[reportUnusedFunction]
 
 @semantic_validate.register(QPath)
 def _validate_qpath(  # pyright: ignore[reportUnusedFunction]
-    obj: QPath, location: Location | None = None, **kwargs: Any
+    obj: QPath,
+    location: Location | None = None,
+    *,
+    qgraph: QueryGraph | PathfinderQueryGraph | None = None,
+    **_: Any,
 ) -> SemanticValidationResult:
-    qgraph: QueryGraph | PathfinderQueryGraph | None = kwargs.get("qgraph")
-
     warnings, errors = validation_pipeline(
         *(
             validate_predicate(predicate, extend_location(location, "predicates"))

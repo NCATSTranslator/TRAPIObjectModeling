@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import Any
 
 from translator_tom.models.edge_binding import EdgeBinding
+from translator_tom.models.knowledge_graph import KnowledgeGraph
 from translator_tom.validation._util import (
     Location,
     SemanticValidationResult,
@@ -18,15 +19,17 @@ from translator_tom.validation._util import (
 
 @semantic_validate.register(EdgeBinding)
 def _validate_edge_binding(  # pyright: ignore[reportUnusedFunction]
-    obj: EdgeBinding, location: Location | None = None, **kwargs: Any
+    obj: EdgeBinding,
+    location: Location | None = None,
+    *,
+    kgraph: KnowledgeGraph | None = None,
+    **_: Any,
 ) -> SemanticValidationResult:
-    kgraph = kwargs.get("kgraph")
-
     return validation_pipeline(
         (
             validate_keys_exist(
                 [obj.id],
-                kgraph.edges,
+                kgraph.edges.keys(),
                 "Edge",
                 "knowledge_graph",
                 extend_location(location, "id"),

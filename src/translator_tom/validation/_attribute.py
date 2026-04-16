@@ -21,7 +21,7 @@ from translator_tom.validation._util import (
 def _validate_attribute(  # pyright: ignore[reportUnusedFunction]
     obj: Attribute,
     location: Location | None = None,
-    **kwargs: Any,  # pyright: ignore[reportUnusedParameter]
+    **_: Any,
 ) -> SemanticValidationResult:
     warnings, errors = (
         SemanticValidationWarningList(),
@@ -29,7 +29,9 @@ def _validate_attribute(  # pyright: ignore[reportUnusedFunction]
     )
 
     if obj.value_url is not None:
-        _, new_err = validate_url(obj.value_url, extend_location(location, "value_url"))
+        _new_warn, new_err = validate_url(
+            obj.value_url, extend_location(location, "value_url")
+        )
         errors.extend(new_err)
 
     return validation_pipeline(

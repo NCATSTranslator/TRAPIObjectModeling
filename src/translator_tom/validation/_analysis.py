@@ -1,5 +1,3 @@
-"""Validators for Analysis and PathfinderAnalysis."""
-
 from __future__ import annotations
 
 import itertools
@@ -10,7 +8,9 @@ from translator_tom.models.analysis import (
     BaseAnalysis,
     PathfinderAnalysis,
 )
-from translator_tom.models.query_graph import QueryGraph
+from translator_tom.models.auxiliary_graph import AuxiliaryGraphsDict
+from translator_tom.models.knowledge_graph import KnowledgeGraph
+from translator_tom.models.query_graph import PathfinderQueryGraph, QueryGraph
 from translator_tom.validation._util import (
     Location,
     SemanticValidationError,
@@ -24,11 +24,13 @@ from translator_tom.validation._util import (
 
 
 def _validate_base_analysis(
-    obj: BaseAnalysis, location: Location | None, **kwargs: Any
+    obj: BaseAnalysis,
+    location: Location | None,
+    *,
+    aux_graphs: AuxiliaryGraphsDict | None = None,
+    **_: Any,
 ) -> SemanticValidationResult:
     """Shared validation for all analysis types."""
-    aux_graphs = kwargs.get("aux_graphs")
-
     warnings, errors = validate_many(
         *obj.attributes_list,
         locations=get_list_locations(
@@ -53,11 +55,14 @@ def _validate_base_analysis(
 
 @semantic_validate.register(Analysis)
 def _validate_analysis(  # pyright:ignore[reportUnusedFunction]
-    obj: Analysis, location: Location | None = None, **kwargs: Any
+    obj: Analysis,
+    location: Location | None = None,
+    *,
+    kgraph: KnowledgeGraph | None = None,
+    qgraph: QueryGraph | None = None,
+    aux_graphs: AuxiliaryGraphsDict | None = None,
+    **_: Any,
 ) -> SemanticValidationResult:
-    qgraph = kwargs.get("qgraph")
-    kgraph = kwargs.get("kgraph")
-
     locations = list(
         itertools.chain(
             *[
@@ -68,7 +73,7 @@ def _validate_analysis(  # pyright:ignore[reportUnusedFunction]
     )
 
     warnings, errors = validation_pipeline(
-        _validate_base_analysis(obj, location, **kwargs),
+        _validate_base_analysis(obj, location, aux_graphs=aux_graphs),
         validate_many(
             *itertools.chain(*obj.edge_bindings.values()),
             locations=locations,
@@ -76,7 +81,7 @@ def _validate_analysis(  # pyright:ignore[reportUnusedFunction]
         ),
     )
 
-    if qgraph is None or not isinstance(qgraph, QueryGraph):
+    if qgraph is None:
         return warnings, errors
 
     for qedge_id in obj.edge_bindings:
@@ -93,11 +98,14 @@ def _validate_analysis(  # pyright:ignore[reportUnusedFunction]
 
 @semantic_validate.register(PathfinderAnalysis)
 def _validate_pathfinder_analysis(  # pyright:ignore[reportUnusedFunction]
-    obj: PathfinderAnalysis, location: Location | None = None, **kwargs: Any
+    obj: PathfinderAnalysis,
+    location: Location | None = None,
+    *,
+    kgraph: KnowledgeGraph | None = None,
+    qgraph: PathfinderQueryGraph | None = None,
+    aux_graphs: AuxiliaryGraphsDict | None = None,
+    **_: Any,
 ) -> SemanticValidationResult:
-    qgraph = kwargs.get("qgraph")
-    kgraph = kwargs.get("kgraph")
-
     locations = list(
         itertools.chain(
             *[
@@ -108,7 +116,7 @@ def _validate_pathfinder_analysis(  # pyright:ignore[reportUnusedFunction]
     )
 
     warnings, errors = validation_pipeline(
-        _validate_base_analysis(obj, location, **kwargs),
+        _validate_base_analysis(obj, location, aux_graphs=aux_graphs),
         validate_many(
             *itertools.chain(*obj.path_bindings.values()),
             locations=locations,

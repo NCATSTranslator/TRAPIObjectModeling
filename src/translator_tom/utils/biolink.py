@@ -24,3 +24,5 @@ is_symmetric = biolink.is_symmetric
 is_predicate = biolink.is_predicate
 is_category = biolink.is_category
 get_element = biolink.get_element
+get_descendents = biolink.get_descendants
+get_ancestors = biolink.get_ancestors

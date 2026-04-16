@@ -1,8 +1,11 @@
 from __future__ import annotations
 
+import itertools
 from typing import Any
 
+from translator_tom.models.knowledge_graph import KnowledgeGraph
 from translator_tom.models.node_binding import NodeBinding
+from translator_tom.models.query_graph import PathfinderQueryGraph, QueryGraph
 from translator_tom.validation._util import (
     Location,
     SemanticValidationResult,
@@ -18,16 +21,18 @@ from translator_tom.validation._util import (
 
 @semantic_validate.register(NodeBinding)
 def _validate_node_binding(  # pyright: ignore[reportUnusedFunction]
-    obj: NodeBinding, location: Location | None = None, **kwargs: Any
+    obj: NodeBinding,
+    location: Location | None = None,
+    *,
+    kgraph: KnowledgeGraph | None = None,
+    qgraph: QueryGraph | PathfinderQueryGraph | None = None,
+    **_: Any,
 ) -> SemanticValidationResult:
-    qgraph = kwargs.get("qgraph")
-    kgraph = kwargs.get("kgraph")
-
     return validation_pipeline(
         (
             validate_keys_exist(
                 [obj.id],
-                kgraph.nodes,
+                kgraph.nodes.keys(),
                 "Node",
                 "knowledge_graph",
                 extend_location(location, "id"),
@@ -38,8 +43,10 @@ def _validate_node_binding(  # pyright: ignore[reportUnusedFunction]
         (
             validate_keys_exist(
                 [obj.query_id],
-                qgraph.nodes,
-                "QNode",
+                list(
+                    itertools.chain(*(node.ids_list for node in qgraph.nodes.values()))
+                ),
+                "query_id",
                 "query_graph",
                 extend_location(location, "query_id"),
             )

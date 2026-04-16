@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import Any
 
 from translator_tom.models.auxiliary_graph import AuxiliaryGraph
+from translator_tom.models.knowledge_graph import KnowledgeGraph
 from translator_tom.validation._util import (
     Location,
     SemanticValidationError,
@@ -16,10 +17,12 @@ from translator_tom.validation._util import (
 
 @semantic_validate.register(AuxiliaryGraph)
 def _validate_auxiliary_graph(  # pyright: ignore[reportUnusedFunction]
-    obj: AuxiliaryGraph, location: Location | None = None, **kwargs: Any
+    obj: AuxiliaryGraph,
+    location: Location | None = None,
+    *,
+    kgraph: KnowledgeGraph | None = None,
+    **_: Any,
 ) -> SemanticValidationResult:
-    kgraph = kwargs.get("kgraph")
-
     warnings, errors = validate_many(
         *obj.attributes,
         locations=get_list_locations(

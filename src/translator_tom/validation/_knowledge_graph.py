@@ -25,7 +25,7 @@ from translator_tom.validation._util import (
 def _validate_knowledge_graph(  # pyright: ignore[reportUnusedFunction]
     obj: KnowledgeGraph,
     location: Location | None = None,
-    **kwargs: Any,  # pyright: ignore[reportUnusedParameter]
+    **_: Any,
 ) -> SemanticValidationResult:
     return validation_pipeline(
         validate_many(
@@ -44,7 +44,7 @@ def _validate_knowledge_graph(  # pyright: ignore[reportUnusedFunction]
 def _validate_node(  # pyright: ignore[reportUnusedFunction]
     obj: Node,
     location: Location | None = None,
-    **kwargs: Any,  # pyright: ignore[reportUnusedParameter]
+    **_: Any,
 ) -> SemanticValidationResult:
     return validation_pipeline(
         *(
@@ -62,10 +62,12 @@ def _validate_node(  # pyright: ignore[reportUnusedFunction]
 
 @semantic_validate.register(Edge)
 def _validate_edge(  # pyright: ignore[reportUnusedFunction]
-    obj: Edge, location: Location | None = None, **kwargs: Any
+    obj: Edge,
+    location: Location | None = None,
+    *,
+    kgraph: KnowledgeGraph | None = None,
+    **_: Any,
 ) -> SemanticValidationResult:
-    kgraph: KnowledgeGraph | None = kwargs.get("kgraph")
-
     warnings, errors = validation_pipeline(
         validate_predicate(obj.predicate, extend_location(location, "predicate")),
         validate_many(

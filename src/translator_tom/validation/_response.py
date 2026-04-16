@@ -20,10 +20,10 @@ from translator_tom.validation._util import (
 def _validate_response(  # pyright: ignore[reportUnusedFunction]
     obj: Response,
     location: Location | None = None,
-    **kwargs: Any,  # pyright: ignore[reportUnusedParameter]
+    **_: Any,
 ) -> SemanticValidationResult:
     warnings, errors = validation_pipeline(
-        semantic_validate(obj.message, location),
+        semantic_validate(obj.message, extend_location(location, "message")),
         validate_many(
             *obj.logs,
             locations=get_list_locations(obj.logs, extend_location(location, "logs")),

@@ -20,7 +20,7 @@ from translator_tom.validation._util import (
 def _validate_attribute_constraint(  # pyright: ignore[reportUnusedFunction]
     obj: AttributeConstraint,
     location: Location | None = None,
-    **kwargs: Any,  # pyright: ignore[reportUnusedParameter]
+    **_: Any,
 ) -> SemanticValidationResult:
     warnings, errors = (
         SemanticValidationWarningList(),

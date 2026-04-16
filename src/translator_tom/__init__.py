@@ -53,8 +53,6 @@ __all__ = [
     "WorkflowOperation",
     "biolink",
     "infores",
-    "passes_semantic_validation",
-    "semantic_validate",
 ]
 
 from translator_tom.models.analysis import (
@@ -122,10 +120,6 @@ from translator_tom.models.workflow_operations import (
     WorkflowOperation,
 )
 from translator_tom.utils.object_base import TOMBaseObject
-from translator_tom.validation import (
-    passes_semantic_validation,
-    semantic_validate,
-)
 
 
 # Eagerly build TypeAdapters for all models at import time, prevents cold-start overhead

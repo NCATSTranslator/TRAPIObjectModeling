@@ -20,10 +20,12 @@ from translator_tom.validation._util import (
 
 @semantic_validate.register(AsyncQuery)
 def _validate_async_query(  # pyright: ignore[reportUnusedFunction]
-    obj: AsyncQuery, location: Location | None = None, **kwargs: Any
+    obj: AsyncQuery,
+    location: Location | None = None,
+    **_: Any,
 ) -> SemanticValidationResult:
     return validation_pipeline(
-        validate_query(obj, location, **kwargs),
+        validate_query(obj, location),
         validate_url(obj.callback, location=extend_location(location, "callback")),
     )
 
@@ -32,7 +34,7 @@ def _validate_async_query(  # pyright: ignore[reportUnusedFunction]
 def _validate_async_query_status_response(  # pyright: ignore[reportUnusedFunction]
     obj: AsyncQueryStatusResponse,
     location: Location | None = None,
-    **kwargs: Any,  # pyright: ignore[reportUnusedParameter]
+    **_: Any,
 ) -> SemanticValidationResult:
     if obj.response_url is not None:
         return validate_url(

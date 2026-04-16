@@ -1,8 +1,6 @@
-"""Core validation infrastructure: singledispatch function and helpers."""
-
 from __future__ import annotations
 
-from collections.abc import Mapping, Sequence
+from collections.abc import Collection, Iterable
 from functools import singledispatch
 from typing import Any, Literal, Protocol, runtime_checkable
 
@@ -88,13 +86,7 @@ def semantic_validate(
     Returns a tuple of warnings and errors.
     An empty errors list means validation passed.
 
-    Context can be provided via keyword arguments:
-    - kgraph: KnowledgeGraph for cross-reference checks
-    - qgraph: QueryGraph or PathfinderQueryGraph for query binding checks
-    - aux_graphs: AuxiliaryGraphsDict for auxiliary graph existence checks
-    - metakg: MetaKnowledgeGraph for meta-level checks
-
-    When called without context, validates only what can be checked standalone.
+    Context can be provided via keyword arguments. When called without context, validates only what can be checked standalone.
     """
     return always_valid()
 
@@ -117,7 +109,9 @@ def validate_many(
 
 
 def valid_if_missing(
-    obj: TOMBaseObject | None, location: Location | None = None, **kwargs: Any
+    obj: TOMBaseObject | None,
+    location: Location | None = None,
+    **kwargs: Any,
 ) -> SemanticValidationResult:
     """Validate the value if it's not None, or return valid otherwise."""
     if obj is None:
@@ -131,9 +125,11 @@ def passes_semantic_validation(obj: TOMBaseObject, **kwargs: Any) -> bool:
     return len(errors) == 0
 
 
-def extend_location(location: Location | None, new_end: str | int) -> Location:
+def extend_location(
+    location: Location | None, new_end: str | int, *additional: str | int
+) -> Location:
     """Extend a location, or start a new one if given None."""
-    return (*(location or ()), new_end)
+    return (*(location or ()), new_end, *additional)
 
 
 def validation_pipeline(
@@ -209,7 +205,15 @@ def validate_category(
     """Validate that a given predicate is a real biolink predicate."""
     warnings, errors = SemanticValidationWarningList(), SemanticValidationErrorList()
 
-    if not biolink.is_category(category):
+    try:
+        valid_category = not biolink.is_category(category) or any(
+            "biolink:NamedThing" in biolink.get_ancestors(desc, formatted=True)
+            for desc in biolink.get_descendents(category, formatted=True)
+        )
+    except Exception:
+        valid_category = False
+
+    if not valid_category:
         errors.append(
             SemanticValidationError(
                 f"Category `{category}` is not a valid BioLink category.", location
@@ -306,8 +310,8 @@ def get_dict_locations(
 
 
 def validate_keys_exist(
-    keys: Sequence[Any],
-    mapping: Mapping[Any, Any],
+    keys: Iterable[Any],
+    host: Collection[Any],
     key_label: str,
     mapping_label: str,
     location: Location | None = None,
@@ -318,7 +322,7 @@ def validate_keys_exist(
         SemanticValidationErrorList(),
     )
     for key in keys:
-        if key not in mapping:
+        if key not in host:
             errors.append(
                 SemanticValidationError(
                     f"{key_label} {key} is not present in {mapping_label}.",

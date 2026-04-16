@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import Any
 
+from translator_tom.models.auxiliary_graph import AuxiliaryGraphsDict
 from translator_tom.models.path_binding import PathBinding
 from translator_tom.validation._util import (
     Location,
@@ -16,10 +17,12 @@ from translator_tom.validation._util import (
 
 @semantic_validate.register(PathBinding)
 def _validate_path_binding(  # pyright: ignore[reportUnusedFunction]
-    obj: PathBinding, location: Location | None = None, **kwargs: Any
+    obj: PathBinding,
+    location: Location | None = None,
+    *,
+    aux_graphs: AuxiliaryGraphsDict | None = None,
+    **_: Any,
 ) -> SemanticValidationResult:
-    aux_graphs = kwargs.get("aux_graphs")
-
     if aux_graphs is not None and obj.id not in aux_graphs:
         return SemanticValidationWarningList(), [
             SemanticValidationError(

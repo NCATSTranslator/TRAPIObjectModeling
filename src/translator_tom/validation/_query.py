@@ -18,7 +18,7 @@ from translator_tom.validation._util import (
 def validate_query(
     obj: Query,
     location: Location | None = None,
-    **kwargs: Any,  # pyright: ignore[reportUnusedParameter]
+    **_: Any,
 ) -> SemanticValidationResult:
     return validation_pipeline(
         semantic_validate(obj.message),

@@ -2,7 +2,10 @@ from __future__ import annotations
 
 from typing import Any
 
-from translator_tom.models.query_graph import QueryGraph
+from translator_tom.models.auxiliary_graph import AuxiliaryGraphsDict
+from translator_tom.models.knowledge_graph import KnowledgeGraph
+from translator_tom.models.meta_knowledge_graph import MetaKnowledgeGraph
+from translator_tom.models.query_graph import PathfinderQueryGraph, QueryGraph
 from translator_tom.models.workflow_operations import (
     EnrichResultsParameters,
     FillAllowListParameters,
@@ -53,10 +56,24 @@ from translator_tom.validation._util import (
 @semantic_validate.register(OperationOverlayFisherExactTest)
 @semantic_validate.register(OperationSortResultsEdgeAttribute)
 @semantic_validate.register(OperationSortResultsNodeAttribute)
-def _validate_op_with_params(  # pyright: ignore[reportUnusedFunction]
-    obj: Any, location: Location | None = None, **kwargs: Any
+def _validate_op_with_params(  # pyright: ignore[reportUnusedFunction]  # noqa: PLR0913
+    obj: Any,
+    location: Location | None = None,
+    *,
+    kgraph: KnowledgeGraph | None = None,
+    qgraph: QueryGraph | PathfinderQueryGraph | None = None,
+    aux_graphs: AuxiliaryGraphsDict | None = None,
+    metakg: MetaKnowledgeGraph | None = None,
+    **_: Any,
 ) -> SemanticValidationResult:
-    return semantic_validate(obj.parameters, location=location, **kwargs)
+    return semantic_validate(
+        obj.parameters,
+        location=location,
+        kgraph=kgraph,
+        qgraph=qgraph,
+        aux_graphs=aux_graphs,
+        metakg=metakg,
+    )
 
 
 # --- Parameter types: cross-model checks ---
@@ -64,13 +81,16 @@ def _validate_op_with_params(  # pyright: ignore[reportUnusedFunction]
 
 @semantic_validate.register(EnrichResultsParameters)
 def _validate_enrich_results_params(  # pyright: ignore[reportUnusedFunction]
-    obj: EnrichResultsParameters, location: Location | None = None, **kwargs: Any
+    obj: EnrichResultsParameters,
+    location: Location | None = None,
+    *,
+    qgraph: QueryGraph | PathfinderQueryGraph | None = None,
+    **_: Any,
 ) -> SemanticValidationResult:
-    qgraph = kwargs.get("qgraph")
     return (
         validate_keys_exist(
             obj.qnode_keys_list,
-            qgraph.nodes,
+            qgraph.nodes.keys(),
             "QNode",
             "query_graph",
             extend_location(location, "qnode_keys"),
@@ -82,13 +102,16 @@ def _validate_enrich_results_params(  # pyright: ignore[reportUnusedFunction]
 
 @semantic_validate.register(FillAllowListParameters)
 def _validate_fill_allow_list_params(  # pyright: ignore[reportUnusedFunction]
-    obj: FillAllowListParameters, location: Location | None = None, **kwargs: Any
+    obj: FillAllowListParameters,
+    location: Location | None = None,
+    *,
+    qgraph: QueryGraph | PathfinderQueryGraph | None = None,
+    **_: Any,
 ) -> SemanticValidationResult:
-    qgraph = kwargs.get("qgraph")
     return (
         validate_keys_exist(
             obj.qedge_keys_list,
-            qgraph.edges,
+            qgraph.edges.keys(),
             "QEdge",
             "query_graph",
             extend_location(location, "qedge_keys"),
@@ -100,13 +123,16 @@ def _validate_fill_allow_list_params(  # pyright: ignore[reportUnusedFunction]
 
 @semantic_validate.register(FillDenyListParameters)
 def _validate_fill_deny_list_params(  # pyright: ignore[reportUnusedFunction]
-    obj: FillDenyListParameters, location: Location | None = None, **kwargs: Any
+    obj: FillDenyListParameters,
+    location: Location | None = None,
+    *,
+    qgraph: QueryGraph | PathfinderQueryGraph | None = None,
+    **_: Any,
 ) -> SemanticValidationResult:
-    qgraph = kwargs.get("qgraph")
     return (
         validate_keys_exist(
             obj.qedge_keys_list,
-            qgraph.edges,
+            qgraph.edges.keys(),
             "QEdge",
             "query_graph",
             extend_location(location, "qedge_keys"),
@@ -118,14 +144,17 @@ def _validate_fill_deny_list_params(  # pyright: ignore[reportUnusedFunction]
 
 @semantic_validate.register(FilterKgraphParametersBase)
 def _validate_filter_kgraph_params(  # pyright: ignore[reportUnusedFunction]
-    obj: FilterKgraphParametersBase, location: Location | None = None, **kwargs: Any
+    obj: FilterKgraphParametersBase,
+    location: Location | None = None,
+    *,
+    qgraph: QueryGraph | PathfinderQueryGraph | None = None,
+    **_: Any,
 ) -> SemanticValidationResult:
-    qgraph = kwargs.get("qgraph")
     return validation_pipeline(
         (
             validate_keys_exist(
                 obj.qedge_keys_list,
-                qgraph.edges,
+                qgraph.edges.keys(),
                 "QEdge",
                 "query_graph",
                 extend_location(location, "qedge_keys"),
@@ -136,7 +165,7 @@ def _validate_filter_kgraph_params(  # pyright: ignore[reportUnusedFunction]
         (
             validate_keys_exist(
                 obj.qnode_keys_list,
-                qgraph.nodes,
+                qgraph.nodes.keys(),
                 "QNode",
                 "query_graph",
                 extend_location(location, "qnode_keys"),
@@ -151,14 +180,15 @@ def _validate_filter_kgraph_params(  # pyright: ignore[reportUnusedFunction]
 def _validate_overlay_jaccard_params(  # pyright: ignore[reportUnusedFunction]
     obj: OverlayComputeJaccardParameters,
     location: Location | None = None,
-    **kwargs: Any,
+    *,
+    qgraph: QueryGraph | PathfinderQueryGraph | None = None,
+    **_: Any,
 ) -> SemanticValidationResult:
-    qgraph = kwargs.get("qgraph")
     return validation_pipeline(
         (
             validate_keys_exist(
                 [obj.intermediate_node_key],
-                qgraph.nodes,
+                qgraph.nodes.keys(),
                 "QNode",
                 "query_graph",
                 extend_location(location, "intermediate_node_key"),
@@ -169,7 +199,7 @@ def _validate_overlay_jaccard_params(  # pyright: ignore[reportUnusedFunction]
         (
             validate_keys_exist(
                 obj.end_node_keys,
-                qgraph.nodes,
+                qgraph.nodes.keys(),
                 "QNode",
                 "query_graph",
                 extend_location(location, "end_node_keys"),
@@ -180,7 +210,7 @@ def _validate_overlay_jaccard_params(  # pyright: ignore[reportUnusedFunction]
         (
             validate_keys_exist(
                 [obj.virtual_relation_label],
-                qgraph.nodes,
+                qgraph.nodes.keys(),
                 "QNode",
                 "query_graph",
                 extend_location(location, "virtual_relation_label"),
@@ -193,13 +223,16 @@ def _validate_overlay_jaccard_params(  # pyright: ignore[reportUnusedFunction]
 
 @semantic_validate.register(OverlayComputeNgdParameters)
 def _validate_overlay_ngd_params(  # pyright: ignore[reportUnusedFunction]
-    obj: OverlayComputeNgdParameters, location: Location | None = None, **kwargs: Any
+    obj: OverlayComputeNgdParameters,
+    location: Location | None = None,
+    *,
+    qgraph: QueryGraph | PathfinderQueryGraph | None = None,
+    **_: Any,
 ) -> SemanticValidationResult:
-    qgraph = kwargs.get("qgraph")
     return (
         validate_keys_exist(
             obj.qnode_keys,
-            qgraph.nodes,
+            qgraph.nodes.keys(),
             "QNode",
             "query_graph",
             extend_location(location, "qnode_keys"),
@@ -213,14 +246,15 @@ def _validate_overlay_ngd_params(  # pyright: ignore[reportUnusedFunction]
 def _validate_overlay_fisher_params(  # pyright: ignore[reportUnusedFunction]
     obj: OverlayFisherExactTestParameters,
     location: Location | None = None,
-    **kwargs: Any,
+    *,
+    qgraph: QueryGraph | PathfinderQueryGraph | None = None,
+    **_: Any,
 ) -> SemanticValidationResult:
-    qgraph = kwargs.get("qgraph")
     return validation_pipeline(
         (
             validate_keys_exist(
                 [obj.subject_qnode_key],
-                qgraph.nodes,
+                qgraph.nodes.keys(),
                 "QNode",
                 "query_graph",
                 extend_location(location, "subject_qnode_key"),
@@ -231,7 +265,7 @@ def _validate_overlay_fisher_params(  # pyright: ignore[reportUnusedFunction]
         (
             validate_keys_exist(
                 [obj.object_qnode_key],
-                qgraph.nodes,
+                qgraph.nodes.keys(),
                 "QNode",
                 "query_graph",
                 extend_location(location, "object_qnode_key"),
@@ -242,7 +276,7 @@ def _validate_overlay_fisher_params(  # pyright: ignore[reportUnusedFunction]
         (
             validate_keys_exist(
                 [obj.rel_edge_key],
-                qgraph.edges,
+                qgraph.edges.keys(),
                 "QEdge",
                 "query_graph",
                 extend_location(location, "rel_edge_key"),
@@ -259,13 +293,14 @@ def _validate_overlay_fisher_params(  # pyright: ignore[reportUnusedFunction]
 def _validate_sort_edge_attr_params(  # pyright: ignore[reportUnusedFunction]
     obj: SortResultsEdgeAttributeParameters,
     location: Location | None = None,
-    **kwargs: Any,
+    *,
+    qgraph: QueryGraph | PathfinderQueryGraph | None = None,
+    **_: Any,
 ) -> SemanticValidationResult:
-    qgraph = kwargs.get("qgraph")
     return (
         validate_keys_exist(
             obj.qedge_keys,
-            qgraph.edges,
+            qgraph.edges.keys(),
             "QEdge",
             "query_graph",
             extend_location(location, "qedge_keys"),
@@ -279,13 +314,14 @@ def _validate_sort_edge_attr_params(  # pyright: ignore[reportUnusedFunction]
 def _validate_sort_node_attr_params(  # pyright: ignore[reportUnusedFunction]
     obj: SortResultNodeAttributeParameters,
     location: Location | None = None,
-    **kwargs: Any,
+    *,
+    qgraph: QueryGraph | PathfinderQueryGraph | None = None,
+    **_: Any,
 ) -> SemanticValidationResult:
-    qgraph = kwargs.get("qgraph")
     return (
         validate_keys_exist(
             obj.qnode_keys_list,
-            qgraph.nodes,
+            qgraph.nodes.keys(),
             "QNode",
             "query_graph",
             extend_location(location, "qnode_keys"),

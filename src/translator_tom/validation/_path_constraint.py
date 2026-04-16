@@ -17,7 +17,7 @@ from translator_tom.validation._util import (
 def _validate_path_constraint(  # pyright: ignore[reportUnusedFunction]
     obj: PathConstraint,
     location: Location | None = None,
-    **kwargs: Any,  # pyright: ignore[reportUnusedParameter]
+    **_: Any,
 ) -> SemanticValidationResult:
     return validation_pipeline(
         *(

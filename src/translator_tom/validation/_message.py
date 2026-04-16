@@ -23,7 +23,7 @@ from translator_tom.validation._util import (
 def _validate_message(  # pyright: ignore[reportUnusedFunction]
     obj: Message,
     location: Location | None = None,
-    **kwargs: Any,  # pyright:ignore[reportUnusedParameter]
+    **_: Any,
 ) -> SemanticValidationResult:
     return validation_pipeline(
         valid_if_missing(

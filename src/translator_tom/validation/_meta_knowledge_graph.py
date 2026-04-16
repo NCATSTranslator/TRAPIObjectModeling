@@ -30,7 +30,7 @@ from translator_tom.validation._util import (
 def _validate_meta_knowledge_graph(  # pyright: ignore[reportUnusedFunction]
     obj: MetaKnowledgeGraph,
     location: Location | None = None,
-    **kwargs: Any,  # pyright: ignore[reportUnusedParameter]
+    **_: Any,
 ) -> SemanticValidationResult:
     return validation_pipeline(
         *(
@@ -53,7 +53,7 @@ def _validate_meta_knowledge_graph(  # pyright: ignore[reportUnusedFunction]
 def _validate_meta_node(  # pyright: ignore[reportUnusedFunction]
     obj: MetaNode,
     location: Location | None = None,
-    **kwargs: Any,  # pyright: ignore[reportUnusedParameter]
+    **_: Any,
 ) -> SemanticValidationResult:
     return validate_many(
         *obj.attributes_list,
@@ -65,16 +65,18 @@ def _validate_meta_node(  # pyright: ignore[reportUnusedFunction]
 
 @semantic_validate.register(MetaEdge)
 def _validate_meta_edge(  # pyright: ignore[reportUnusedFunction]
-    obj: MetaEdge, location: Location | None = None, **kwargs: Any
+    obj: MetaEdge,
+    location: Location | None = None,
+    *,
+    metakg: MetaKnowledgeGraph | None = None,
+    **_: Any,
 ) -> SemanticValidationResult:
-    metakg: MetaKnowledgeGraph | None = kwargs.get("metakg")
-
     return validation_pipeline(
         validate_category(obj.subject, extend_location(location, "subject")),
         (
             validate_keys_exist(
                 [obj.subject],
-                metakg.nodes,
+                metakg.nodes.keys(),
                 "Node",
                 "meta_knowledge_graph",
                 extend_location(location, "subject"),
@@ -85,7 +87,7 @@ def _validate_meta_edge(  # pyright: ignore[reportUnusedFunction]
         (
             validate_keys_exist(
                 [obj.object],
-                metakg.nodes,
+                metakg.nodes.keys(),
                 "Node",
                 "meta_knowledge_graph",
                 extend_location(location, "object"),

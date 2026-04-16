@@ -19,7 +19,7 @@ from translator_tom.validation._util import (
 def _validate_retrieval_source(  # pyright: ignore[reportUnusedFunction]
     obj: RetrievalSource,
     location: Location | None = None,
-    **kwargs: Any,  # pyright: ignore[reportUnusedParameter]
+    **_: Any,
 ) -> SemanticValidationResult:
     warnings, errors = (
         SemanticValidationWarningList(),
