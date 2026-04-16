@@ -57,6 +57,17 @@ class MetaNode(TOMBaseObject):
         """Get the meta attributes as a guaranteed list, even if they are represented as None."""
         return self.attributes if self.attributes is not None else []
 
+    def update(self, other: MetaNode) -> None:
+        """Update the meta edge in-place with another meta node."""
+        self.id_prefixes = list(set(self.id_prefixes) | set(other.id_prefixes))
+
+        if (not self.attributes) and other.attributes:
+            self.attributes = other.attributes
+        elif self.attributes and other.attributes:
+            attrs = {attr.hash(): attr for attr in self.attributes}
+            new_attrs = {attr.hash(): attr for attr in other.attributes}
+            self.attributes = list({**attrs, **new_attrs}.values())
+
 
 @dataclass(kw_only=True, config=ConfigDict(extra="ignore"))
 class MetaEdge(TOMBaseObject):
@@ -111,6 +122,50 @@ class MetaEdge(TOMBaseObject):
     def qualifiers_list(self) -> list[MetaQualifier]:
         """Get the meta qualifiers as a guaranteed list, even if they are represented as None."""
         return self.qualifiers if self.qualifiers is not None else []
+
+    def update(self, other: MetaEdge) -> None:
+        """Update the meta edge in-place with another meta edge."""
+        if (not self.knowledge_types) and other.knowledge_types:
+            self.knowledge_types = other.knowledge_types
+        elif self.knowledge_types and other.knowledge_types:
+            self.knowledge_types = list(
+                set(self.knowledge_types_list) | set(other.knowledge_types_list)
+            )
+
+        if (not self.attributes) and other.attributes:
+            self.attributes = other.attributes
+        elif self.attributes and other.attributes:
+            attrs = {attr.hash(): attr for attr in self.attributes}
+            new_attrs = {
+                attr.hash(): attr
+                for attr in other.attributes
+                # Avoid multiple KL/AT
+                if attr.attribute_type_id
+                not in (biolink("knowledge_level"), biolink("agent_type"))
+            }
+            self.attributes = list({**attrs, **new_attrs}.values())
+
+        if not other.qualifiers:
+            return
+        if not self.qualifiers:
+            self.qualifiers = other.qualifiers
+            return
+
+        quals_by_type = {qual.qualifier_type_id: qual for qual in self.qualifiers}
+        new_quals_by_type = {qual.qualifier_type_id: qual for qual in other.qualifiers}
+
+        for type_id, qual in new_quals_by_type.items():
+            if type_id in quals_by_type:
+                merged = list(
+                    set(quals_by_type[type_id].applicable_values_list)
+                    | set(qual.applicable_values_list)
+                )
+                if len(merged) > 0:
+                    quals_by_type[type_id].applicable_values = merged
+            else:
+                quals_by_type[type_id] = qual
+
+        self.qualifiers = list(quals_by_type.values())
 
     def meets_attribute_constraints(
         self, constraints: list[AttributeConstraint]

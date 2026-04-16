@@ -42,3 +42,20 @@ class Result(TOMBaseObject):
                 *(bindings for bindings in analysis.edge_bindings.values())
             ):
                 binding.id = mapping.get(binding.id, binding.id)
+
+    def update(self, other: Result) -> None:
+        """Update the result in-place with another result."""
+        if not other.analyses:
+            return
+        if (not self.analyses) and other.analyses:
+            self.analyses = other.analyses
+            return
+
+        for analysis in other.analyses:
+            not_present = True
+            for ana in self.analyses:
+                if analysis == ana:
+                    ana.update(analysis)  # pyright:ignore[reportArgumentType] Equality means they're the same type
+                    not_present = False
+            if not_present:
+                self.analyses.append(analysis)

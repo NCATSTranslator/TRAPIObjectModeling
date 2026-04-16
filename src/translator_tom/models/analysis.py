@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from typing import override
+import copy
+from typing import Self, override
 
 from pydantic import ConfigDict
 from pydantic.dataclasses import dataclass
@@ -61,6 +62,21 @@ class BaseAnalysis(TOMBaseObject):
             (self.resource_id, self.score, self.support_graphs, self.scoring_method)
         ).hexdigest()
 
+    def _update_base(self, other: BaseAnalysis) -> None:
+        if (not self.attributes) and other.attributes:
+            self.attributes = other.attributes
+        elif self.attributes and other.attributes:
+            attrs = {attr.hash(): attr for attr in self.attributes}
+            new_attrs = {attr.hash(): attr for attr in other.attributes}
+            self.attributes = list({**attrs, **new_attrs}.values())
+
+        if (not self.support_graphs) and other.support_graphs:
+            self.support_graphs = other.support_graphs
+        elif self.support_graphs and other.support_graphs:
+            self.support_graphs = list(
+                set(self.support_graphs) | set(other.support_graphs)
+            )
+
 
 @dataclass(kw_only=True, config=ConfigDict(extra="allow"))
 class Analysis(BaseAnalysis):
@@ -82,6 +98,18 @@ class Analysis(BaseAnalysis):
             )
         ).hexdigest()
 
+    def update(self, other: Analysis) -> None:
+        """Update the analysis in-place with another analysis."""
+        self._update_base(other)
+        for k in other.edge_bindings:
+            if k in self.edge_bindings:
+                self.edge_bindings[k] = list(
+                    set(self.edge_bindings[k])
+                    | set(copy.deepcopy(other.edge_bindings[k]))
+                )
+            else:
+                self.edge_bindings[k] = copy.deepcopy(other.edge_bindings[k])
+
 
 @dataclass(kw_only=True, config=ConfigDict(extra="allow"))
 class PathfinderAnalysis(BaseAnalysis):
@@ -98,3 +126,15 @@ class PathfinderAnalysis(BaseAnalysis):
                 self.path_bindings,
             )
         ).hexdigest()
+
+    def update(self, other: PathfinderAnalysis) -> None:
+        """Update the analysis in-place with another analysis."""
+        self._update_base(other)
+        for k in other.path_bindings:
+            if k in self.path_bindings:
+                self.path_bindings[k] = list(
+                    set(self.path_bindings[k])
+                    | set(copy.deepcopy(other.path_bindings[k]))
+                )
+            else:
+                self.path_bindings[k] = copy.deepcopy(other.path_bindings[k])
