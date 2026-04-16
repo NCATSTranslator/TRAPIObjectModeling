@@ -99,4 +99,8 @@ class TOMBaseObject(ABC):
     @override
     def __eq__(self, other: object) -> bool:
         """Check for equality between self an other, using hashes."""
-        return bool(isinstance(other, TOMBaseObject) and self.hash() == other.hash())
+        return bool(
+            isinstance(other, TOMBaseObject)
+            and isinstance(other, type(self))
+            and self.hash() == other.hash()
+        )
