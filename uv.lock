@@ -1495,7 +1495,7 @@ wheels = [
 ]
 
 [[package]]
-name = "trapi-object-modeling"
+name = "translator-tom"
 version = "0.1.0"
 source = { editable = "." }
 dependencies = [

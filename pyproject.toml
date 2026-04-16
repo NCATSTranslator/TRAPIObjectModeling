@@ -1,7 +1,7 @@
 [project]
-name = "trapi-object-modeling"
+name = "translator_tom"
 version = "0.1.0"
-description = "Add your description here"
+description = "TRAPI Object Models: A performant python data model and centralized utilities for the Translator Reasoner API."
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
@@ -133,6 +133,7 @@ reportMissingTypeStubs = false # Sometimes type stubs aren't available and auto-
 
 [tool.deptry]
 extend_exclude = ["locustfile.py", "tests"]
+known_first_party = ["trapi_object_modeling"]
 
 [tool.deptry.per_rule_ignores]
 DEP002 = [

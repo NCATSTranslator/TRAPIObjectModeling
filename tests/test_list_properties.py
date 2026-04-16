@@ -1,11 +1,11 @@
 """Tests for _list convenience properties on optional list fields."""
 
-from trapi_object_modeling.models.meta_attribute import MetaAttribute
-from trapi_object_modeling.models.meta_knowledge_graph import MetaEdge
-from trapi_object_modeling.models.meta_qualifier import MetaQualifier
-from trapi_object_modeling.models.query_graph import QNode
-from trapi_object_modeling.models.retrieval_source import RetrievalSource
-from trapi_object_modeling.models.workflow_operations import (
+from translator_tom.models.meta_attribute import MetaAttribute
+from translator_tom.models.meta_knowledge_graph import MetaEdge
+from translator_tom.models.meta_qualifier import MetaQualifier
+from translator_tom.models.query_graph import QNode
+from translator_tom.models.retrieval_source import RetrievalSource
+from translator_tom.models.workflow_operations import (
     AnnotateEdgesParameters,
     AnnotateNodesParameters,
 )

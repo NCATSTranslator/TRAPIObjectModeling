@@ -6,7 +6,7 @@ import orjson
 from pydantic import TypeAdapter
 
 t0 = time.perf_counter()
-from trapi_object_modeling import Response
+from translator_tom import Response
 
 t1 = time.perf_counter()
 
