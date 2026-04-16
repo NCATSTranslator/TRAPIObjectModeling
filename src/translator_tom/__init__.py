@@ -65,8 +65,8 @@ from translator_tom.models.asyncquery import (
     AsyncQueryResponse,
     AsyncQueryStatusResponse,
 )
-from translator_tom.models.attribute import Attribute
-from translator_tom.models.attribute_constraint import (
+from translator_tom.models.attribute import (
+    Attribute,
     AttributeConstraint,
     OperatorEnum,
 )
@@ -85,8 +85,7 @@ from translator_tom.models.meta_qualifier import MetaQualifier
 from translator_tom.models.node_binding import NodeBinding
 from translator_tom.models.path_binding import PathBinding
 from translator_tom.models.path_constraint import PathConstraint
-from translator_tom.models.qualifier import Qualifier
-from translator_tom.models.qualifier_constraint import QualifierConstraint
+from translator_tom.models.qualifier import Qualifier, QualifierConstraint
 from translator_tom.models.query import Query
 from translator_tom.models.query_graph import (
     BaseQueryGraph,

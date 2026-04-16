@@ -5,6 +5,7 @@ from typing import Annotated
 from pydantic import ConfigDict, Field
 from pydantic.dataclasses import dataclass
 
+from translator_tom.models.meta_qualifier import MetaQualifier
 from translator_tom.models.shared import CURIE
 from translator_tom.utils.object_base import TOMBaseObject
 
@@ -28,3 +29,23 @@ class Qualifier(TOMBaseObject):
     type is generally going to be constrained by the category
     of edge (i.e. biolink:Association subtype) of the (Q)Edge.
     """
+
+
+@dataclass(kw_only=True, config=ConfigDict(extra="ignore"))
+class QualifierConstraint(TOMBaseObject):
+    """Defines a query constraint based on the qualifier_types and qualifier_values of a set of Qualifiers attached to an edge.
+
+    For example, it can constrain a
+    "ChemicalX - affects - ?Gene" query to return only edges where
+    ChemicalX specifically affects the 'expression' of the Gene, by
+    constraining on the qualifier_type "biolink:object_aspect_qualifier"
+    with a qualifier_value of "expression".
+    """
+
+    qualifier_set: list[Qualifier]
+    """A set of Qualifiers that serves to add nuance to a query, by constraining allowed values held by Qualifiers on queried Edges."""
+
+    def met_by(self, qualifiers: list[Qualifier] | list[MetaQualifier]) -> bool:
+        """Check that the given qualifiers satisfy the constraint."""
+        # TODO: implement (with qualifier type / value hierarchy considerations)
+        return bool(len(qualifiers))

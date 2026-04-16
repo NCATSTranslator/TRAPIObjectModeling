@@ -6,9 +6,9 @@ from typing import Annotated, Literal
 from pydantic import ConfigDict, Field
 from pydantic.dataclasses import dataclass
 
-from translator_tom.models.attribute_constraint import AttributeConstraint
+from translator_tom.models.attribute import AttributeConstraint
 from translator_tom.models.path_constraint import PathConstraint
-from translator_tom.models.qualifier_constraint import QualifierConstraint
+from translator_tom.models.qualifier import QualifierConstraint
 from translator_tom.models.shared import (
     CURIE,
     BiolinkEntity,

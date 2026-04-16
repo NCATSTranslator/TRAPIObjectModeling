@@ -5,12 +5,16 @@ from typing import Annotated
 from pydantic import ConfigDict, Field
 from pydantic.dataclasses import dataclass
 
+from translator_tom.models.attribute import AttributeConstraint
 from translator_tom.models.meta_attribute import MetaAttribute
 from translator_tom.models.meta_qualifier import MetaQualifier
+from translator_tom.models.qualifier import QualifierConstraint
 from translator_tom.models.shared import (
+    CURIE,
     BiolinkEntity,
     BiolinkPredicate,
     KnowledgeType,
+    biolink,
 )
 from translator_tom.utils.object_base import TOMBaseObject
 
@@ -107,3 +111,33 @@ class MetaEdge(TOMBaseObject):
     def qualifiers_list(self) -> list[MetaQualifier]:
         """Get the meta qualifiers as a guaranteed list, even if they are represented as None."""
         return self.qualifiers if self.qualifiers is not None else []
+
+    def meets_attribute_constraints(
+        self, constraints: list[AttributeConstraint]
+    ) -> bool:
+        """Check if all attribute constraints are satisfied by the meta edge's attributes."""
+        if len(constraints) == 0:
+            return True
+        elif len(self.attributes_list) == 0:
+            return False
+
+        attrs_by_type: dict[CURIE, list[MetaAttribute]] = {}
+        for attr in self.attributes_list:
+            attrs_by_type.setdefault(attr.attribute_type_id, []).append(attr)
+        return all(
+            any(c.met_by(attr) for attr in attrs_by_type.get(c.id, []))
+            for c in constraints
+        )
+
+    def meets_qualifer_constraints(
+        self, constraints: list[QualifierConstraint]
+    ) -> bool:
+        """Check if the meta edge satisfies the qualifier constraints."""
+        if len(constraints) == 0:
+            return True
+        elif len(self.qualifiers_list) == 0:
+            return False
+
+        return any(
+            constraint.met_by(self.qualifiers_list) for constraint in constraints
+        )

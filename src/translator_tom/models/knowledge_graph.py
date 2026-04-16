@@ -8,10 +8,9 @@ from pydantic.dataclasses import dataclass
 from stablehash import stablehash
 
 from translator_tom.models.analysis import Analysis
-from translator_tom.models.attribute import Attribute
-from translator_tom.models.attribute_constraint import AttributeConstraint
+from translator_tom.models.attribute import Attribute, AttributeConstraint
 from translator_tom.models.auxiliary_graph import AuxiliaryGraphsDict
-from translator_tom.models.qualifier import Qualifier
+from translator_tom.models.qualifier import Qualifier, QualifierConstraint
 from translator_tom.models.result import Result
 from translator_tom.models.retrieval_source import (
     ResourceRoleEnum,
@@ -187,15 +186,15 @@ class Node(TOMBaseObject):
         for attr in self.attributes:
             attrs_by_type.setdefault(attr.attribute_type_id, []).append(attr)
         return all(
-            any(attr.meets_constraint(c) for attr in attrs_by_type.get(c.id, []))
+            any(c.met_by(attr) for attr in attrs_by_type.get(c.id, []))
             for c in constraints
         )
 
     def update(self, other: Node) -> None:
         """Update the node in-place with another node."""
         self.name = other.name or self.name
-        if other.categories:
-            self.categories = list(set(self.categories) | set(other.categories))
+        self.categories = list(set(self.categories) | set(other.categories))
+
         if other.attributes:
             attrs = {attr.hash(): attr for attr in self.attributes}
             new_attrs = {attr.hash(): attr for attr in other.attributes}
@@ -293,18 +292,31 @@ class Edge(TOMBaseObject):
         self, constraints: list[AttributeConstraint]
     ) -> bool:
         """Check if all attribute constraints are satisfied by the edge's attributes."""
+        if len(constraints) == 0:
+            return True
+        elif len(self.attributes_list) == 0:
+            return False
+
         attrs_by_type: dict[CURIE, list[Attribute]] = {}
         for attr in self.attributes_list:
             attrs_by_type.setdefault(attr.attribute_type_id, []).append(attr)
         return all(
-            any(attr.meets_constraint(c) for attr in attrs_by_type.get(c.id, []))
+            all(c.met_by(attr) for attr in attrs_by_type.get(c.id, []))
             for c in constraints
         )
 
-    # def meets_qualifier_constraints(
-    #     self, constraints: list[QualifierConstraint]
-    # ) -> bool:
-    #     """Check if the edge satisfies the qualifier constraints."""
+    def meets_qualifer_constraints(
+        self, constraints: list[QualifierConstraint]
+    ) -> bool:
+        """Check if the edge satisfies the qualifier constraints."""
+        if len(constraints) == 0:
+            return True
+        elif len(self.qualifiers_list) == 0:
+            return False
+
+        return any(
+            constraint.met_by(self.qualifiers_list) for constraint in constraints
+        )
 
     def get_last_downstream_source(self) -> RetrievalSource | None:
         """Get the last/most downstream source in the chain."""
