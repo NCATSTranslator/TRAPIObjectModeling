@@ -6,8 +6,8 @@ from pydantic import ConfigDict, Field
 from pydantic.dataclasses import dataclass
 from stablehash import stablehash
 
-from trapi_object_modeling.log_entry import LogEntry
-from trapi_object_modeling.query import Query
+from trapi_object_modeling.models.log_entry import LogEntry
+from trapi_object_modeling.models.query import Query
 from trapi_object_modeling.utils.object_base import TOMBaseObject
 
 

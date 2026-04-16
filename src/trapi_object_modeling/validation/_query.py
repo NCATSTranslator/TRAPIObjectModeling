@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from trapi_object_modeling.query import Query
+from trapi_object_modeling.models.query import Query
 from trapi_object_modeling.validation._util import (
     Location,
     SemanticValidationResult,

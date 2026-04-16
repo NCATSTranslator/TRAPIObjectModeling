@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from trapi_object_modeling.meta_attribute import MetaAttribute
+from trapi_object_modeling.models.meta_attribute import MetaAttribute
 from trapi_object_modeling.validation._util import (
     Location,
     SemanticValidationResult,

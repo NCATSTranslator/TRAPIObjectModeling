@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from trapi_object_modeling.node_binding import NodeBinding
+from trapi_object_modeling.models.node_binding import NodeBinding
 from trapi_object_modeling.validation._util import (
     Location,
     SemanticValidationResult,
@@ -10,6 +10,7 @@ from trapi_object_modeling.validation._util import (
     extend_location,
     get_list_locations,
     semantic_validate,
+    validate_keys_exist,
     validate_many,
     validation_pipeline,
 )
@@ -24,13 +25,23 @@ def _validate_node_binding(  # pyright: ignore[reportUnusedFunction]
 
     return validation_pipeline(
         (
-            kgraph.validate_nodes_exist([obj.id], extend_location(location, "id"))
+            validate_keys_exist(
+                [obj.id],
+                kgraph.nodes,
+                "Node",
+                "knowledge_graph",
+                extend_location(location, "id"),
+            )
             if kgraph is not None
             else always_valid()
         ),
         (
-            qgraph.validate_qnodes_exist(
-                [obj.query_id], extend_location(location, "query_id")
+            validate_keys_exist(
+                [obj.query_id],
+                qgraph.nodes,
+                "QNode",
+                "query_graph",
+                extend_location(location, "query_id"),
             )
             if qgraph is not None and obj.query_id is not None
             else always_valid()

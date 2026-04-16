@@ -57,33 +57,40 @@ __all__ = [
     "semantic_validate",
 ]
 
-from trapi_object_modeling.analysis import Analysis, BaseAnalysis, PathfinderAnalysis
-from trapi_object_modeling.asyncquery import (
+from trapi_object_modeling.models.analysis import (
+    Analysis,
+    BaseAnalysis,
+    PathfinderAnalysis,
+)
+from trapi_object_modeling.models.asyncquery import (
     AsyncQuery,
     AsyncQueryResponse,
     AsyncQueryStatusResponse,
 )
-from trapi_object_modeling.attribute import Attribute
-from trapi_object_modeling.attribute_constraint import AttributeConstraint, OperatorEnum
-from trapi_object_modeling.auxiliary_graph import AuxiliaryGraph
-from trapi_object_modeling.edge_binding import EdgeBinding
-from trapi_object_modeling.knowledge_graph import Edge, KnowledgeGraph, Node
-from trapi_object_modeling.log_entry import LogEntry, LogLevel
-from trapi_object_modeling.message import Message
-from trapi_object_modeling.meta_attribute import MetaAttribute
-from trapi_object_modeling.meta_knowledge_graph import (
+from trapi_object_modeling.models.attribute import Attribute
+from trapi_object_modeling.models.attribute_constraint import (
+    AttributeConstraint,
+    OperatorEnum,
+)
+from trapi_object_modeling.models.auxiliary_graph import AuxiliaryGraph
+from trapi_object_modeling.models.edge_binding import EdgeBinding
+from trapi_object_modeling.models.knowledge_graph import Edge, KnowledgeGraph, Node
+from trapi_object_modeling.models.log_entry import LogEntry, LogLevel
+from trapi_object_modeling.models.message import Message
+from trapi_object_modeling.models.meta_attribute import MetaAttribute
+from trapi_object_modeling.models.meta_knowledge_graph import (
     MetaEdge,
     MetaKnowledgeGraph,
     MetaNode,
 )
-from trapi_object_modeling.meta_qualifier import MetaQualifier
-from trapi_object_modeling.node_binding import NodeBinding
-from trapi_object_modeling.path_binding import PathBinding
-from trapi_object_modeling.path_constraint import PathConstraint
-from trapi_object_modeling.qualifier import Qualifier
-from trapi_object_modeling.qualifier_constraint import QualifierConstraint
-from trapi_object_modeling.query import Query
-from trapi_object_modeling.query_graph import (
+from trapi_object_modeling.models.meta_qualifier import MetaQualifier
+from trapi_object_modeling.models.node_binding import NodeBinding
+from trapi_object_modeling.models.path_binding import PathBinding
+from trapi_object_modeling.models.path_constraint import PathConstraint
+from trapi_object_modeling.models.qualifier import Qualifier
+from trapi_object_modeling.models.qualifier_constraint import QualifierConstraint
+from trapi_object_modeling.models.query import Query
+from trapi_object_modeling.models.query_graph import (
     BaseQueryGraph,
     PathfinderQueryGraph,
     QEdge,
@@ -92,21 +99,19 @@ from trapi_object_modeling.query_graph import (
     QueryGraph,
     SetInterpetationEnum,
 )
-from trapi_object_modeling.response import Response
-from trapi_object_modeling.result import Result
-from trapi_object_modeling.retrieval_source import ResourceRoleEnum, RetrievalSource
-from trapi_object_modeling.shared import (
+from trapi_object_modeling.models.response import Response
+from trapi_object_modeling.models.result import Result
+from trapi_object_modeling.models.retrieval_source import (
+    ResourceRoleEnum,
+    RetrievalSource,
+)
+from trapi_object_modeling.models.shared import (
     Curie,
     KnowledgeTypeEnum,
     biolink,
     infores,
 )
-from trapi_object_modeling.utils.object_base import TOMBaseObject
-from trapi_object_modeling.validation import (
-    passes_semantic_validation,
-    semantic_validate,
-)
-from trapi_object_modeling.workflow_operations import (
+from trapi_object_modeling.models.workflow_operations import (
     AboveOrBelowEnum,
     AllowList,
     AscendingOrDescending,
@@ -115,6 +120,11 @@ from trapi_object_modeling.workflow_operations import (
     PlusOrMinusEnum,
     TopOrBottomEnum,
     WorkflowOperation,
+)
+from trapi_object_modeling.utils.object_base import TOMBaseObject
+from trapi_object_modeling.validation import (
+    passes_semantic_validation,
+    semantic_validate,
 )
 
 

@@ -5,8 +5,8 @@ import re
 from pydantic import ConfigDict, JsonValue, SkipValidation
 from pydantic.dataclasses import dataclass
 
-from trapi_object_modeling.attribute_constraint import AttributeConstraint
-from trapi_object_modeling.shared import CURIE
+from trapi_object_modeling.models.attribute_constraint import AttributeConstraint
+from trapi_object_modeling.models.shared import CURIE
 from trapi_object_modeling.utils.object_base import TOMBaseObject
 
 

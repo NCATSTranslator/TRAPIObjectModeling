@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from trapi_object_modeling.auxiliary_graph import AuxiliaryGraph
+from trapi_object_modeling.models.auxiliary_graph import AuxiliaryGraph
 from trapi_object_modeling.validation._util import (
     Location,
     SemanticValidationError,

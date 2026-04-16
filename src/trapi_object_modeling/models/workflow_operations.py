@@ -6,7 +6,7 @@ from typing import Annotated, Literal, override
 from pydantic import ConfigDict, Field, JsonValue, SkipValidation
 from pydantic.dataclasses import dataclass
 
-from trapi_object_modeling.shared import Infores, QEdgeID, QNodeID
+from trapi_object_modeling.models.shared import Infores, QEdgeID, QNodeID
 from trapi_object_modeling.utils.object_base import TOMBaseObject
 
 

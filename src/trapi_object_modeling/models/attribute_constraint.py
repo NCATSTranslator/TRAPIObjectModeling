@@ -6,7 +6,7 @@ from typing import Annotated, Literal
 from pydantic import ConfigDict, Field, JsonValue, SkipValidation
 from pydantic.dataclasses import dataclass
 
-from trapi_object_modeling.shared import CURIE
+from trapi_object_modeling.models.shared import CURIE
 from trapi_object_modeling.utils.object_base import TOMBaseObject
 
 

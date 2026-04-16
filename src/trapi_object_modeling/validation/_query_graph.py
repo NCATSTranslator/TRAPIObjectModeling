@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from trapi_object_modeling.query_graph import (
+from trapi_object_modeling.models.query_graph import (
     PathfinderQueryGraph,
     QEdge,
     QNode,

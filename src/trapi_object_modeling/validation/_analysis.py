@@ -5,8 +5,12 @@ from __future__ import annotations
 import itertools
 from typing import Any
 
-from trapi_object_modeling.analysis import Analysis, BaseAnalysis, PathfinderAnalysis
-from trapi_object_modeling.query_graph import QueryGraph
+from trapi_object_modeling.models.analysis import (
+    Analysis,
+    BaseAnalysis,
+    PathfinderAnalysis,
+)
+from trapi_object_modeling.models.query_graph import QueryGraph
 from trapi_object_modeling.validation._util import (
     Location,
     SemanticValidationError,

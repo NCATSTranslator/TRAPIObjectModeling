@@ -6,9 +6,9 @@ from typing import Annotated
 from pydantic import ConfigDict, Field
 from pydantic.dataclasses import dataclass
 
-from trapi_object_modeling.analysis import Analysis, PathfinderAnalysis
-from trapi_object_modeling.node_binding import NodeBinding
-from trapi_object_modeling.shared import EdgeID, QNodeID
+from trapi_object_modeling.models.analysis import Analysis, PathfinderAnalysis
+from trapi_object_modeling.models.node_binding import NodeBinding
+from trapi_object_modeling.models.shared import EdgeID, QNodeID
 from trapi_object_modeling.utils.object_base import TOMBaseObject
 
 

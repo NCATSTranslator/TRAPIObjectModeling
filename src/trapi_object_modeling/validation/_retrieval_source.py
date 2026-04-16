@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from trapi_object_modeling.retrieval_source import RetrievalSource
+from trapi_object_modeling.models.retrieval_source import RetrievalSource
 from trapi_object_modeling.validation._util import (
     Location,
     SemanticValidationError,

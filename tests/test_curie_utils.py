@@ -1,6 +1,6 @@
 """Tests for CURIE utility functions in shared.py."""
 
-from trapi_object_modeling.shared import Curie, biolink, infores
+from trapi_object_modeling.models.shared import Curie, biolink, infores
 
 
 class TestCurieSplit:

@@ -2,12 +2,13 @@
 
 from __future__ import annotations
 
+from collections.abc import Mapping, Sequence
 from functools import singledispatch
 from typing import Any, Literal, Protocol, runtime_checkable
 
 from pydantic import AnyUrl, TypeAdapter, ValidationError
 
-from trapi_object_modeling.shared import BiolinkEntity, BiolinkPredicate
+from trapi_object_modeling.models.shared import BiolinkEntity, BiolinkPredicate
 from trapi_object_modeling.utils import biolink
 from trapi_object_modeling.utils.object_base import TOMBaseObject
 
@@ -302,6 +303,29 @@ def get_dict_locations(
         locations = [Location((*location, *loc)) for loc in locations]
 
     return locations
+
+
+def validate_keys_exist(
+    keys: Sequence[Any],
+    mapping: Mapping[Any, Any],
+    key_label: str,
+    mapping_label: str,
+    location: Location | None = None,
+) -> SemanticValidationResult:
+    """Check that every key is present in the mapping."""
+    warnings, errors = (
+        SemanticValidationWarningList(),
+        SemanticValidationErrorList(),
+    )
+    for key in keys:
+        if key not in mapping:
+            errors.append(
+                SemanticValidationError(
+                    f"{key_label} {key} is not present in {mapping_label}.",
+                    location or (),
+                )
+            )
+    return warnings, errors
 
 
 def validate_node_exists(

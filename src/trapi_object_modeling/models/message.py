@@ -3,10 +3,10 @@ from __future__ import annotations
 from pydantic import ConfigDict
 from pydantic.dataclasses import dataclass
 
-from trapi_object_modeling.auxiliary_graph import AuxiliaryGraphsDict
-from trapi_object_modeling.knowledge_graph import KnowledgeGraph
-from trapi_object_modeling.query_graph import PathfinderQueryGraph, QueryGraph
-from trapi_object_modeling.result import Result
+from trapi_object_modeling.models.auxiliary_graph import AuxiliaryGraphsDict
+from trapi_object_modeling.models.knowledge_graph import KnowledgeGraph
+from trapi_object_modeling.models.query_graph import PathfinderQueryGraph, QueryGraph
+from trapi_object_modeling.models.result import Result
 from trapi_object_modeling.utils.object_base import TOMBaseObject
 
 

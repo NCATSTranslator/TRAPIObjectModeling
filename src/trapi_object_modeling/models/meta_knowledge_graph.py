@@ -5,21 +5,14 @@ from typing import Annotated
 from pydantic import ConfigDict, Field
 from pydantic.dataclasses import dataclass
 
-from trapi_object_modeling.meta_attribute import MetaAttribute
-from trapi_object_modeling.meta_qualifier import MetaQualifier
-from trapi_object_modeling.shared import (
+from trapi_object_modeling.models.meta_attribute import MetaAttribute
+from trapi_object_modeling.models.meta_qualifier import MetaQualifier
+from trapi_object_modeling.models.shared import (
     BiolinkEntity,
     BiolinkPredicate,
     KnowledgeType,
 )
 from trapi_object_modeling.utils.object_base import TOMBaseObject
-from trapi_object_modeling.validation._util import (
-    Location,
-    SemanticValidationError,
-    SemanticValidationErrorList,
-    SemanticValidationResult,
-    SemanticValidationWarningList,
-)
 
 
 @dataclass(kw_only=True, config=ConfigDict(extra="allow"))
@@ -43,25 +36,6 @@ class MetaKnowledgeGraph(TOMBaseObject):
     A predicate is only exposed here if there is an edge
     for which the predicate is the most specific available.
     """
-
-    def validate_nodes_exist(
-        self, nodes: list[BiolinkEntity], location: Location | None = None
-    ) -> SemanticValidationResult:
-        """Check that every given CURIE is present in the nodes."""
-        warnings, errors = (
-            SemanticValidationWarningList(),
-            SemanticValidationErrorList(),
-        )
-        for category in nodes:
-            if category not in self.nodes:
-                errors.append(
-                    SemanticValidationError(
-                        f"Node {category} is not present in meta_knowledge_graph.",
-                        location or (),
-                    )
-                )
-
-        return warnings, errors
 
 
 @dataclass(kw_only=True, config=ConfigDict(extra="ignore"))

@@ -5,8 +5,8 @@ from typing import Annotated
 from pydantic import ConfigDict, Field
 from pydantic.dataclasses import dataclass
 
-from trapi_object_modeling.attribute import Attribute
-from trapi_object_modeling.shared import AuxGraphID, EdgeID
+from trapi_object_modeling.models.attribute import Attribute
+from trapi_object_modeling.models.shared import AuxGraphID, EdgeID
 from trapi_object_modeling.utils.object_base import TOMBaseObject
 
 

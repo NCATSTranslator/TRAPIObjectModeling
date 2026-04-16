@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from trapi_object_modeling.meta_knowledge_graph import (
+from trapi_object_modeling.models.meta_knowledge_graph import (
     MetaEdge,
     MetaKnowledgeGraph,
     MetaNode,
@@ -19,6 +19,7 @@ from trapi_object_modeling.validation._util import (
     semantic_validate,
     validate_association,
     validate_category,
+    validate_keys_exist,
     validate_many,
     validate_predicate,
     validation_pipeline,
@@ -71,15 +72,23 @@ def _validate_meta_edge(  # pyright: ignore[reportUnusedFunction]
     return validation_pipeline(
         validate_category(obj.subject, extend_location(location, "subject")),
         (
-            metakg.validate_nodes_exist(
-                [obj.subject], extend_location(location, "subject")
+            validate_keys_exist(
+                [obj.subject],
+                metakg.nodes,
+                "Node",
+                "meta_knowledge_graph",
+                extend_location(location, "subject"),
             )
             if metakg is not None
             else always_valid()
         ),
         (
-            metakg.validate_nodes_exist(
-                [obj.object], extend_location(location, "object")
+            validate_keys_exist(
+                [obj.object],
+                metakg.nodes,
+                "Node",
+                "meta_knowledge_graph",
+                extend_location(location, "object"),
             )
             if metakg is not None
             else always_valid()

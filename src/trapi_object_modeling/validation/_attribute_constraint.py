@@ -3,7 +3,7 @@ from __future__ import annotations
 import re
 from typing import Any
 
-from trapi_object_modeling.attribute_constraint import AttributeConstraint
+from trapi_object_modeling.models.attribute_constraint import AttributeConstraint
 from trapi_object_modeling.validation._util import (
     Location,
     SemanticValidationError,

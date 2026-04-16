@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from trapi_object_modeling.asyncquery import (
+from trapi_object_modeling.models.asyncquery import (
     AsyncQuery,
     AsyncQueryStatusResponse,
 )

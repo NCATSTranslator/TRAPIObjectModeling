@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from trapi_object_modeling.path_binding import PathBinding
+from trapi_object_modeling.models.path_binding import PathBinding
 from trapi_object_modeling.validation._util import (
     Location,
     SemanticValidationError,

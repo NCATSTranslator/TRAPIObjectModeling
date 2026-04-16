@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from trapi_object_modeling.message import Message
+from trapi_object_modeling.models.message import Message
 from trapi_object_modeling.validation._util import (
     Location,
     SemanticValidationResult,

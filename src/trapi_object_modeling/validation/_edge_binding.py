@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from trapi_object_modeling.edge_binding import EdgeBinding
+from trapi_object_modeling.models.edge_binding import EdgeBinding
 from trapi_object_modeling.validation._util import (
     Location,
     SemanticValidationResult,
@@ -10,6 +10,7 @@ from trapi_object_modeling.validation._util import (
     extend_location,
     get_list_locations,
     semantic_validate,
+    validate_keys_exist,
     validate_many,
     validation_pipeline,
 )
@@ -23,7 +24,13 @@ def _validate_edge_binding(  # pyright: ignore[reportUnusedFunction]
 
     return validation_pipeline(
         (
-            kgraph.validate_edges_exist([obj.id], extend_location(location, "id"))
+            validate_keys_exist(
+                [obj.id],
+                kgraph.edges,
+                "Edge",
+                "knowledge_graph",
+                extend_location(location, "id"),
+            )
             if kgraph is not None
             else always_valid()
         ),

@@ -3,10 +3,10 @@ from __future__ import annotations
 from pydantic import ConfigDict, Field
 from pydantic.dataclasses import dataclass
 
-from trapi_object_modeling.log_entry import LogEntry
-from trapi_object_modeling.message import Message
+from trapi_object_modeling.models.log_entry import LogEntry
+from trapi_object_modeling.models.message import Message
+from trapi_object_modeling.models.workflow_operations import WorkflowOperation
 from trapi_object_modeling.utils.object_base import TOMBaseObject
-from trapi_object_modeling.workflow_operations import WorkflowOperation
 
 
 @dataclass(kw_only=True, config=ConfigDict(extra="allow"))

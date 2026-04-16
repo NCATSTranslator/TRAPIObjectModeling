@@ -1,12 +1,13 @@
 """Semantic validation for TOM objects via singledispatch."""
 
-# Import all registration modules to trigger @singledispatch.register side effects
+# Import all registration modules to trigger @singledispatch.register side effects.
 from trapi_object_modeling.validation import _analysis as _analysis
 from trapi_object_modeling.validation import _asyncquery as _asyncquery
 from trapi_object_modeling.validation import _attribute as _attribute
 from trapi_object_modeling.validation import (
     _attribute_constraint as _attribute_constraint,
 )
+from trapi_object_modeling.validation import _auxiliary_graph as _auxiliary_graph
 from trapi_object_modeling.validation import _edge_binding as _edge_binding
 from trapi_object_modeling.validation import _knowledge_graph as _knowledge_graph
 from trapi_object_modeling.validation import _log_entry as _log_entry
@@ -23,6 +24,7 @@ from trapi_object_modeling.validation import _qualifier as _qualifier
 from trapi_object_modeling.validation import (
     _qualifier_constraint as _qualifier_constraint,
 )
+from trapi_object_modeling.validation import _query as _query
 from trapi_object_modeling.validation import _query_graph as _query_graph
 from trapi_object_modeling.validation import _response as _response
 from trapi_object_modeling.validation import _result as _result

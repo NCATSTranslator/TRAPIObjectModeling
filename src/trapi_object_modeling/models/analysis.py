@@ -6,10 +6,10 @@ from pydantic import ConfigDict
 from pydantic.dataclasses import dataclass
 from stablehash import stablehash
 
-from trapi_object_modeling.attribute import Attribute
-from trapi_object_modeling.edge_binding import EdgeBinding
-from trapi_object_modeling.path_binding import PathBinding
-from trapi_object_modeling.shared import CURIE, AuxGraphID, QEdgeID, QPathID
+from trapi_object_modeling.models.attribute import Attribute
+from trapi_object_modeling.models.edge_binding import EdgeBinding
+from trapi_object_modeling.models.path_binding import PathBinding
+from trapi_object_modeling.models.shared import CURIE, AuxGraphID, QEdgeID, QPathID
 from trapi_object_modeling.utils.object_base import TOMBaseObject
 
 

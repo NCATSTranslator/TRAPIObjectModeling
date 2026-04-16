@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from trapi_object_modeling.response import Response
+from trapi_object_modeling.models.response import Response
 from trapi_object_modeling.utils.config import TRAPI_CONFIG
 from trapi_object_modeling.validation._util import (
     Location,

@@ -5,7 +5,7 @@ from typing import Annotated
 from pydantic import ConfigDict, Field
 from pydantic.dataclasses import dataclass
 
-from trapi_object_modeling.shared import BiolinkEntity
+from trapi_object_modeling.models.shared import BiolinkEntity
 from trapi_object_modeling.utils.object_base import TOMBaseObject
 
 

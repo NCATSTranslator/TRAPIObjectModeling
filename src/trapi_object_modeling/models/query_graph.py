@@ -6,10 +6,10 @@ from typing import Annotated, Literal
 from pydantic import ConfigDict, Field
 from pydantic.dataclasses import dataclass
 
-from trapi_object_modeling.attribute_constraint import AttributeConstraint
-from trapi_object_modeling.path_constraint import PathConstraint
-from trapi_object_modeling.qualifier_constraint import QualifierConstraint
-from trapi_object_modeling.shared import (
+from trapi_object_modeling.models.attribute_constraint import AttributeConstraint
+from trapi_object_modeling.models.path_constraint import PathConstraint
+from trapi_object_modeling.models.qualifier_constraint import QualifierConstraint
+from trapi_object_modeling.models.shared import (
     CURIE,
     BiolinkEntity,
     BiolinkPredicate,
@@ -19,13 +19,6 @@ from trapi_object_modeling.shared import (
     QPathID,
 )
 from trapi_object_modeling.utils.object_base import TOMBaseObject
-from trapi_object_modeling.validation._util import (
-    Location,
-    SemanticValidationError,
-    SemanticValidationErrorList,
-    SemanticValidationResult,
-    SemanticValidationWarningList,
-)
 
 
 @dataclass(kw_only=True, config=ConfigDict(extra="allow"))
@@ -45,25 +38,6 @@ class BaseQueryGraph(TOMBaseObject):
     on bound nodes.
     """
 
-    def validate_qnodes_exist(
-        self, qnodes: list[QNodeID], location: Location | None = None
-    ) -> SemanticValidationResult:
-        """Check that every given QNodeID is present in the nodes."""
-        warnings, errors = (
-            SemanticValidationWarningList(),
-            SemanticValidationErrorList(),
-        )
-        for qnode_id in qnodes:
-            if qnode_id not in self.nodes:
-                errors.append(
-                    SemanticValidationError(
-                        f"QNode {qnode_id} is not present in query_graph.",
-                        location or (),
-                    )
-                )
-
-        return warnings, errors
-
 
 @dataclass(kw_only=True, config=ConfigDict(extra="allow"))
 class QueryGraph(BaseQueryGraph):
@@ -77,25 +51,6 @@ class QueryGraph(BaseQueryGraph):
     on bound edges, in addition to specifying the subject and object QNodes.
     """
 
-    def validate_qedges_exist(
-        self, qedges: list[QEdgeID], location: Location | None = None
-    ) -> SemanticValidationResult:
-        """Check that every given QEdgeID is present in the edges."""
-        warnings, errors = (
-            SemanticValidationWarningList(),
-            SemanticValidationErrorList(),
-        )
-        for qedge_id in qedges:
-            if qedge_id not in self.edges:
-                errors.append(
-                    SemanticValidationError(
-                        f"QEdge {qedge_id} is not present in query_graph.",
-                        location or (),
-                    )
-                )
-
-        return warnings, errors
-
 
 @dataclass(kw_only=True, config=ConfigDict(extra="allow"))
 class PathfinderQueryGraph(BaseQueryGraph):
@@ -108,25 +63,6 @@ class PathfinderQueryGraph(BaseQueryGraph):
     corresponding values include the constraints on bound paths, in
     addition to specifying the subject, object, and intermediate QNodes.
     """
-
-    def validate_paths_exist(
-        self, qpaths: list[QPathID], location: Location | None = None
-    ) -> SemanticValidationResult:
-        """Check that every given QPathID is present in the paths."""
-        warnings, errors = (
-            SemanticValidationWarningList(),
-            SemanticValidationErrorList(),
-        )
-        for qpath_id in qpaths:
-            if qpath_id not in self.paths:
-                errors.append(
-                    SemanticValidationError(
-                        f"QPath {qpath_id} is not present in query_graph.",
-                        location or (),
-                    )
-                )
-
-        return warnings, errors
 
 
 class SetInterpetationEnum(str, Enum):

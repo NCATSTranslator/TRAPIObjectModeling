@@ -13,7 +13,7 @@ LOG = logging.getLogger(__name__)
 LOG.info("Starting import of dataclass definitions")
 t0 = time.perf_counter()
 
-from trapi_object_modeling.response import Response  # noqa: E402
+from trapi_object_modeling.models.response import Response  # noqa: E402
 
 t1 = time.perf_counter()
 LOG.info("Import conplete in %s seconds.", t1 - t0)

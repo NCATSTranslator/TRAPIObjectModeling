@@ -3,7 +3,7 @@ from __future__ import annotations
 import itertools
 from typing import Any
 
-from trapi_object_modeling.result import Result
+from trapi_object_modeling.models.result import Result
 from trapi_object_modeling.validation._util import (
     Location,
     SemanticValidationResult,
@@ -11,6 +11,7 @@ from trapi_object_modeling.validation._util import (
     extend_location,
     get_list_locations,
     semantic_validate,
+    validate_keys_exist,
     validate_many,
     validation_pipeline,
 )
@@ -35,8 +36,11 @@ def _validate_result(  # pyright: ignore[reportUnusedFunction]
 
     return validation_pipeline(
         (
-            qgraph.validate_qnodes_exist(
+            validate_keys_exist(
                 list(obj.node_bindings.keys()),
+                qgraph.nodes,
+                "QNode",
+                "query_graph",
                 extend_location(location, "node_bindings"),
             )
             if qgraph is not None

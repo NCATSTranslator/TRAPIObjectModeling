@@ -7,14 +7,17 @@ from pydantic import ConfigDict, Field
 from pydantic.dataclasses import dataclass
 from stablehash import stablehash
 
-from trapi_object_modeling.analysis import Analysis
-from trapi_object_modeling.attribute import Attribute
-from trapi_object_modeling.attribute_constraint import AttributeConstraint
-from trapi_object_modeling.auxiliary_graph import AuxiliaryGraphsDict
-from trapi_object_modeling.qualifier import Qualifier
-from trapi_object_modeling.result import Result
-from trapi_object_modeling.retrieval_source import ResourceRoleEnum, RetrievalSource
-from trapi_object_modeling.shared import (
+from trapi_object_modeling.models.analysis import Analysis
+from trapi_object_modeling.models.attribute import Attribute
+from trapi_object_modeling.models.attribute_constraint import AttributeConstraint
+from trapi_object_modeling.models.auxiliary_graph import AuxiliaryGraphsDict
+from trapi_object_modeling.models.qualifier import Qualifier
+from trapi_object_modeling.models.result import Result
+from trapi_object_modeling.models.retrieval_source import (
+    ResourceRoleEnum,
+    RetrievalSource,
+)
+from trapi_object_modeling.models.shared import (
     CURIE,
     BiolinkEntity,
     BiolinkPredicate,
@@ -23,13 +26,6 @@ from trapi_object_modeling.shared import (
     biolink,
 )
 from trapi_object_modeling.utils.object_base import TOMBaseObject
-from trapi_object_modeling.validation._util import (
-    Location,
-    SemanticValidationError,
-    SemanticValidationErrorList,
-    SemanticValidationResult,
-    SemanticValidationWarningList,
-)
 
 
 @dataclass(kw_only=True, config=ConfigDict(extra="allow"))
@@ -48,44 +44,6 @@ class KnowledgeGraph(TOMBaseObject):
 
     edges: dict[EdgeID, Edge]
     """Dictionary of Edge instances used in the KnowledgeGraph, referenced elsewhere in the TRAPI output by the dictionary key."""
-
-    def validate_edges_exist(
-        self, edges: list[EdgeID], location: Location | None = None
-    ) -> SemanticValidationResult:
-        """Check that every given EdgeID is present in the edges."""
-        warnings, errors = (
-            SemanticValidationWarningList(),
-            SemanticValidationErrorList(),
-        )
-        for edge_id in edges:
-            if edge_id not in self.edges:
-                errors.append(
-                    SemanticValidationError(
-                        f"Edge {edge_id} is not present in knowledge_graph.",
-                        location or (),
-                    )
-                )
-
-        return warnings, errors
-
-    def validate_nodes_exist(
-        self, nodes: list[CURIE], location: Location | None = None
-    ) -> SemanticValidationResult:
-        """Check that every given CURIE is present in the nodes."""
-        warnings, errors = (
-            SemanticValidationWarningList(),
-            SemanticValidationErrorList(),
-        )
-        for node_id in nodes:
-            if node_id not in self.nodes:
-                errors.append(
-                    SemanticValidationError(
-                        f"Node {node_id} is not present in knowledge_graph.",
-                        location or (),
-                    )
-                )
-
-        return warnings, errors
 
     def normalize(self) -> dict[EdgeID, EdgeID]:
         """Normalize the kgraph edge IDs and return a mapping of new:old."""

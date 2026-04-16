@@ -2,16 +2,8 @@ from __future__ import annotations
 
 from typing import Any
 
-from trapi_object_modeling.query_graph import QueryGraph
-from trapi_object_modeling.validation._util import (
-    Location,
-    SemanticValidationResult,
-    always_valid,
-    extend_location,
-    semantic_validate,
-    validation_pipeline,
-)
-from trapi_object_modeling.workflow_operations import (
+from trapi_object_modeling.models.query_graph import QueryGraph
+from trapi_object_modeling.models.workflow_operations import (
     EnrichResultsParameters,
     FillAllowListParameters,
     FillDenyListParameters,
@@ -34,6 +26,15 @@ from trapi_object_modeling.workflow_operations import (
     OverlayFisherExactTestParameters,
     SortResultNodeAttributeParameters,
     SortResultsEdgeAttributeParameters,
+)
+from trapi_object_modeling.validation._util import (
+    Location,
+    SemanticValidationResult,
+    always_valid,
+    extend_location,
+    semantic_validate,
+    validate_keys_exist,
+    validation_pipeline,
 )
 
 # --- Operation types: delegate to their parameters ---
@@ -67,8 +68,12 @@ def _validate_enrich_results_params(  # pyright: ignore[reportUnusedFunction]
 ) -> SemanticValidationResult:
     qgraph = kwargs.get("qgraph")
     return (
-        qgraph.validate_qnodes_exist(
-            obj.qnode_keys_list, extend_location(location, "qnode_keys")
+        validate_keys_exist(
+            obj.qnode_keys_list,
+            qgraph.nodes,
+            "QNode",
+            "query_graph",
+            extend_location(location, "qnode_keys"),
         )
         if qgraph is not None
         else always_valid()
@@ -81,8 +86,12 @@ def _validate_fill_allow_list_params(  # pyright: ignore[reportUnusedFunction]
 ) -> SemanticValidationResult:
     qgraph = kwargs.get("qgraph")
     return (
-        qgraph.validate_qedges_exist(
-            obj.qedge_keys_list, extend_location(location, "qedge_keys")
+        validate_keys_exist(
+            obj.qedge_keys_list,
+            qgraph.edges,
+            "QEdge",
+            "query_graph",
+            extend_location(location, "qedge_keys"),
         )
         if qgraph is not None and isinstance(qgraph, QueryGraph)
         else always_valid()
@@ -95,8 +104,12 @@ def _validate_fill_deny_list_params(  # pyright: ignore[reportUnusedFunction]
 ) -> SemanticValidationResult:
     qgraph = kwargs.get("qgraph")
     return (
-        qgraph.validate_qedges_exist(
-            obj.qedge_keys_list, extend_location(location, "qedge_keys")
+        validate_keys_exist(
+            obj.qedge_keys_list,
+            qgraph.edges,
+            "QEdge",
+            "query_graph",
+            extend_location(location, "qedge_keys"),
         )
         if qgraph is not None and isinstance(qgraph, QueryGraph)
         else always_valid()
@@ -110,15 +123,23 @@ def _validate_filter_kgraph_params(  # pyright: ignore[reportUnusedFunction]
     qgraph = kwargs.get("qgraph")
     return validation_pipeline(
         (
-            qgraph.validate_qedges_exist(
-                obj.qedge_keys_list, extend_location(location, "qedge_keys")
+            validate_keys_exist(
+                obj.qedge_keys_list,
+                qgraph.edges,
+                "QEdge",
+                "query_graph",
+                extend_location(location, "qedge_keys"),
             )
             if qgraph is not None and isinstance(qgraph, QueryGraph)
             else always_valid()
         ),
         (
-            qgraph.validate_qnodes_exist(
-                obj.qnode_keys_list, extend_location(location, "qnode_keys")
+            validate_keys_exist(
+                obj.qnode_keys_list,
+                qgraph.nodes,
+                "QNode",
+                "query_graph",
+                extend_location(location, "qnode_keys"),
             )
             if qgraph is not None
             else always_valid()
@@ -135,23 +156,33 @@ def _validate_overlay_jaccard_params(  # pyright: ignore[reportUnusedFunction]
     qgraph = kwargs.get("qgraph")
     return validation_pipeline(
         (
-            qgraph.validate_qnodes_exist(
+            validate_keys_exist(
                 [obj.intermediate_node_key],
+                qgraph.nodes,
+                "QNode",
+                "query_graph",
                 extend_location(location, "intermediate_node_key"),
             )
             if qgraph is not None
             else always_valid()
         ),
         (
-            qgraph.validate_qnodes_exist(
-                obj.end_node_keys, extend_location(location, "end_node_keys")
+            validate_keys_exist(
+                obj.end_node_keys,
+                qgraph.nodes,
+                "QNode",
+                "query_graph",
+                extend_location(location, "end_node_keys"),
             )
             if qgraph is not None
             else always_valid()
         ),
         (
-            qgraph.validate_qnodes_exist(
+            validate_keys_exist(
                 [obj.virtual_relation_label],
+                qgraph.nodes,
+                "QNode",
+                "query_graph",
                 extend_location(location, "virtual_relation_label"),
             )
             if qgraph is not None
@@ -166,8 +197,12 @@ def _validate_overlay_ngd_params(  # pyright: ignore[reportUnusedFunction]
 ) -> SemanticValidationResult:
     qgraph = kwargs.get("qgraph")
     return (
-        qgraph.validate_qnodes_exist(
-            obj.qnode_keys, extend_location(location, "qnode_keys")
+        validate_keys_exist(
+            obj.qnode_keys,
+            qgraph.nodes,
+            "QNode",
+            "query_graph",
+            extend_location(location, "qnode_keys"),
         )
         if qgraph is not None
         else always_valid()
@@ -183,24 +218,34 @@ def _validate_overlay_fisher_params(  # pyright: ignore[reportUnusedFunction]
     qgraph = kwargs.get("qgraph")
     return validation_pipeline(
         (
-            qgraph.validate_qnodes_exist(
+            validate_keys_exist(
                 [obj.subject_qnode_key],
+                qgraph.nodes,
+                "QNode",
+                "query_graph",
                 extend_location(location, "subject_qnode_key"),
             )
             if qgraph is not None
             else always_valid()
         ),
         (
-            qgraph.validate_qnodes_exist(
+            validate_keys_exist(
                 [obj.object_qnode_key],
+                qgraph.nodes,
+                "QNode",
+                "query_graph",
                 extend_location(location, "object_qnode_key"),
             )
             if qgraph is not None
             else always_valid()
         ),
         (
-            qgraph.validate_qedges_exist(
-                [obj.rel_edge_key], extend_location(location, "rel_edge_key")
+            validate_keys_exist(
+                [obj.rel_edge_key],
+                qgraph.edges,
+                "QEdge",
+                "query_graph",
+                extend_location(location, "rel_edge_key"),
             )
             if qgraph is not None
             and obj.rel_edge_key is not None
@@ -218,8 +263,12 @@ def _validate_sort_edge_attr_params(  # pyright: ignore[reportUnusedFunction]
 ) -> SemanticValidationResult:
     qgraph = kwargs.get("qgraph")
     return (
-        qgraph.validate_qedges_exist(
-            obj.qedge_keys, extend_location(location, "qedge_keys")
+        validate_keys_exist(
+            obj.qedge_keys,
+            qgraph.edges,
+            "QEdge",
+            "query_graph",
+            extend_location(location, "qedge_keys"),
         )
         if qgraph is not None and isinstance(qgraph, QueryGraph)
         else always_valid()
@@ -234,8 +283,12 @@ def _validate_sort_node_attr_params(  # pyright: ignore[reportUnusedFunction]
 ) -> SemanticValidationResult:
     qgraph = kwargs.get("qgraph")
     return (
-        qgraph.validate_qnodes_exist(
-            obj.qnode_keys_list, extend_location(location, "qnode_keys")
+        validate_keys_exist(
+            obj.qnode_keys_list,
+            qgraph.nodes,
+            "QNode",
+            "query_graph",
+            extend_location(location, "qnode_keys"),
         )
         if qgraph is not None
         else always_valid()
