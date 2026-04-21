@@ -13,18 +13,26 @@ from translator_tom.models.workflow_operations import (
 
 class TestMetaAttributeOriginalAttributeNamesList:
     def test_none_returns_empty(self) -> None:
-        obj = MetaAttribute(attribute_type_id="biolink:p_value", original_attribute_names=None)
+        obj = MetaAttribute(
+            attribute_type_id="biolink:p_value", original_attribute_names=None
+        )
         assert obj.original_attribute_names_list == []
 
     def test_populated_returns_list(self) -> None:
         names = ["pvalue", "p-value"]
-        obj = MetaAttribute(attribute_type_id="biolink:p_value", original_attribute_names=names)
+        obj = MetaAttribute(
+            attribute_type_id="biolink:p_value", original_attribute_names=names
+        )
         assert obj.original_attribute_names_list == names
 
 
 class TestMetaEdgeKnowledgeTypesList:
     def test_none_returns_empty(self) -> None:
-        obj = MetaEdge(subject="biolink:Gene", predicate="biolink:related_to", object="biolink:Gene")
+        obj = MetaEdge(
+            subject="biolink:Gene",
+            predicate="biolink:related_to",
+            object="biolink:Gene",
+        )
         assert obj.knowledge_types_list == []
 
     def test_populated_returns_list(self) -> None:
@@ -44,7 +52,9 @@ class TestMetaQualifierApplicableValuesList:
 
     def test_populated_returns_list(self) -> None:
         vals = ["activity", "expression"]
-        obj = MetaQualifier(qualifier_type_id="biolink:object_aspect_qualifier", applicable_values=vals)
+        obj = MetaQualifier(
+            qualifier_type_id="biolink:object_aspect_qualifier", applicable_values=vals
+        )
         assert obj.applicable_values_list == vals
 
 
@@ -61,7 +71,9 @@ class TestQNodeIdsList:
 
 class TestRetrievalSourceUpstreamResourceIdsList:
     def test_none_returns_empty(self) -> None:
-        obj = RetrievalSource(resource_id="infores:molepro", resource_role="primary_knowledge_source")
+        obj = RetrievalSource(
+            resource_id="infores:molepro", resource_role="primary_knowledge_source"
+        )
         assert obj.upstream_resource_ids_list == []
 
     def test_populated_returns_list(self) -> None:
@@ -76,7 +88,9 @@ class TestRetrievalSourceUpstreamResourceIdsList:
 
 class TestRetrievalSourceSourceRecordUrlsList:
     def test_none_returns_empty(self) -> None:
-        obj = RetrievalSource(resource_id="infores:molepro", resource_role="primary_knowledge_source")
+        obj = RetrievalSource(
+            resource_id="infores:molepro", resource_role="primary_knowledge_source"
+        )
         assert obj.source_record_urls_list == []
 
     def test_populated_returns_list(self) -> None:

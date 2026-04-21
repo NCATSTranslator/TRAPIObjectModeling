@@ -37,7 +37,7 @@ ResourceRole = Literal[
 ]
 
 
-@dataclass(kw_only=True, config=ConfigDict(extra="allow"))
+@dataclass(kw_only=True, config=ConfigDict(extra="allow"), eq=False)
 class RetrievalSource(TOMBaseObject):
     """Provides information about how a particular InformationResource served as a source from which knowledge expressed in an Edge, or data used to generate this knowledge, was retrieved."""
 

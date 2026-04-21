@@ -3,6 +3,13 @@
 from translator_tom.models.shared import Curie, biolink, infores
 
 
+class TestMakeCurie:
+    """Tests for Curie() call."""
+
+    def test_call(self) -> None:
+        assert Curie("prefix", "reference") == "prefix:reference"
+
+
 class TestCurieSplit:
     """Tests for Curie.split()."""
 

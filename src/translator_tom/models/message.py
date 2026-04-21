@@ -3,14 +3,14 @@ from __future__ import annotations
 from pydantic import ConfigDict
 from pydantic.dataclasses import dataclass
 
-from translator_tom.models.auxiliary_graph import AuxiliaryGraphsDict
+from translator_tom.models.auxiliary_graph import AuxiliaryGraph, AuxiliaryGraphsDict
 from translator_tom.models.knowledge_graph import KnowledgeGraph
 from translator_tom.models.query_graph import PathfinderQueryGraph, QueryGraph
 from translator_tom.models.result import Result
 from translator_tom.utils.object_base import TOMBaseObject
 
 
-@dataclass(kw_only=True, config=ConfigDict(extra="ignore"))
+@dataclass(kw_only=True, config=ConfigDict(extra="ignore"), eq=False)
 class Message(TOMBaseObject):
     """The message object holds the main content of a Query or a Response in three properties: query_graph, results, and knowledge_graph.
 

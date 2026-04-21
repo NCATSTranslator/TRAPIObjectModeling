@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import copy
-from typing import Self, override
+from typing import override
 
 from pydantic import ConfigDict
 from pydantic.dataclasses import dataclass
@@ -14,7 +14,7 @@ from translator_tom.models.shared import CURIE, AuxGraphID, QEdgeID, QPathID
 from translator_tom.utils.object_base import TOMBaseObject
 
 
-@dataclass(kw_only=True, config=ConfigDict(extra="allow"))
+@dataclass(kw_only=True, config=ConfigDict(extra="allow"), eq=False)
 class BaseAnalysis(TOMBaseObject):
     """An analysis is a dictionary that contains information about the result tied to a particular service.
 
@@ -59,7 +59,12 @@ class BaseAnalysis(TOMBaseObject):
     @override
     def hash(self) -> str:
         return stablehash(
-            (self.resource_id, self.score, self.support_graphs, self.scoring_method)
+            (
+                self.resource_id,
+                self.score,
+                frozenset(self.support_graphs_list),
+                self.scoring_method,
+            )
         ).hexdigest()
 
     def _update_base(self, other: BaseAnalysis) -> None:
@@ -78,7 +83,7 @@ class BaseAnalysis(TOMBaseObject):
             )
 
 
-@dataclass(kw_only=True, config=ConfigDict(extra="allow"))
+@dataclass(kw_only=True, config=ConfigDict(extra="allow"), eq=False)
 class Analysis(BaseAnalysis):
     """An analysis for results from a non-Pathfinder query SHOULD have edge_bindings and SHOULD NOT have path_bindings."""
 
@@ -94,7 +99,10 @@ class Analysis(BaseAnalysis):
         return stablehash(
             (
                 super().hash(),
-                self.edge_bindings,
+                {
+                    qedge_id: frozenset(bindings)
+                    for qedge_id, bindings in self.edge_bindings.items()
+                },
             )
         ).hexdigest()
 
@@ -111,7 +119,7 @@ class Analysis(BaseAnalysis):
                 self.edge_bindings[k] = copy.deepcopy(other.edge_bindings[k])
 
 
-@dataclass(kw_only=True, config=ConfigDict(extra="allow"))
+@dataclass(kw_only=True, config=ConfigDict(extra="allow"), eq=False)
 class PathfinderAnalysis(BaseAnalysis):
     """An analysis for results from a Pathfinder query SHOULD have path_bindings and SHOULD NOT have edge_bindings."""
 
@@ -123,7 +131,10 @@ class PathfinderAnalysis(BaseAnalysis):
         return stablehash(
             (
                 super().hash(),
-                self.path_bindings,
+                {
+                    qpath_id: frozenset(bindings)
+                    for qpath_id, bindings in self.path_bindings.items()
+                },
             )
         ).hexdigest()
 

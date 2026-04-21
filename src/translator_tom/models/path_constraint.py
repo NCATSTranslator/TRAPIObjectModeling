@@ -9,7 +9,7 @@ from translator_tom.models.shared import BiolinkEntity
 from translator_tom.utils.object_base import TOMBaseObject
 
 
-@dataclass(kw_only=True, config=ConfigDict(extra="allow"))
+@dataclass(kw_only=True, config=ConfigDict(extra="allow"), eq=False)
 class PathConstraint(TOMBaseObject):
     """A constraint for paths. ARAs must comply with constraints when finding paths."""
 

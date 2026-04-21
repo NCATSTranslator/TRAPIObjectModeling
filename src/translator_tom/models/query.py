@@ -5,7 +5,7 @@ from pydantic.dataclasses import dataclass
 
 from translator_tom.models.log_entry import LogLevelValue
 from translator_tom.models.message import Message
-from translator_tom.models.workflow_operations import WorkflowOperation
+from translator_tom.models.workflow_operations import Operation
 from translator_tom.utils.object_base import TOMBaseObject
 
 # FIX: need to somehow warn or guard against this
@@ -13,7 +13,7 @@ from translator_tom.utils.object_base import TOMBaseObject
 # This becomes a problem if the instance is mutated, because then its hash changes
 
 
-@dataclass(kw_only=True, config=ConfigDict(extra="allow"))
+@dataclass(kw_only=True, config=ConfigDict(extra="allow"), eq=False)
 class Query(TOMBaseObject):
     """The Query class is used to package a user request for information.
 
@@ -37,7 +37,7 @@ class Query(TOMBaseObject):
     log_level: LogLevelValue | None = None
     """The least critical level of logs to return."""
 
-    workflow: list[WorkflowOperation] | None = None
+    workflow: list[Operation] | None = None
     """List of workflow steps to be executed."""
 
     submitter: str | None = None
@@ -58,6 +58,6 @@ class Query(TOMBaseObject):
     """
 
     @property
-    def workflow_list(self) -> list[WorkflowOperation]:
+    def workflow_list(self) -> list[Operation]:
         """Get the workflow operations as a guaranteed list, even if they are represented as None."""
         return self.workflow if self.workflow is not None else []

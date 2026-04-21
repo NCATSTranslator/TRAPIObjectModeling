@@ -1,18 +1,19 @@
 from __future__ import annotations
 
 import itertools
-from typing import Annotated
+from typing import Annotated, override
 
 from pydantic import ConfigDict, Field
 from pydantic.dataclasses import dataclass
+from stablehash import stablehash
 
 from translator_tom.models.analysis import Analysis, PathfinderAnalysis
 from translator_tom.models.node_binding import NodeBinding
-from translator_tom.models.shared import EdgeID, QNodeID
+from translator_tom.models.shared import EdgeID, Infores, QNodeID
 from translator_tom.utils.object_base import TOMBaseObject
 
 
-@dataclass(kw_only=True, config=ConfigDict(extra="allow"))
+@dataclass(kw_only=True, config=ConfigDict(extra="allow"), eq=False)
 class Result(TOMBaseObject):
     """A Result object specifies the nodes and edges in the knowledge graph that satisfy the structure or conditions of a user-submitted query graph.
 
@@ -32,6 +33,15 @@ class Result(TOMBaseObject):
 
     analyses: list[Analysis | PathfinderAnalysis]
     """The list of all Analysis components that contribute to the result."""
+
+    @override
+    def hash(self) -> str:
+        return stablehash(
+            {
+                qnode_id: frozenset(bindings)
+                for qnode_id, bindings in self.node_bindings.items()
+            }
+        ).hexdigest()
 
     def normalize(self, mapping: dict[EdgeID, EdgeID]) -> None:
         """Normalize the result given a mapping of old:new EdgeIDs."""

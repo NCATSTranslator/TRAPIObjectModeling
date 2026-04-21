@@ -10,7 +10,7 @@ from translator_tom.models.shared import Infores, QEdgeID, QNodeID
 from translator_tom.utils.object_base import TOMBaseObject
 
 
-@dataclass(kw_only=True, config=ConfigDict(extra="ignore"))
+@dataclass(kw_only=True, config=ConfigDict(extra="ignore"), eq=False)
 class AllowList(TOMBaseObject):
     """List of operation providers (by infores ID) that may be used to complete operation."""
 
@@ -24,7 +24,7 @@ class AllowList(TOMBaseObject):
     """
 
 
-@dataclass(kw_only=True, config=ConfigDict(extra="ignore"))
+@dataclass(kw_only=True, config=ConfigDict(extra="ignore"), eq=False)
 class DenyList(TOMBaseObject):
     """List of operation providers (by infores ID) that may not be used to complete operation."""
 
@@ -51,13 +51,13 @@ class AscendingOrDescending(str, Enum):
 AscendingOrDescendingValue = Literal["ascending", "descending"]
 
 
-@dataclass(kw_only=True, config=ConfigDict(extra="ignore"))
+@dataclass(kw_only=True, config=ConfigDict(extra="ignore"), eq=False)
 class OperationParameters(TOMBaseObject):
     """Base class for various operation parameters."""
 
 
-@dataclass(kw_only=True, config=ConfigDict(extra="ignore"))
-class WorkflowOperation(TOMBaseObject):
+@dataclass(kw_only=True, config=ConfigDict(extra="ignore"), eq=False)
+class BaseOperation(TOMBaseObject):
     """Base class for types of workflow operation to execute."""
 
     runner_parameters: RunnerParameters | None = None
@@ -68,12 +68,12 @@ class WorkflowOperation(TOMBaseObject):
         return False
 
 
-@dataclass(kw_only=True, config=ConfigDict(extra="ignore"))
-class OperationAnnotate(WorkflowOperation):
+@dataclass(kw_only=True, config=ConfigDict(extra="ignore"), eq=False)
+class OperationAnnotate(BaseOperation):
     """This operation adds attributes to knowledge graph elements."""
 
     id: Literal["annotate"]
-    parameters: dict[str, SkipValidation[JsonValue]]
+    parameters: dict[str, SkipValidation[JsonValue]] | None = None
 
     @property
     @override
@@ -82,7 +82,7 @@ class OperationAnnotate(WorkflowOperation):
         return True
 
 
-@dataclass(kw_only=True, config=ConfigDict(extra="ignore"))
+@dataclass(kw_only=True, config=ConfigDict(extra="ignore"), eq=False)
 class AnnotateEdgesParameters(OperationParameters):
     """Parameters for the AnnotateEdges operation."""
 
@@ -100,8 +100,8 @@ class AnnotateEdgesParameters(OperationParameters):
         return self.attributes if self.attributes is not None else []
 
 
-@dataclass(kw_only=True, config=ConfigDict(extra="ignore"))
-class OperationAnnotateEdges(WorkflowOperation):
+@dataclass(kw_only=True, config=ConfigDict(extra="ignore"), eq=False)
+class OperationAnnotateEdges(BaseOperation):
     """This operation adds attributes to knowledge graph edges."""
 
     id: Literal["annotate_edges"]
@@ -114,7 +114,7 @@ class OperationAnnotateEdges(WorkflowOperation):
         return True
 
 
-@dataclass(kw_only=True, config=ConfigDict(extra="ignore"))
+@dataclass(kw_only=True, config=ConfigDict(extra="ignore"), eq=False)
 class AnnotateNodesParameters(OperationParameters):
     """Parameters for the AnnotateNodes operation."""
 
@@ -132,8 +132,8 @@ class AnnotateNodesParameters(OperationParameters):
         return self.attributes if self.attributes is not None else []
 
 
-@dataclass(kw_only=True, config=ConfigDict(extra="ignore"))
-class OperationAnnotateNodes(WorkflowOperation):
+@dataclass(kw_only=True, config=ConfigDict(extra="ignore"), eq=False)
+class OperationAnnotateNodes(BaseOperation):
     """This operation adds attributes to knowledge graph nodes."""
 
     id: Literal["annotate_nodes"]
@@ -146,23 +146,23 @@ class OperationAnnotateNodes(WorkflowOperation):
         return True
 
 
-@dataclass(kw_only=True, config=ConfigDict(extra="ignore"))
-class OperationBind(WorkflowOperation):
+@dataclass(kw_only=True, config=ConfigDict(extra="ignore"), eq=False)
+class OperationBind(BaseOperation):
     """This operation adds results binding kgraph elements to qgraph elements."""
 
     id: Literal["bind"]
-    parameters: dict[str, SkipValidation[JsonValue]]
+    parameters: dict[str, SkipValidation[JsonValue]] | None = None
 
 
-@dataclass(kw_only=True, config=ConfigDict(extra="ignore"))
-class OperationCompleteResults(WorkflowOperation):
+@dataclass(kw_only=True, config=ConfigDict(extra="ignore"), eq=False)
+class OperationCompleteResults(BaseOperation):
     """This operation combines partial results into complete results."""
 
     id: Literal["complete_results"]
-    parameters: dict[str, SkipValidation[JsonValue]]
+    parameters: dict[str, SkipValidation[JsonValue]] | None = None
 
 
-@dataclass(kw_only=True, config=ConfigDict(extra="ignore"))
+@dataclass(kw_only=True, config=ConfigDict(extra="ignore"), eq=False)
 class EnrichResultsParameters(OperationParameters):
     """Parameters for the EnrichResults operation."""
 
@@ -180,8 +180,8 @@ class EnrichResultsParameters(OperationParameters):
         return self.qnode_keys if self.qnode_keys is not None else []
 
 
-@dataclass(kw_only=True, config=ConfigDict(extra="ignore"))
-class OperationEnrichResults(WorkflowOperation):
+@dataclass(kw_only=True, config=ConfigDict(extra="ignore"), eq=False)
+class OperationEnrichResults(BaseOperation):
     """Create new results by applying enrichment analysis to existing results.
 
     In particular, combines results by transforming a qnode into a set, formed of
@@ -189,7 +189,7 @@ class OperationEnrichResults(WorkflowOperation):
     """
 
     id: Literal["enrich_results"]
-    parameters: EnrichResultsParameters
+    parameters: EnrichResultsParameters | None = None
 
     @property
     @override
@@ -198,7 +198,7 @@ class OperationEnrichResults(WorkflowOperation):
         return True
 
 
-@dataclass(kw_only=True, config=ConfigDict(extra="ignore"))
+@dataclass(kw_only=True, config=ConfigDict(extra="ignore"), eq=False)
 class FillAllowListParameters(AllowList):
     """AllowList Parameters for the Fill operation."""
 
@@ -215,7 +215,7 @@ class FillAllowListParameters(AllowList):
         return self.qedge_keys if self.qedge_keys is not None else []
 
 
-@dataclass(kw_only=True, config=ConfigDict(extra="ignore"))
+@dataclass(kw_only=True, config=ConfigDict(extra="ignore"), eq=False)
 class FillDenyListParameters(DenyList):
     """DenyList Parameters for the Fill operation."""
 
@@ -232,12 +232,12 @@ class FillDenyListParameters(DenyList):
         return self.qedge_keys if self.qedge_keys is not None else []
 
 
-@dataclass(kw_only=True, config=ConfigDict(extra="ignore"))
-class OperationFill(WorkflowOperation):
+@dataclass(kw_only=True, config=ConfigDict(extra="ignore"), eq=False)
+class OperationFill(BaseOperation):
     """This operation adds knodes and kedges. SkipValidation[JsonValue] constraints attached to QNodes and QEdges specified in the TRAPI must be respected."""
 
     id: Literal["fill"]
-    parameters: FillAllowListParameters | FillDenyListParameters
+    parameters: FillAllowListParameters | FillDenyListParameters | None = None
 
     @property
     @override
@@ -246,12 +246,12 @@ class OperationFill(WorkflowOperation):
         return True
 
 
-@dataclass(kw_only=True, config=ConfigDict(extra="ignore"))
-class OperationFilterKgraph(WorkflowOperation):
+@dataclass(kw_only=True, config=ConfigDict(extra="ignore"), eq=False)
+class OperationFilterKgraph(BaseOperation):
     """This operation removes kgraph elements (nodes and/or edges)."""
 
     id: Literal["filter_kgraph"]
-    parameters: dict[str, SkipValidation[JsonValue]]
+    parameters: dict[str, SkipValidation[JsonValue]] | None = None
 
 
 class AboveOrBelowEnum(str, Enum):
@@ -264,7 +264,7 @@ class AboveOrBelowEnum(str, Enum):
 AboveOrBelow = Literal["above", "below"]
 
 
-@dataclass(kw_only=True, config=ConfigDict(extra="ignore"))
+@dataclass(kw_only=True, config=ConfigDict(extra="ignore"), eq=False)
 class FilterKgraphParametersBase(OperationParameters):
     """A base class for filtering the kgraph with appropriate validation."""
 
@@ -294,7 +294,7 @@ class FilterKgraphParametersBase(OperationParameters):
         return self.qnode_keys if self.qnode_keys is not None else []
 
 
-@dataclass(kw_only=True, config=ConfigDict(extra="ignore"))
+@dataclass(kw_only=True, config=ConfigDict(extra="ignore"), eq=False)
 class FilterKgraphContinuousKedgeAttributeParameters(FilterKgraphParametersBase):
     """Parameters for the FilterKgraphContinuousKedgeAttribute operation."""
 
@@ -307,8 +307,8 @@ class FilterKgraphContinuousKedgeAttributeParameters(FilterKgraphParametersBase)
     remove_above_or_below: AboveOrBelow
 
 
-@dataclass(kw_only=True, config=ConfigDict(extra="ignore"))
-class OperationFilterKgraphContinuousKedgeAttribute(WorkflowOperation):
+@dataclass(kw_only=True, config=ConfigDict(extra="ignore"), eq=False)
+class OperationFilterKgraphContinuousKedgeAttribute(BaseOperation):
     """This operation removes kgraph edges based on the value of a continuous edge attribute.
 
     Edges without the given attribute are left alone
@@ -318,7 +318,7 @@ class OperationFilterKgraphContinuousKedgeAttribute(WorkflowOperation):
     parameters: FilterKgraphContinuousKedgeAttributeParameters
 
 
-@dataclass(kw_only=True, config=ConfigDict(extra="ignore"))
+@dataclass(kw_only=True, config=ConfigDict(extra="ignore"), eq=False)
 class FilterKgraphDiscreteKedgeAttributeParameters(FilterKgraphParametersBase):
     """Parameters for the FilterKgraphDiscreteKedgeAttribute operation."""
 
@@ -331,8 +331,8 @@ class FilterKgraphDiscreteKedgeAttributeParameters(FilterKgraphParametersBase):
     """The value for which all edges containing this value in the specified edge_attribute should be removed."""
 
 
-@dataclass(kw_only=True, config=ConfigDict(extra="ignore"))
-class OperationFilterKgraphDiscreteKedgeAttribute(WorkflowOperation):
+@dataclass(kw_only=True, config=ConfigDict(extra="ignore"), eq=False)
+class OperationFilterKgraphDiscreteKedgeAttribute(BaseOperation):
     """This operation removes kgraph edges which have a discrete attribute containing the specified value.
 
     Edges without the given attribute are left alone
@@ -342,7 +342,7 @@ class OperationFilterKgraphDiscreteKedgeAttribute(WorkflowOperation):
     parameters: FilterKgraphDiscreteKedgeAttributeParameters
 
 
-@dataclass(kw_only=True, config=ConfigDict(extra="ignore"))
+@dataclass(kw_only=True, config=ConfigDict(extra="ignore"), eq=False)
 class FilterKgraphDiscreteKnodeAttributeParameters(FilterKgraphParametersBase):
     """Parameters for the FilterKgraphDiscreteKnodeAttribute operation."""
 
@@ -355,8 +355,8 @@ class FilterKgraphDiscreteKnodeAttributeParameters(FilterKgraphParametersBase):
     """The value for which all edges containing this value in the specified edge_attribute should be removed."""
 
 
-@dataclass(kw_only=True, config=ConfigDict(extra="ignore"))
-class OperationFilterKgraphDiscreteKnodeAttribute(WorkflowOperation):
+@dataclass(kw_only=True, config=ConfigDict(extra="ignore"), eq=False)
+class OperationFilterKgraphDiscreteKnodeAttribute(BaseOperation):
     """This operation removes kgraph nodes which have a discrete attribute containing the specified value.
 
     In TRAPI 1.1+ this will look in the `attribute_type_id` and
@@ -369,15 +369,15 @@ class OperationFilterKgraphDiscreteKnodeAttribute(WorkflowOperation):
     parameters: FilterKgraphDiscreteKnodeAttributeParameters
 
 
-@dataclass(kw_only=True, config=ConfigDict(extra="ignore"))
-class OperationFilterKgraphOrphans(WorkflowOperation):
+@dataclass(kw_only=True, config=ConfigDict(extra="ignore"), eq=False)
+class OperationFilterKgraphOrphans(BaseOperation):
     """This operation removes kgraph elements that are not referenced by any results."""
 
     id: Literal["filter_kgraph_orphans"]
-    parameters: dict[str, SkipValidation[JsonValue]]
+    parameters: dict[str, SkipValidation[JsonValue]] | None = None
 
 
-@dataclass(kw_only=True, config=ConfigDict(extra="ignore"))
+@dataclass(kw_only=True, config=ConfigDict(extra="ignore"), eq=False)
 class FilterKgraphPercentileParameters(FilterKgraphParametersBase):
     """Parameters for the FilterKgraphPercentile operation."""
 
@@ -391,8 +391,8 @@ class FilterKgraphPercentileParameters(FilterKgraphParametersBase):
     """Indicates whether to remove above or below the given threshold."""
 
 
-@dataclass(kw_only=True, config=ConfigDict(extra="ignore"))
-class OperationFilterKgraphPercentile(WorkflowOperation):
+@dataclass(kw_only=True, config=ConfigDict(extra="ignore"), eq=False)
+class OperationFilterKgraphPercentile(BaseOperation):
     """This operation removes kgraph edges that have attribute values are below/above the given percentile."""
 
     id: Literal["filter_kgraph_percentile"]
@@ -409,7 +409,7 @@ class PlusOrMinusEnum(str, Enum):
 PlusOrMinus = Literal["plus", "minus"]
 
 
-@dataclass(kw_only=True, config=ConfigDict(extra="ignore"))
+@dataclass(kw_only=True, config=ConfigDict(extra="ignore"), eq=False)
 class FilterKgraphStdDevParameters(FilterKgraphParametersBase):
     """Parameters for the FilterKgraphStdDev operation."""
 
@@ -431,8 +431,8 @@ class FilterKgraphStdDevParameters(FilterKgraphParametersBase):
     """
 
 
-@dataclass(kw_only=True, config=ConfigDict(extra="ignore"))
-class OperationFilterKgraphStdDev(WorkflowOperation):
+@dataclass(kw_only=True, config=ConfigDict(extra="ignore"), eq=False)
+class OperationFilterKgraphStdDev(BaseOperation):
     """This operation removes kgraph edges that have attribute values are below/above the mean +/- n standard deviations."""
 
     id: Literal["filter_kgraph_std_dev"]
@@ -449,7 +449,7 @@ class TopOrBottomEnum(str, Enum):
 TopOrBottom = Literal["top", "bottom"]
 
 
-@dataclass(kw_only=True, config=ConfigDict(extra="ignore"))
+@dataclass(kw_only=True, config=ConfigDict(extra="ignore"), eq=False)
 class FilterKgraphTopNParameters(FilterKgraphParametersBase):
     """Parameters for the FilterKgraphTopN operation."""
 
@@ -463,39 +463,39 @@ class FilterKgraphTopNParameters(FilterKgraphParametersBase):
     """Indicate whether or not the the top or bottom n values should be kept."""
 
 
-@dataclass(kw_only=True, config=ConfigDict(extra="ignore"))
-class OperationFilterKgraphTopN(WorkflowOperation):
+@dataclass(kw_only=True, config=ConfigDict(extra="ignore"), eq=False)
+class OperationFilterKgraphTopN(BaseOperation):
     """This operation removes kgraph edges that have attribute values are below/above the top/bottom n values."""
 
     id: Literal["filter_kgraph_top_n"]
     parameters: FilterKgraphTopNParameters
 
 
-@dataclass(kw_only=True, config=ConfigDict(extra="ignore"))
-class OperationFilterResults(WorkflowOperation):
+@dataclass(kw_only=True, config=ConfigDict(extra="ignore"), eq=False)
+class OperationFilterResults(BaseOperation):
     """This operation allows the TRAPI server to remove elements from the list of results."""
 
     id: Literal["filter_results"]
-    parameters: dict[str, SkipValidation[JsonValue]]
+    parameters: dict[str, SkipValidation[JsonValue]] | None = None
 
 
-@dataclass(kw_only=True, config=ConfigDict(extra="ignore"))
+@dataclass(kw_only=True, config=ConfigDict(extra="ignore"), eq=False)
 class FilterResultsTopNParameters(OperationParameters):
     """Parameters for the FilterResultsTopN operation."""
 
     max_results: Annotated[int, Field(gt=0, examples=[50])]
 
 
-@dataclass(kw_only=True, config=ConfigDict(extra="ignore"))
-class OperationFilterResultsTopN(WorkflowOperation):
+@dataclass(kw_only=True, config=ConfigDict(extra="ignore"), eq=False)
+class OperationFilterResultsTopN(BaseOperation):
     """This operation truncates the results to at most `max_results` that appear in the TRAPI JSON message."""
 
     id: Literal["filter_results_top_n"]
     parameters: FilterResultsTopNParameters
 
 
-@dataclass(kw_only=True, config=ConfigDict(extra="ignore"))
-class OperationLookup(WorkflowOperation):
+@dataclass(kw_only=True, config=ConfigDict(extra="ignore"), eq=False)
+class OperationLookup(BaseOperation):
     """This operation adds knodes/kedges and (complete) results.
 
     It is equivalent to the workflow fill + bind + complete_results. SkipValidation[JsonValue] constraints
@@ -503,7 +503,7 @@ class OperationLookup(WorkflowOperation):
     """
 
     id: Literal["lookup"]
-    parameters: dict[str, SkipValidation[JsonValue]]
+    parameters: dict[str, SkipValidation[JsonValue]] | None = None
 
     @property
     @override
@@ -512,8 +512,8 @@ class OperationLookup(WorkflowOperation):
         return True
 
 
-@dataclass(kw_only=True, config=ConfigDict(extra="ignore"))
-class OperationLookupAndScore(WorkflowOperation):
+@dataclass(kw_only=True, config=ConfigDict(extra="ignore"), eq=False)
+class OperationLookupAndScore(BaseOperation):
     """This operation adds knodes/kedges, (complete) results, and scores (to the results).
 
     It is equivalent to the workflow fill + bind + complete_results + score. SkipValidation[JsonValue]
@@ -521,7 +521,7 @@ class OperationLookupAndScore(WorkflowOperation):
     """
 
     id: Literal["lookup_and_score"]
-    parameters: dict[str, SkipValidation[JsonValue]]
+    parameters: dict[str, SkipValidation[JsonValue]] | None = None
 
     @property
     @override
@@ -530,15 +530,15 @@ class OperationLookupAndScore(WorkflowOperation):
         return True
 
 
-@dataclass(kw_only=True, config=ConfigDict(extra="ignore"))
-class OperationOverlay(WorkflowOperation):
+@dataclass(kw_only=True, config=ConfigDict(extra="ignore"), eq=False)
+class OperationOverlay(BaseOperation):
     """This operation adds additional qedges and/or kedges and/or result edge bindings."""
 
     id: Literal["overlay"]
-    parameters: dict[str, SkipValidation[JsonValue]]
+    parameters: dict[str, SkipValidation[JsonValue]] | None = None
 
 
-@dataclass(kw_only=True, config=ConfigDict(extra="ignore"))
+@dataclass(kw_only=True, config=ConfigDict(extra="ignore"), eq=False)
 class OverlayComputeJaccardParameters(OperationParameters):
     """Parameters for the OverlayComputeJaccard operation."""
 
@@ -552,8 +552,8 @@ class OverlayComputeJaccardParameters(OperationParameters):
     """The key of the query graph edge that corresponds to the knowledge graph edges that were added by this operation."""
 
 
-@dataclass(kw_only=True, config=ConfigDict(extra="ignore"))
-class OperationOverlayComputeJaccard(WorkflowOperation):
+@dataclass(kw_only=True, config=ConfigDict(extra="ignore"), eq=False)
+class OperationOverlayComputeJaccard(BaseOperation):
     """This operation computes the Jaccard Similarity which measures how many intermediate_node_key nodes are directly connected to both the end_node_keys nodes for all pairs of nodes with corresponding keys.
 
     It will then add edges to the knowledge graph along with edge attributes (with the
@@ -569,7 +569,7 @@ class OperationOverlayComputeJaccard(WorkflowOperation):
     parameters: OverlayComputeJaccardParameters
 
 
-@dataclass(kw_only=True, config=ConfigDict(extra="ignore"))
+@dataclass(kw_only=True, config=ConfigDict(extra="ignore"), eq=False)
 class OverlayComputeNgdParameters(OperationParameters):
     """Parameters for the OverlayComputeNgd operation."""
 
@@ -583,8 +583,8 @@ class OverlayComputeNgdParameters(OperationParameters):
     """
 
 
-@dataclass(kw_only=True, config=ConfigDict(extra="ignore"))
-class OperationOverlayComputeNgd(WorkflowOperation):
+@dataclass(kw_only=True, config=ConfigDict(extra="ignore"), eq=False)
+class OperationOverlayComputeNgd(BaseOperation):
     """This operation computes the normalized Google distance (co-occurrence frequency) in PubMed abstracts and adds virual edges between qnodes AND/OR knodes AND/OR results edge bindings.
 
     If no publications are found infinity is returned.
@@ -594,8 +594,8 @@ class OperationOverlayComputeNgd(WorkflowOperation):
     parameters: OverlayComputeNgdParameters
 
 
-@dataclass(kw_only=True, config=ConfigDict(extra="ignore"))
-class OperationOverlayConnectKnodes(WorkflowOperation):
+@dataclass(kw_only=True, config=ConfigDict(extra="ignore"), eq=False)
+class OperationOverlayConnectKnodes(BaseOperation):
     """Given a TRAPI message, create new kedges between existing knodes.
 
     These may be created using arbitrary methods or data sources, though provenance
@@ -606,10 +606,10 @@ class OperationOverlayConnectKnodes(WorkflowOperation):
     """
 
     id: Literal["overlay_connect_knodes"]
-    parameters: dict[str, SkipValidation[JsonValue]]
+    parameters: dict[str, SkipValidation[JsonValue]] | None = None
 
 
-@dataclass(kw_only=True, config=ConfigDict(extra="ignore"))
+@dataclass(kw_only=True, config=ConfigDict(extra="ignore"), eq=False)
 class OverlayFisherExactTestParameters(OperationParameters):
     """Parameters for the OverlayFisherExactTest operation."""
 
@@ -626,8 +626,8 @@ class OverlayFisherExactTestParameters(OperationParameters):
     """A specific Qedge id connected to both subject nodes and object nodes in message KG (optional, otherwise all edges connected to both subject nodes and object nodes in message KG are considered)."""
 
 
-@dataclass(kw_only=True, config=ConfigDict(extra="ignore"))
-class OperationOverlayFisherExactTest(WorkflowOperation):
+@dataclass(kw_only=True, config=ConfigDict(extra="ignore"), eq=False)
+class OperationOverlayFisherExactTest(BaseOperation):
     """Fisher exact test computes the Fisher's Exact Test p-values of the connection between a list of given nodes with specified query id (subject_qnode_key e.g. n01) to their adjacent nodes with specified query id (object_qnode_key e.g. n02) in the message knowledge graph.
 
     This information is then added as an edge attribute to a virtual edge which is then
@@ -641,12 +641,12 @@ class OperationOverlayFisherExactTest(WorkflowOperation):
     parameters: OverlayFisherExactTestParameters
 
 
-@dataclass(kw_only=True, config=ConfigDict(extra="ignore"))
-class OperationRestate(WorkflowOperation):
+@dataclass(kw_only=True, config=ConfigDict(extra="ignore"), eq=False)
+class OperationRestate(BaseOperation):
     """This operation modifies the query graph."""
 
     id: Literal["restate"]
-    parameters: dict[str, SkipValidation[JsonValue]]
+    parameters: dict[str, SkipValidation[JsonValue]] | None = None
 
     @property
     @override
@@ -655,12 +655,12 @@ class OperationRestate(WorkflowOperation):
         return True
 
 
-@dataclass(kw_only=True, config=ConfigDict(extra="ignore"))
-class OperationScore(WorkflowOperation):
+@dataclass(kw_only=True, config=ConfigDict(extra="ignore"), eq=False)
+class OperationScore(BaseOperation):
     """This operation adds scores to results."""
 
     id: Literal["score"]
-    parameters: dict[str, SkipValidation[JsonValue]]
+    parameters: dict[str, SkipValidation[JsonValue]] | None = None
 
     @property
     @override
@@ -669,15 +669,15 @@ class OperationScore(WorkflowOperation):
         return True
 
 
-@dataclass(kw_only=True, config=ConfigDict(extra="ignore"))
-class OperationSortResults(WorkflowOperation):
+@dataclass(kw_only=True, config=ConfigDict(extra="ignore"), eq=False)
+class OperationSortResults(BaseOperation):
     """This operation allows the TRAPI server to sort the elements of the list of results."""
 
     id: Literal["sort_results"]
-    parameters: dict[str, SkipValidation[JsonValue]]
+    parameters: dict[str, SkipValidation[JsonValue]] | None = None
 
 
-@dataclass(kw_only=True, config=ConfigDict(extra="ignore"))
+@dataclass(kw_only=True, config=ConfigDict(extra="ignore"), eq=False)
 class SortResultsEdgeAttributeParameters(OperationParameters):
     """Parameters for the SortResultsEdgeAttribute operation."""
 
@@ -693,8 +693,8 @@ class SortResultsEdgeAttributeParameters(OperationParameters):
     """
 
 
-@dataclass(kw_only=True, config=ConfigDict(extra="ignore"))
-class OperationSortResultsEdgeAttribute(WorkflowOperation):
+@dataclass(kw_only=True, config=ConfigDict(extra="ignore"), eq=False)
+class OperationSortResultsEdgeAttribute(BaseOperation):
     """This operation sorts the results by the given edge attribute.
 
     If in ascending order, the minimum value of the results edges with the given
@@ -707,7 +707,7 @@ class OperationSortResultsEdgeAttribute(WorkflowOperation):
     parameters: SortResultsEdgeAttributeParameters
 
 
-@dataclass(kw_only=True, config=ConfigDict(extra="ignore"))
+@dataclass(kw_only=True, config=ConfigDict(extra="ignore"), eq=False)
 class SortResultNodeAttributeParameters(OperationParameters):
     """Parameters for the SortResultNodeAttribute operation."""
 
@@ -728,8 +728,8 @@ class SortResultNodeAttributeParameters(OperationParameters):
         return self.qnode_keys if self.qnode_keys is not None else []
 
 
-@dataclass(kw_only=True, config=ConfigDict(extra="ignore"))
-class OperationSortResultsNodeAttribute(WorkflowOperation):
+@dataclass(kw_only=True, config=ConfigDict(extra="ignore"), eq=False)
+class OperationSortResultsNodeAttribute(BaseOperation):
     """This operation sorts the results by the given node attribute.
 
     If in ascending order, the minimum value of the results nodes with the given
@@ -742,15 +742,15 @@ class OperationSortResultsNodeAttribute(WorkflowOperation):
     parameters: SortResultNodeAttributeParameters
 
 
-@dataclass(kw_only=True, config=ConfigDict(extra="ignore"))
+@dataclass(kw_only=True, config=ConfigDict(extra="ignore"), eq=False)
 class SortResultsScoreParameters(OperationParameters):
     """Parameters for the SortResultsScore operation."""
 
     ascending_or_descending: AscendingOrDescendingValue
 
 
-@dataclass(kw_only=True, config=ConfigDict(extra="ignore"))
-class OperationSortResultsScore(WorkflowOperation):
+@dataclass(kw_only=True, config=ConfigDict(extra="ignore"), eq=False)
+class OperationSortResultsScore(BaseOperation):
     """This operation sorts the results by the result score.
 
     If `max_results` is given, it truncates the results to at most the given value.
@@ -758,3 +758,73 @@ class OperationSortResultsScore(WorkflowOperation):
 
     id: Literal["sort_results_score"]
     parameters: SortResultsScoreParameters
+
+
+operations = [
+    OperationAnnotate,
+    OperationAnnotateEdges,
+    OperationAnnotateNodes,
+    OperationBind,
+    OperationCompleteResults,
+    OperationEnrichResults,
+    OperationFill,
+    OperationFilterKgraph,
+    OperationFilterKgraphContinuousKedgeAttribute,
+    OperationFilterKgraphDiscreteKedgeAttribute,
+    OperationFilterKgraphDiscreteKnodeAttribute,
+    OperationFilterKgraphOrphans,
+    OperationFilterKgraphPercentile,
+    OperationFilterKgraphStdDev,
+    OperationFilterKgraphTopN,
+    OperationFilterResults,
+    OperationFilterResultsTopN,
+    OperationLookup,
+    OperationLookupAndScore,
+    OperationOverlay,
+    OperationOverlayComputeJaccard,
+    OperationOverlayComputeNgd,
+    OperationOverlayConnectKnodes,
+    OperationOverlayFisherExactTest,
+    OperationRestate,
+    OperationScore,
+    OperationSortResults,
+    OperationSortResultsEdgeAttribute,
+    OperationSortResultsNodeAttribute,
+    OperationSortResultsScore,
+]
+
+Operation = Annotated[
+    (
+        OperationAnnotate
+        | OperationAnnotateEdges
+        | OperationAnnotateNodes
+        | OperationBind
+        | OperationCompleteResults
+        | OperationEnrichResults
+        | OperationFill
+        | OperationFilterKgraph
+        | OperationFilterKgraphContinuousKedgeAttribute
+        | OperationFilterKgraphDiscreteKedgeAttribute
+        | OperationFilterKgraphDiscreteKnodeAttribute
+        | OperationFilterKgraphOrphans
+        | OperationFilterKgraphPercentile
+        | OperationFilterKgraphStdDev
+        | OperationFilterKgraphTopN
+        | OperationFilterResults
+        | OperationFilterResultsTopN
+        | OperationLookup
+        | OperationLookupAndScore
+        | OperationOverlay
+        | OperationOverlayComputeJaccard
+        | OperationOverlayComputeNgd
+        | OperationOverlayConnectKnodes
+        | OperationOverlayFisherExactTest
+        | OperationRestate
+        | OperationScore
+        | OperationSortResults
+        | OperationSortResultsEdgeAttribute
+        | OperationSortResultsNodeAttribute
+        | OperationSortResultsScore
+    ),
+    Field(discriminator="id"),
+]

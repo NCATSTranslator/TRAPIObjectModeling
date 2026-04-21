@@ -12,8 +12,10 @@ TEST_EXAMPLES = get_test_json()
 LOG = logging.getLogger(__name__)
 
 
-@pytest.mark.parametrize("example", TEST_EXAMPLES.items(), ids=["Small", "Medium", "Large"])
-def test_semantic_validate(example: tuple[str, str]):
+@pytest.mark.parametrize(
+    "example", TEST_EXAMPLES.items(), ids=["Small", "Medium", "Large"]
+)
+def test_semantic_validate(example: tuple[str, str]) -> None:
     name, json_str = example
     t0 = time.perf_counter()
     LOG.info("Running semantic validation on %s example...", name)

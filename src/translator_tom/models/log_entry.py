@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import datetime
 from enum import Enum
-from typing import Literal
+from typing import Literal, Self
 
 from pydantic import ConfigDict
 from pydantic.dataclasses import dataclass
@@ -29,7 +29,7 @@ class LogLevel(str, Enum):
 LogLevelValue = Literal["ERROR", "WARNING", "INFO", "DEBUG"]
 
 
-@dataclass(kw_only=True, config=ConfigDict(extra="allow"))
+@dataclass(kw_only=True, config=ConfigDict(extra="allow"), eq=False)
 class LogEntry(TOMBaseObject):
     """The LogEntry object contains information useful for tracing and debugging across Translator components.
 

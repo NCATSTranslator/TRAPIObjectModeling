@@ -1,16 +1,17 @@
 from __future__ import annotations
 
-from typing import Annotated
+from typing import Annotated, override
 
 from pydantic import ConfigDict, Field
 from pydantic.dataclasses import dataclass
+from stablehash import stablehash
 
 from translator_tom.models.attribute import Attribute
 from translator_tom.models.shared import AuxGraphID, EdgeID
 from translator_tom.utils.object_base import TOMBaseObject
 
 
-@dataclass(kw_only=True, config=ConfigDict(extra="allow"))
+@dataclass(kw_only=True, config=ConfigDict(extra="allow"), eq=False)
 class AuxiliaryGraph(TOMBaseObject):
     """A single AuxiliaryGraph instance that is used by Knowledge Graph Edges, Result Analysis support graphs, and Path Bindings.
 
@@ -33,6 +34,12 @@ class AuxiliaryGraph(TOMBaseObject):
 
     attributes: list[Attribute]
     """Attributes of the Auxiliary Graph."""
+
+    @override
+    def hash(self) -> str:
+        return stablehash(
+            (frozenset(self.edges), frozenset(self.attributes))
+        ).hexdigest()
 
     def normalize(self, mapping: dict[EdgeID, EdgeID]) -> None:
         """Normalize the auxiliary graph given a mapping of old:new EdgeIDs."""

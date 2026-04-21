@@ -5,11 +5,12 @@ from pydantic.dataclasses import dataclass
 
 from translator_tom.models.log_entry import LogEntry
 from translator_tom.models.message import Message
-from translator_tom.models.workflow_operations import WorkflowOperation
+from translator_tom.models.workflow_operations import Operation
+from translator_tom.utils.config import TRAPI_CONFIG
 from translator_tom.utils.object_base import TOMBaseObject
 
 
-@dataclass(kw_only=True, config=ConfigDict(extra="allow"))
+@dataclass(kw_only=True, config=ConfigDict(extra="allow"), eq=False)
 class Response(TOMBaseObject):
     """The Response object contains the main payload when a TRAPI query endpoint interprets and responds to the submitted query successfully (i.e., HTTP Status Code 200).
 
@@ -33,7 +34,7 @@ class Response(TOMBaseObject):
     List items MUST be in chronological order with earliest first.
     """
 
-    workflow: list[WorkflowOperation] | None = None
+    workflow: list[Operation] | None = None
     """List of workflow steps that were executed."""
 
     schema_version: str | None = None
@@ -43,6 +44,6 @@ class Response(TOMBaseObject):
     """Version label of the Biolink model used in this document."""
 
     @property
-    def workflow_list(self) -> list[WorkflowOperation]:
+    def workflow_list(self) -> list[Operation]:
         """Get the workflow operations as a guaranteed list, even if they are represented as None."""
         return self.workflow if self.workflow is not None else []

@@ -72,7 +72,7 @@ class OperatorEnum(str, Enum):
 Operator = Literal["==", "===", ">", "<", "matches"]
 
 
-@dataclass(kw_only=True, config=ConfigDict(extra="ignore"))
+@dataclass(kw_only=True, config=ConfigDict(extra="ignore"), eq=False)
 class Attribute(TOMBaseObject):
     """Generic attribute for a node or an edge that expands the key-value pair concept by including fields for additional metadata.
 
@@ -140,8 +140,7 @@ class Attribute(TOMBaseObject):
 
 @dataclass(
     kw_only=True,
-    eq=True,
-    unsafe_hash=True,
+    eq=False,
     config=ConfigDict(extra="ignore", serialize_by_alias=True),
 )
 class AttributeConstraint(TOMBaseObject):
@@ -263,4 +262,3 @@ class AttributeConstraint(TOMBaseObject):
                     )
 
         return not result if self.negated else result
-

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Annotated
+from typing import Annotated, Self
 
 from pydantic import ConfigDict, Field
 from pydantic.dataclasses import dataclass
@@ -19,7 +19,7 @@ from translator_tom.models.shared import (
 from translator_tom.utils.object_base import TOMBaseObject
 
 
-@dataclass(kw_only=True, config=ConfigDict(extra="allow"))
+@dataclass(kw_only=True, config=ConfigDict(extra="allow"), eq=False)
 class MetaKnowledgeGraph(TOMBaseObject):
     """Knowledge-map representation of this TRAPI web service.
 
@@ -42,7 +42,8 @@ class MetaKnowledgeGraph(TOMBaseObject):
     """
 
 
-@dataclass(kw_only=True, config=ConfigDict(extra="ignore"))
+
+@dataclass(kw_only=True, config=ConfigDict(extra="ignore"), eq=False)
 class MetaNode(TOMBaseObject):
     """Description of a node category provided by this TRAPI web service."""
 
@@ -69,7 +70,7 @@ class MetaNode(TOMBaseObject):
             self.attributes = list({**attrs, **new_attrs}.values())
 
 
-@dataclass(kw_only=True, config=ConfigDict(extra="ignore"))
+@dataclass(kw_only=True, config=ConfigDict(extra="ignore"), eq=False)
 class MetaEdge(TOMBaseObject):
     """Edge in a meta knowledge map describing relationship between a subject Biolink class and an object Biolink class."""
 

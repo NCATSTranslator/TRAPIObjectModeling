@@ -21,7 +21,7 @@ from translator_tom.models.shared import (
 from translator_tom.utils.object_base import TOMBaseObject
 
 
-@dataclass(kw_only=True, config=ConfigDict(extra="allow"))
+@dataclass(kw_only=True, config=ConfigDict(extra="allow"), eq=False)
 class BaseQueryGraph(TOMBaseObject):
     """A graph representing a biomedical question.
 
@@ -39,7 +39,7 @@ class BaseQueryGraph(TOMBaseObject):
     """
 
 
-@dataclass(kw_only=True, config=ConfigDict(extra="allow"))
+@dataclass(kw_only=True, config=ConfigDict(extra="allow"), eq=False)
 class QueryGraph(BaseQueryGraph):
     """A non-Pathfinder query SHOULD have edges following the QEdge schema and SHOULD NOT have paths."""
 
@@ -52,7 +52,7 @@ class QueryGraph(BaseQueryGraph):
     """
 
 
-@dataclass(kw_only=True, config=ConfigDict(extra="allow"))
+@dataclass(kw_only=True, config=ConfigDict(extra="allow"), eq=False)
 class PathfinderQueryGraph(BaseQueryGraph):
     """A Pathfinder query SHOULD have paths following the QPath schema and SHOULD NOT have edges."""
 
@@ -81,7 +81,7 @@ class SetInterpetationEnum(str, Enum):
 SetInterpetation = Literal["BATCH", "MANY", "ALL"]
 
 
-@dataclass(kw_only=True, config=ConfigDict(extra="allow"))
+@dataclass(kw_only=True, config=ConfigDict(extra="allow"), eq=False)
 class QNode(TOMBaseObject):
     """A node in the QueryGraph used to represent an entity in a query.
 
@@ -158,7 +158,7 @@ class QNode(TOMBaseObject):
         return self.constraints if self.constraints is not None else []
 
 
-@dataclass(kw_only=True, config=ConfigDict(extra="allow"))
+@dataclass(kw_only=True, config=ConfigDict(extra="allow"), eq=False)
 class QEdge(TOMBaseObject):
     """An edge in the QueryGraph used as a filter pattern specification in a query.
 
@@ -227,7 +227,7 @@ class QEdge(TOMBaseObject):
         )
 
 
-@dataclass(kw_only=True, config=ConfigDict(extra="allow"))
+@dataclass(kw_only=True, config=ConfigDict(extra="allow"), eq=False)
 class QPath(TOMBaseObject):
     """A path in the QueryGraph used for pathfinder queries.
 

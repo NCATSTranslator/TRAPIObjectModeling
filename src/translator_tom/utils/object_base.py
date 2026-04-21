@@ -2,14 +2,36 @@ from abc import ABC
 from typing import Any, ClassVar, Literal, Self, overload, override
 
 import ormsgpack
-from pydantic import TypeAdapter
+from pydantic import (
+    ConfigDict,
+    SerializerFunctionWrapHandler,
+    TypeAdapter,
+    model_serializer,
+)
+from pydantic.json_schema import (
+    DEFAULT_REF_TEMPLATE,
+    GenerateJsonSchema,
+    JsonSchemaMode,
+)
 from stablehash import stablehash
+
+# TODO: serialization doesn't maintain extra (because of course not >.>)
+# So we need custom serialization for extra=allowed (goodbye, performance!)
 
 
 class TOMBaseObject(ABC):
     """A base class handling (de)serialization and providing method requirements."""
 
+    # Pydantic internal fields that we want to use
+    # This base class isn't pydantic but all instances will be.
+    __pydantic_fields__: dict[str, Any]
+    __pydantic_config__: ClassVar[ConfigDict]
+
     _type_adapter: ClassVar[TypeAdapter[Any]]
+
+    def __init__(self) -> None:
+        """Prevent base class from being instantiated."""
+        raise TypeError("Can't instantiate TOMBaseObject base class.")
 
     ###### I/O methods #####
 
@@ -33,7 +55,7 @@ class TOMBaseObject(ABC):
             adapter = self.__class__._type_adapter
         except AttributeError:
             adapter = self.get_type_adapter()
-        return adapter.dump_python(self)
+        return adapter.dump_python(self, mode="json")
 
     @classmethod
     def from_json(cls, json: str | bytes) -> Self:
@@ -81,14 +103,48 @@ class TOMBaseObject(ABC):
 
     ##### Misc. #####
 
+    @classmethod
+    def json_schema(
+        cls,
+        *,
+        by_alias: bool = True,
+        ref_template: str = DEFAULT_REF_TEMPLATE,
+        union_format: Literal["any_of", "primitive_type_array"] = "any_of",
+        schema_generator: type[GenerateJsonSchema] = GenerateJsonSchema,
+        mode: JsonSchemaMode = "validation",
+    ) -> dict[str, Any]:
+        """Get the json schema for this model."""
+        try:
+            adapter = cls.__class__._type_adapter
+        except AttributeError:
+            adapter = cls.get_type_adapter()
+        return adapter.json_schema(
+            by_alias=by_alias,
+            ref_template=ref_template,
+            union_format=union_format,
+            schema_generator=schema_generator,
+            mode=mode,
+        )
+
+    def __getitem__(self, key: str) -> Any:
+        """Get an extra item, if present."""
+        return self.__dict__[key]
+
+    def get(self, key: str, default: Any | None) -> Any:
+        """Get an extra item or the given default."""
+        return self.__dict__.get(key, default)
+
     def hash(self) -> str:
         """Hash the object into a hex string."""
+        # NOTE: only hashes fields that are not extra
         return stablehash(
             (
                 self.__class__.__name__,
-                *self.__dict__.items(),
-                # TODO: Decide if extra should factor into hash?
-                # *getattr(self, "__pydantic_extra__", {}).items(),
+                *tuple(
+                    (key, val)
+                    for key, val in self.__dict__.items()
+                    if key in self.__pydantic_fields__
+                ),
             )
         ).hexdigest()
 

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import itertools
-from typing import Annotated, Literal, cast, override
+from typing import Annotated, Literal, Self, cast, override
 
 from pydantic import ConfigDict, Field
 from pydantic.dataclasses import dataclass
@@ -27,7 +27,7 @@ from translator_tom.models.shared import (
 from translator_tom.utils.object_base import TOMBaseObject
 
 
-@dataclass(kw_only=True, config=ConfigDict(extra="allow"))
+@dataclass(kw_only=True, config=ConfigDict(extra="allow"), eq=False)
 class KnowledgeGraph(TOMBaseObject):
     """The knowledge graph associated with a set of results.
 
@@ -151,7 +151,7 @@ class KnowledgeGraph(TOMBaseObject):
         # )
 
 
-@dataclass(kw_only=True, config=ConfigDict(extra="ignore"))
+@dataclass(kw_only=True, config=ConfigDict(extra="ignore"), eq=False)
 class Node(TOMBaseObject):
     """A node in the KnowledgeGraph which represents some biomedical concept.
 
@@ -178,6 +178,9 @@ class Node(TOMBaseObject):
 
     @override
     def hash(self) -> str:
+        # Categories and attributes shouldn't matter; what makes a node unique is its ID
+        # name and is_set sort of naturally follow.
+        # Either way, we don't merge nodes by hash, rather we do by index.
         return stablehash((self.name, self.is_set)).hexdigest()
 
     def meets_constraints(self, constraints: list[AttributeConstraint]) -> bool:
@@ -201,7 +204,7 @@ class Node(TOMBaseObject):
             self.attributes = list({**attrs, **new_attrs}.values())
 
 
-@dataclass(kw_only=True, config=ConfigDict(extra="ignore"))
+@dataclass(kw_only=True, config=ConfigDict(extra="ignore"), eq=False)
 class Edge(TOMBaseObject):
     """A specification of the semantic relationship linking two concepts that are expressed as nodes in the knowledge "thought" graph resulting from a query upon the underlying knowledge source."""
 
@@ -255,7 +258,7 @@ class Edge(TOMBaseObject):
                 self.subject,
                 self.object,
                 self.predicate,
-                self.qualifiers,
+                frozenset(self.qualifiers_list),
                 self.primary_knowledge_source.resource_id,
             )
         ).hexdigest()
