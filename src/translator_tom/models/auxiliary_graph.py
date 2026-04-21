@@ -45,5 +45,21 @@ class AuxiliaryGraph(TOMBaseObject):
         """Normalize the auxiliary graph given a mapping of old:new EdgeIDs."""
         self.edges = [mapping.get(edge_id, edge_id) for edge_id in self.edges]
 
+    def update(self, other: AuxiliaryGraph) -> None:
+        """Update the auxiliary graph in-place using the other."""
+        if (not self.attributes) and other.attributes:
+            self.attributes = other.attributes
+        elif self.attributes and other.attributes:
+            Attribute.merge_attribute_lists(self.attributes, other.attributes)
+
+    @staticmethod
+    def merge_dictionaries(old: AuxiliaryGraphsDict, new: AuxiliaryGraphsDict) -> None:
+        """Merge the new auxiliary graphs into the existing auxiliary graphs."""
+        for aux_id, graph in new.items():
+            if aux_id in old:
+                old[aux_id].update(graph)
+            else:
+                old[aux_id] = graph
+
 
 AuxiliaryGraphsDict = dict[AuxGraphID, AuxiliaryGraph]

@@ -69,3 +69,55 @@ class Result(TOMBaseObject):
                     not_present = False
             if not_present:
                 self.analyses.append(analysis)
+
+    @staticmethod
+    def merge_result_lists(old: list[Result], new: list[Result]) -> None:
+        """Merge the new results into the existing results."""
+        results = {res.hash(): res for res in old}
+
+        for result in new:
+            result_hash = result.hash()
+            if result_hash in results:
+                results[result_hash].update(result)
+            else:
+                results[result_hash] = result
+
+        old.clear()
+        old.extend(results.values())
+
+    @staticmethod
+    def merge_results(results: list[Result]) -> list[Result]:
+        """Merge the given results in-place."""
+        merged_results: dict[str, Result] = {}
+        for result in results:
+            result_hash = result.hash()
+            if result_hash in merged_results:
+                merged_results[result_hash].update(result)
+            else:
+                merged_results[result_hash] = result
+
+        results.clear()
+        results.extend(merged_results.values())
+        return results
+
+    def merge_analyses_by_resource_id(self) -> None:
+        """Merge any of the analyses on this result by resource_id.
+
+        Useful when a service unintentionally adds multiple analyses to a single result,
+        Combines all of those analyses.
+        """
+        merged = dict[Infores, Analysis | PathfinderAnalysis]()
+        analyses = list[Analysis | PathfinderAnalysis](list(self.analyses))
+        for _ in range(len(analyses)):
+            analysis = analyses.pop()
+            if analysis.resource_id not in merged:
+                merged[analysis.resource_id] = analysis
+            for analysis_to_compare in analyses:
+                if (
+                    type(analysis) is type(analysis_to_compare)
+                    and analysis.resource_id == analysis_to_compare.resource_id
+                    and analysis != analysis_to_compare
+                ):
+                    merged[analysis.resource_id].update(analysis_to_compare)  # pyright:ignore[reportArgumentType] We've checked they're the same type
+
+        self.analyses = list(merged.values())

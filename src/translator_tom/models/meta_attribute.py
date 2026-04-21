@@ -43,3 +43,14 @@ class MetaAttribute(TOMBaseObject):
         return stablehash(
             (self.attribute_type_id, self.attribute_source, self.constraint_use)
         ).hexdigest()
+
+    @staticmethod
+    def merge_attribute_lists(
+        old: list[MetaAttribute], new: list[MetaAttribute]
+    ) -> None:
+        """Merge the new attributes into the existing attributes."""
+        attrs = {attr.hash(): attr for attr in old}
+        new_attrs = {attr.hash(): attr for attr in new}
+
+        old.clear()
+        old.extend(list({**attrs, **new_attrs}.values()))

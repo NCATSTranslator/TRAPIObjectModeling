@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import copy
+from typing import Literal
+
 from pydantic import ConfigDict
 from pydantic.dataclasses import dataclass
 
@@ -7,6 +10,7 @@ from translator_tom.models.auxiliary_graph import AuxiliaryGraph, AuxiliaryGraph
 from translator_tom.models.knowledge_graph import KnowledgeGraph
 from translator_tom.models.query_graph import PathfinderQueryGraph, QueryGraph
 from translator_tom.models.result import Result
+from translator_tom.models.shared import EdgeID
 from translator_tom.utils.object_base import TOMBaseObject
 
 
@@ -55,10 +59,49 @@ class Message(TOMBaseObject):
         """Get the auxiliary_graphs as a guaranteed dict, even if they are represented as None."""
         return self.auxiliary_graphs if self.auxiliary_graphs is not None else {}
 
-    def normalize(self) -> None:
+    def update(
+        self,
+        other: Message,
+        pre_normalized: Literal["neither", "both", "self", "other"] = "neither",
+    ) -> dict[EdgeID, EdgeID]:
+        """Update one message in-place using the other.
+
+        Returns a mapping of old:new EdgeIDs if normalization was done.
+        """
+        if self.query_graph != other.query_graph:
+            raise NotImplementedError("Query graph merging not yet supported.")
+
+        mapping = dict[EdgeID, EdgeID]()
+        if pre_normalized in ("neither", "other"):
+            mapping.update(self.normalize())
+        if pre_normalized in ("neither", "self"):
+            # Normalize a deep copy of the other dict so as not to modify the original
+            other = copy.deepcopy(other)
+            mapping.update(other.normalize())
+
+        if (not self.knowledge_graph) and other.knowledge_graph:
+            self.knowledge_graph = other.knowledge_graph
+        elif self.knowledge_graph and other.knowledge_graph:
+            self.knowledge_graph.update(other.knowledge_graph)
+
+        if (not self.results) and other.results:
+            self.results = other.results
+        elif self.results and other.results:
+            Result.merge_result_lists(self.results, other.results)
+
+        if (not self.auxiliary_graphs) and other.auxiliary_graphs:
+            self.auxiliary_graphs = other.auxiliary_graphs
+        elif self.auxiliary_graphs and other.auxiliary_graphs:
+            AuxiliaryGraph.merge_dictionaries(
+                self.auxiliary_graphs, other.auxiliary_graphs
+            )
+
+        return mapping
+
+    def normalize(self) -> dict[EdgeID, EdgeID]:
         """Normalize the knowledge_graph and update the results and auxiliary_graphs accordingly."""
         if self.knowledge_graph is None:
-            return
+            return {}
 
         mapping = self.knowledge_graph.normalize()
 
@@ -67,6 +110,8 @@ class Message(TOMBaseObject):
 
         for result in self.results_list:
             result.normalize(mapping)
+
+        return mapping
 
     def prune_kg(self) -> None:
         """Prune the knowledge_graph."""

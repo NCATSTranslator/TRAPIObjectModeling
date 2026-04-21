@@ -137,6 +137,15 @@ class Attribute(TOMBaseObject):
         """Get the attributes as a guaranteed list, even if they are represented as None."""
         return self.attributes if self.attributes is not None else []
 
+    @staticmethod
+    def merge_attribute_lists(old: list[Attribute], new: list[Attribute]) -> None:
+        """Merge the new attributes into the existing attributes."""
+        attrs = {attr.hash(): attr for attr in old}
+        new_attrs = {attr.hash(): attr for attr in new}
+
+        old.clear()
+        old.extend(list({**attrs, **new_attrs}.values()))
+
 
 @dataclass(
     kw_only=True,

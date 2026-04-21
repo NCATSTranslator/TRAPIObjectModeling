@@ -71,9 +71,7 @@ class BaseAnalysis(TOMBaseObject):
         if (not self.attributes) and other.attributes:
             self.attributes = other.attributes
         elif self.attributes and other.attributes:
-            attrs = {attr.hash(): attr for attr in self.attributes}
-            new_attrs = {attr.hash(): attr for attr in other.attributes}
-            self.attributes = list({**attrs, **new_attrs}.values())
+            Attribute.merge_attribute_lists(self.attributes, other.attributes)
 
         if (not self.support_graphs) and other.support_graphs:
             self.support_graphs = other.support_graphs

@@ -41,6 +41,10 @@ class MetaKnowledgeGraph(TOMBaseObject):
     for which the predicate is the most specific available.
     """
 
+    @classmethod
+    def new(cls) -> Self:
+        """Return an empty instance, without having to pass required containers."""
+        return cls(nodes={}, edges=[])
 
 
 @dataclass(kw_only=True, config=ConfigDict(extra="ignore"), eq=False)
@@ -65,9 +69,7 @@ class MetaNode(TOMBaseObject):
         if (not self.attributes) and other.attributes:
             self.attributes = other.attributes
         elif self.attributes and other.attributes:
-            attrs = {attr.hash(): attr for attr in self.attributes}
-            new_attrs = {attr.hash(): attr for attr in other.attributes}
-            self.attributes = list({**attrs, **new_attrs}.values())
+            MetaAttribute.merge_attribute_lists(self.attributes, other.attributes)
 
 
 @dataclass(kw_only=True, config=ConfigDict(extra="ignore"), eq=False)

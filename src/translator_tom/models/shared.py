@@ -1,7 +1,8 @@
 from __future__ import annotations
 
+from collections.abc import Callable
 from enum import Enum
-from typing import Literal
+from typing import Literal, override
 
 ##### Internal IDs with no set structure
 
@@ -20,7 +21,16 @@ prefix, such as http://identifiers.org/uniprot/, to form a full URI.
 """
 
 
-class Curie:
+class _CurieMeta(type):
+    """Metaclass that allows for calling Curie."""
+
+    @override
+    def __call__(cls, prefix: str, reference: str) -> CURIE:
+        """Return a CURIE."""
+        return f"{prefix}:{reference}"
+
+
+class Curie(metaclass=_CurieMeta):
     """A holding class for CURIE utility methods."""
 
     @staticmethod
@@ -40,6 +50,14 @@ class Curie:
     def get_reference(curie: CURIE) -> str:
         """Get the reference of a CURIE."""
         return Curie.split(curie)[1]
+
+    @staticmethod
+    def ensure_prefix(prefix: str, curie: CURIE) -> str:
+        """Ensure the only prefix the CURIE has is the given one."""
+        return f"{prefix}:{Curie.get_reference(curie)}"
+
+    rmprefix: Callable[[CURIE], str] = get_reference
+    rmref: Callable[[CURIE], str] = get_prefix
 
 
 Infores = str
@@ -64,7 +82,7 @@ followed by the PascalCase class name.
 """
 
 
-def biolink(ref: str) -> BiolinkPredicate | BiolinkEntity:
+def biolink(ref: str) -> str:
     """Return a properly-formed biolink element."""
     return f"biolink:{ref.removeprefix('biolink:')}"
 

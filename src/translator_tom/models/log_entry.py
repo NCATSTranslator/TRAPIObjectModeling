@@ -42,7 +42,7 @@ class LogEntry(TOMBaseObject):
     the component sending the message.
     """
 
-    timestamp: datetime.datetime
+    timestamp: datetime.datetime  # TODO: enforce correct serialization
     """Timestamp in ISO 8601 format, providing the LogEntry time
 
     either in univeral coordinated time (UTC) using the 'Z' tag
@@ -58,3 +58,12 @@ class LogEntry(TOMBaseObject):
 
     message: str
     """A human-readable log message."""
+
+    @classmethod
+    def new(
+        cls, message: str, level: LogLevelValue | None = None, code: str | None = None
+    ) -> Self:
+        """Return a new LogEntry with a timestamp from now."""
+        return cls(
+            timestamp=datetime.datetime.now(), level=level, code=code, message=message
+        )

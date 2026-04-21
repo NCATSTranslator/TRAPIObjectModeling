@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Self
+
 from pydantic import ConfigDict, Field
 from pydantic.dataclasses import dataclass
 
@@ -47,3 +49,13 @@ class Response(TOMBaseObject):
     def workflow_list(self) -> list[Operation]:
         """Get the workflow operations as a guaranteed list, even if they are represented as None."""
         return self.workflow if self.workflow is not None else []
+
+    @classmethod
+    def new(cls) -> Self:
+        """Return an empty instance, without having to pass required containers."""
+        return cls(
+            message=Message(),
+            logs=[],
+            schema_version=TRAPI_CONFIG.schema_version,
+            biolink_version=TRAPI_CONFIG.biolink_version,
+        )

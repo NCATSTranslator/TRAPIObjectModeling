@@ -44,6 +44,11 @@ class KnowledgeGraph(TOMBaseObject):
     edges: dict[EdgeID, Edge]
     """Dictionary of Edge instances used in the KnowledgeGraph, referenced elsewhere in the TRAPI output by the dictionary key."""
 
+    @classmethod
+    def new(cls) -> Self:
+        """Return an empty instance, without having to pass required containers."""
+        return cls(nodes={}, edges={})
+
     def normalize(self) -> dict[EdgeID, EdgeID]:
         """Normalize the kgraph edge IDs and return a mapping of new:old."""
         mapping = dict[EdgeID, EdgeID]()

@@ -1,6 +1,7 @@
 """TRAPI Object Modeling."""
 
 __all__ = [
+    "CURIE",
     "AboveOrBelowEnum",
     "AllowList",
     "Analysis",
@@ -13,10 +14,13 @@ __all__ = [
     "AuxiliaryGraph",
     "BaseAnalysis",
     "BaseQueryGraph",
+    "BiolinkEntity",
+    "BiolinkPredicate",
     "Curie",
     "DenyList",
     "Edge",
     "EdgeBinding",
+    "Infores",
     "KnowledgeGraph",
     "KnowledgeTypeEnum",
     "LogEntry",
@@ -29,6 +33,7 @@ __all__ = [
     "MetaQualifier",
     "Node",
     "NodeBinding",
+    "Operation",
     "OperationParameters",
     "OperatorEnum",
     "PathBinding",
@@ -50,9 +55,9 @@ __all__ = [
     "SetInterpetationEnum",
     "TOMBaseObject",
     "TopOrBottomEnum",
-    "WorkflowOperation",
     "biolink",
     "infores",
+    "operations",
 ]
 
 from translator_tom.models.analysis import (
@@ -70,7 +75,7 @@ from translator_tom.models.attribute import (
     AttributeConstraint,
     OperatorEnum,
 )
-from translator_tom.models.auxiliary_graph import AuxiliaryGraph
+from translator_tom.models.auxiliary_graph import AuxiliaryGraph, AuxiliaryGraphsDict
 from translator_tom.models.edge_binding import EdgeBinding
 from translator_tom.models.knowledge_graph import Edge, KnowledgeGraph, Node
 from translator_tom.models.log_entry import LogEntry, LogLevel
@@ -103,7 +108,11 @@ from translator_tom.models.retrieval_source import (
     RetrievalSource,
 )
 from translator_tom.models.shared import (
+    CURIE,
+    BiolinkEntity,
+    BiolinkPredicate,
     Curie,
+    Infores,
     KnowledgeTypeEnum,
     biolink,
     infores,
@@ -113,10 +122,11 @@ from translator_tom.models.workflow_operations import (
     AllowList,
     AscendingOrDescending,
     DenyList,
+    Operation,
     OperationParameters,
     PlusOrMinusEnum,
     TopOrBottomEnum,
-    WorkflowOperation,
+    operations,
 )
 from translator_tom.utils.object_base import TOMBaseObject
 
@@ -132,3 +142,37 @@ def _build_all_adapters() -> None:
 
 
 _build_all_adapters()
+
+components = [
+    Attribute,
+    BiolinkEntity,
+    BiolinkPredicate,
+    CURIE,
+    Edge,
+    EdgeBinding,
+    KnowledgeGraph,
+    RetrievalSource,
+    LogEntry,
+    Message,
+    Node,
+    NodeBinding,
+    QEdge,
+    QNode,
+    Query,
+    QueryGraph,
+    AsyncQuery,
+    Result,
+    Response,
+    AsyncQueryResponse,
+    AsyncQueryStatusResponse,
+    LogLevel,
+    AttributeConstraint,
+    MetaEdge,
+    MetaNode,
+    MetaKnowledgeGraph,
+    MetaAttribute,
+    AuxiliaryGraph,
+    AuxiliaryGraphsDict,
+    Operation,
+    Analysis,
+]

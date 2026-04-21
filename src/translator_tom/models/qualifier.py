@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from typing import Annotated
+from collections.abc import Iterable
+from typing import Annotated, Self
 
 from pydantic import ConfigDict, Field
 from pydantic.dataclasses import dataclass
@@ -45,7 +46,12 @@ class QualifierConstraint(TOMBaseObject):
     qualifier_set: list[Qualifier]
     """A set of Qualifiers that serves to add nuance to a query, by constraining allowed values held by Qualifiers on queried Edges."""
 
-    def met_by(self, qualifiers: list[Qualifier] | list[MetaQualifier]) -> bool:
+    def met_by(self, qualifiers: Iterable[Qualifier] | Iterable[MetaQualifier]) -> bool:
         """Check that the given qualifiers satisfy the constraint."""
         # TODO: implement (with qualifier type / value hierarchy considerations)
-        return bool(len(qualifiers))
+        raise NotImplementedError("Qualifier constraint solving not yet implemented.")
+
+    @classmethod
+    def new(cls) -> Self:
+        """Return an empty instance, without having to pass required containers."""
+        return cls(qualifier_set=[])
