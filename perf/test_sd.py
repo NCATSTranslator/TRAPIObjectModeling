@@ -74,6 +74,15 @@ for response_path in TEST_FILES:
     t1 = time.perf_counter()
 
     t2 = time.perf_counter()
-    response = Response.to_json(response)
+    dump = response.to_json()
     t3 = time.perf_counter()
     print(f"Direct Serialize: Pydantic {(t1 - t0):.6f}s / Class {(t3 - t2):.6f}s.")
+
+    t0 = time.perf_counter()
+    response_msgpack = response.to_msgpack()
+    t1 = time.perf_counter()
+
+    t2 = time.perf_counter()
+    response = Response.from_msgpack(response_msgpack)
+    t3 = time.perf_counter()
+    print(f"Msgpack: Deserialize {(t3 - t2):.6f}s / Serialize {(t1 - t0):.6f}s.")
