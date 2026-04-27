@@ -1237,6 +1237,18 @@ wheels = [
 ]
 
 [[package]]
+name = "reasoner-pydantic"
+version = "6.0.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "pydantic" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/e4/94/53eaf0897ac0a2b6467a80767a89b2c01ae34302d739ed63cf5dcb536be4/reasoner-pydantic-6.0.0.tar.gz", hash = "sha256:ab44042afd826deecb6b8c05e5103364598c5d62e3e6ef586c602bf1ffd25fe4", size = 15356, upload-time = "2025-07-17T16:15:05.287Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/e3/7c/570aede71494d86640aa69d2f8025151f0eb420b4f9e40505ff99c1313f1/reasoner_pydantic-6.0.0-py3-none-any.whl", hash = "sha256:c3847b0b9c96b946aeb834570689a2fb207b0d02c3d81feafc513c1b4f4bf768", size = 17966, upload-time = "2025-07-17T16:15:04.013Z" },
+]
+
+[[package]]
 name = "referencing"
 version = "0.37.0"
 source = { registry = "https://pypi.org/simple" }
@@ -1516,6 +1528,7 @@ dev = [
     { name = "pyinstrument" },
     { name = "pytest" },
     { name = "pytest-cov" },
+    { name = "reasoner-pydantic" },
     { name = "ruff" },
     { name = "taskipy" },
 ]
@@ -1539,6 +1552,7 @@ dev = [
     { name = "pyinstrument", specifier = ">=5.1.1" },
     { name = "pytest", specifier = ">=8.4.2" },
     { name = "pytest-cov", specifier = ">=7.0.0" },
+    { name = "reasoner-pydantic", specifier = ">=6.0.0" },
     { name = "ruff", specifier = ">=0.13.3" },
     { name = "taskipy", specifier = ">=1.14.1" },
 ]

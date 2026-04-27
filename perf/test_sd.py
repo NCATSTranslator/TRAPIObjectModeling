@@ -10,7 +10,14 @@ from translator_tom import Response
 
 t1 = time.perf_counter()
 
-print(f"Import Response model in {(t1 - t0):.6f}s.")
+print(f"Import translator_tom Response in {(t1 - t0):.6f}s.")
+
+t0 = time.perf_counter()
+from reasoner_pydantic import Response as RPResponse
+
+t1 = time.perf_counter()
+
+print(f"Import reasoner_pydantic Response in {(t1 - t0):.6f}s.")
 
 
 TEST_FILES = [
@@ -86,3 +93,13 @@ for response_path in TEST_FILES:
     response = Response.from_msgpack(response_msgpack)
     t3 = time.perf_counter()
     print(f"Msgpack: Deserialize {(t3 - t2):.6f}s / Serialize {(t1 - t0):.6f}s.")
+
+    t0 = time.perf_counter()
+    rp_response = RPResponse.model_validate_json(response_json)
+    t1 = time.perf_counter()
+    print(f"Reasoner-Pydantic Deserialize: {(t1 - t0):.6f}s.")
+
+    t0 = time.perf_counter()
+    dump = rp_response.model_dump_json()
+    t1 = time.perf_counter()
+    print(f"Reasoner-Pydantic Serialize: {(t1 - t0):.6f}s.")
