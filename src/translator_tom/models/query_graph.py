@@ -1,10 +1,9 @@
 from __future__ import annotations
 
 from enum import Enum
-from typing import Annotated, Literal
+from typing import Annotated, ClassVar, Literal
 
 from pydantic import ConfigDict, Field
-from pydantic.dataclasses import dataclass
 
 from translator_tom.models.attribute import AttributeConstraint
 from translator_tom.models.path_constraint import PathConstraint
@@ -21,7 +20,6 @@ from translator_tom.models.shared import (
 from translator_tom.utils.object_base import TOMBaseObject
 
 
-@dataclass(kw_only=True, config=ConfigDict(extra="allow"), eq=False)
 class BaseQueryGraph(TOMBaseObject):
     """A graph representing a biomedical question.
 
@@ -29,6 +27,8 @@ class BaseQueryGraph(TOMBaseObject):
     each result (answer), where each bound knowledge graph node/edge is
     expected to obey the constraints of the associated query graph element.
     """
+
+    model_config: ClassVar[ConfigDict] = ConfigDict(extra="allow")
 
     nodes: dict[QNodeID, QNode]
     """The node specifications.
@@ -39,9 +39,10 @@ class BaseQueryGraph(TOMBaseObject):
     """
 
 
-@dataclass(kw_only=True, config=ConfigDict(extra="allow"), eq=False)
 class QueryGraph(BaseQueryGraph):
     """A non-Pathfinder query SHOULD have edges following the QEdge schema and SHOULD NOT have paths."""
+
+    model_config: ClassVar[ConfigDict] = ConfigDict(extra="allow")
 
     edges: dict[QEdgeID, QEdge]
     """The edge specifications.
@@ -52,9 +53,10 @@ class QueryGraph(BaseQueryGraph):
     """
 
 
-@dataclass(kw_only=True, config=ConfigDict(extra="allow"), eq=False)
 class PathfinderQueryGraph(BaseQueryGraph):
     """A Pathfinder query SHOULD have paths following the QPath schema and SHOULD NOT have edges."""
+
+    model_config: ClassVar[ConfigDict] = ConfigDict(extra="allow")
 
     paths: Annotated[dict[QPathID, QPath], Field(min_length=1, max_length=1)]
     """The QueryGraph path specification, used only for pathfinder type queries.
@@ -81,13 +83,14 @@ class SetInterpetationEnum(str, Enum):
 SetInterpetation = Literal["BATCH", "MANY", "ALL"]
 
 
-@dataclass(kw_only=True, config=ConfigDict(extra="allow"), eq=False)
 class QNode(TOMBaseObject):
     """A node in the QueryGraph used to represent an entity in a query.
 
     If a CURIE is not specified, any nodes matching the category
     of the QNode will be returned in the Results.
     """
+
+    model_config: ClassVar[ConfigDict] = ConfigDict(extra="allow")
 
     ids: Annotated[list[CURIE] | None, Field(min_length=1)] = None
     """A CURIE identifier (or list of identifiers) for this node.
@@ -158,7 +161,6 @@ class QNode(TOMBaseObject):
         return self.constraints if self.constraints is not None else []
 
 
-@dataclass(kw_only=True, config=ConfigDict(extra="allow"), eq=False)
 class QEdge(TOMBaseObject):
     """An edge in the QueryGraph used as a filter pattern specification in a query.
 
@@ -169,6 +171,8 @@ class QEdge(TOMBaseObject):
     an exact match to the given QEdge predicate term,
     or to a term that is a descendant of the QEdge predicate term.
     """
+
+    model_config: ClassVar[ConfigDict] = ConfigDict(extra="allow")
 
     knowledge_type: KnowledgeType | None = None
     """Indicates the type of knowledge that the client wants from the server between the subject and object.
@@ -227,7 +231,6 @@ class QEdge(TOMBaseObject):
         )
 
 
-@dataclass(kw_only=True, config=ConfigDict(extra="allow"), eq=False)
 class QPath(TOMBaseObject):
     """A path in the QueryGraph used for pathfinder queries.
 
@@ -235,6 +238,8 @@ class QPath(TOMBaseObject):
     Paths returned that bind to this QPath can represent some
     relationship between subject and object.
     """
+
+    model_config: ClassVar[ConfigDict] = ConfigDict(extra="allow")
 
     subject: QNodeID
     """Corresponds to the map key identifier of the subject concept node for the start of the queried path."""

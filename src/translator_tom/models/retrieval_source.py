@@ -1,10 +1,9 @@
 from __future__ import annotations
 
 from enum import Enum
-from typing import Literal, override
+from typing import ClassVar, Literal, override
 
 from pydantic import ConfigDict
-from pydantic.dataclasses import dataclass
 from stablehash import stablehash
 
 from translator_tom.models.shared import Infores
@@ -37,9 +36,10 @@ ResourceRole = Literal[
 ]
 
 
-@dataclass(kw_only=True, config=ConfigDict(extra="allow"), eq=False)
 class RetrievalSource(TOMBaseObject):
     """Provides information about how a particular InformationResource served as a source from which knowledge expressed in an Edge, or data used to generate this knowledge, was retrieved."""
+
+    model_config: ClassVar[ConfigDict] = ConfigDict(extra="allow")
 
     resource_id: Infores
     """The CURIE for an Information Resource that served as a source of knowledge expressed in an Edge, or a source of data used to generate this knowledge."""

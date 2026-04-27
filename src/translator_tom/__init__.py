@@ -130,19 +130,6 @@ from translator_tom.models.workflow_operations import (
 )
 from translator_tom.utils.object_base import TOMBaseObject
 
-
-# Eagerly build TypeAdapters for all models at import time, prevents cold-start overhead
-def _build_all_adapters() -> None:
-    """Walk subclass tree and build TypeAdapters eagerly."""
-    queue: list[type[TOMBaseObject]] = list(TOMBaseObject.__subclasses__())
-    while queue:
-        cls = queue.pop()
-        cls.get_type_adapter()
-        queue.extend(cls.__subclasses__())
-
-
-_build_all_adapters()
-
 components = [
     Attribute,
     BiolinkEntity,

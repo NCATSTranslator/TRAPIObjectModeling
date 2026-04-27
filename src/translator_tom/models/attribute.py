@@ -2,13 +2,12 @@ from __future__ import annotations
 
 import re
 from enum import Enum
-from typing import Annotated, Literal
+from typing import Annotated, ClassVar, Literal
 
-from pydantic import ConfigDict, Field, JsonValue, SkipValidation
-from pydantic.dataclasses import dataclass
+from pydantic import ConfigDict, Field
 
 from translator_tom.models.meta_attribute import MetaAttribute
-from translator_tom.models.shared import CURIE
+from translator_tom.models.shared import CURIE, FastJsonValue
 from translator_tom.utils.object_base import TOMBaseObject
 
 
@@ -72,7 +71,6 @@ class OperatorEnum(str, Enum):
 Operator = Literal["==", "===", ">", "<", "matches"]
 
 
-@dataclass(kw_only=True, config=ConfigDict(extra="ignore"), eq=False)
 class Attribute(TOMBaseObject):
     """Generic attribute for a node or an edge that expands the key-value pair concept by including fields for additional metadata.
 
@@ -104,8 +102,7 @@ class Attribute(TOMBaseObject):
     party ontology term.
     """
 
-    # JSON value inherently doesn't need validation if you're validating from JSON
-    value: SkipValidation[JsonValue]
+    value: FastJsonValue
     """Value of the attribute. May be any data type, including a list."""
 
     value_type_id: CURIE | None = None
@@ -147,13 +144,11 @@ class Attribute(TOMBaseObject):
         old.extend(list({**attrs, **new_attrs}.values()))
 
 
-@dataclass(
-    kw_only=True,
-    eq=False,
-    config=ConfigDict(extra="ignore", serialize_by_alias=True),
-)
 class AttributeConstraint(TOMBaseObject):
     """Generic query constraint for a query node or query edge."""
+
+    # `negated` serializes as "not" (reserved word) via Field(alias="not").
+    model_config: ClassVar[ConfigDict] = ConfigDict(serialize_by_alias=True)
 
     id: CURIE
     """CURIE of the concept being constrained.
@@ -201,8 +196,7 @@ class AttributeConstraint(TOMBaseObject):
     describes an "is a" subclass relationship for the parent QNode.
     """
 
-    # JSON value inherently doesn't need validation if you're validating from JSON
-    value: SkipValidation[JsonValue]
+    value: FastJsonValue
     """Value of the attribute.
 
     May be any data type, including a list.

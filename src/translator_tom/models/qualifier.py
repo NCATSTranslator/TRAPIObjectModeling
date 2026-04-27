@@ -3,15 +3,13 @@ from __future__ import annotations
 from collections.abc import Iterable
 from typing import Annotated, Self
 
-from pydantic import ConfigDict, Field
-from pydantic.dataclasses import dataclass
+from pydantic import Field
 
 from translator_tom.models.meta_qualifier import MetaQualifier
 from translator_tom.models.shared import CURIE
 from translator_tom.utils.object_base import TOMBaseObject
 
 
-@dataclass(kw_only=True, config=ConfigDict(extra="ignore"), eq=False)
 class Qualifier(TOMBaseObject):
     """An additional nuance attached to an assertion."""
 
@@ -32,7 +30,6 @@ class Qualifier(TOMBaseObject):
     """
 
 
-@dataclass(kw_only=True, config=ConfigDict(extra="ignore"), eq=False)
 class QualifierConstraint(TOMBaseObject):
     """Defines a query constraint based on the qualifier_types and qualifier_values of a set of Qualifiers attached to an edge.
 

@@ -1,9 +1,8 @@
 from __future__ import annotations
 
-from typing import Self
+from typing import ClassVar, Self
 
 from pydantic import ConfigDict
-from pydantic.dataclasses import dataclass
 
 from translator_tom.models.log_entry import LogLevelValue
 from translator_tom.models.message import Message
@@ -15,7 +14,6 @@ from translator_tom.utils.object_base import TOMBaseObject
 # This becomes a problem if the instance is mutated, because then its hash changes
 
 
-@dataclass(kw_only=True, config=ConfigDict(extra="allow"), eq=False)
 class Query(TOMBaseObject):
     """The Query class is used to package a user request for information.
 
@@ -26,6 +24,8 @@ class Query(TOMBaseObject):
     override the default log level in order to receive more fine-grained
     log information when debugging an issue.
     """
+
+    model_config: ClassVar[ConfigDict] = ConfigDict(extra="allow")
 
     message: Message
     """The query Message is a serialization of the user request.

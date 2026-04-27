@@ -1,18 +1,18 @@
 from __future__ import annotations
 
-from typing import Annotated
+from typing import Annotated, ClassVar
 
 from pydantic import ConfigDict, Field
-from pydantic.dataclasses import dataclass
 
 from translator_tom.models.log_entry import LogEntry
 from translator_tom.models.query import Query
 from translator_tom.utils.object_base import TOMBaseObject
 
 
-@dataclass(kw_only=True, config=ConfigDict(extra="allow"), eq=False)
 class AsyncQuery(Query):
     """The AsyncQuery class is effectively the same as the Query class but it requires a callback property."""
+
+    model_config: ClassVar[ConfigDict] = ConfigDict(extra="allow")
 
     callback: str
     """Upon completion, this server will send a POST request to the
@@ -26,9 +26,10 @@ class AsyncQuery(Query):
     """
 
 
-@dataclass(kw_only=True, config=ConfigDict(extra="allow"), eq=False)
 class AsyncQueryResponse(TOMBaseObject):
     """The AsyncQueryResponse object contains a payload that must be returned from a submitted async_query."""
+
+    model_config: ClassVar[ConfigDict] = ConfigDict(extra="allow")
 
     status: str | None = None
     """One of a standardized set of short codes: e.g. Accepted, QueryNotTraversable, KPsNotAvailable"""
@@ -40,9 +41,10 @@ class AsyncQueryResponse(TOMBaseObject):
     """An identifier for the submitted job that can be used with async_query_status to receive an update on the status of the job."""
 
 
-@dataclass(kw_only=True, config=ConfigDict(extra="allow"), eq=False)
 class AsyncQueryStatusResponse(TOMBaseObject):
     """The AsyncQueryStatusResponse object contains a payload that describes the current status of a previously submitted async_query."""
+
+    model_config: ClassVar[ConfigDict] = ConfigDict(extra="allow")
 
     status: str
     """One of a standardized set of short codes: Queued, Running, Completed, Failed"""

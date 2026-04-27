@@ -1,13 +1,8 @@
-from abc import ABC
 from typing import Any, ClassVar, Literal, Self, overload, override
 
+import orjson
 import ormsgpack
-from pydantic import (
-    ConfigDict,
-    SerializerFunctionWrapHandler,
-    TypeAdapter,
-    model_serializer,
-)
+from pydantic import BaseModel, ConfigDict
 from pydantic.json_schema import (
     DEFAULT_REF_TEMPLATE,
     GenerateJsonSchema,
@@ -15,54 +10,35 @@ from pydantic.json_schema import (
 )
 from stablehash import stablehash
 
-# TODO: serialization doesn't maintain extra (because of course not >.>)
-# So we need custom serialization for extra=allowed (goodbye, performance!)
 
-
-class TOMBaseObject(ABC):
+class TOMBaseObject(BaseModel):
     """A base class handling (de)serialization and providing method requirements."""
 
-    # Pydantic internal fields that we want to use
-    # This base class isn't pydantic but all instances will be.
-    __pydantic_fields__: dict[str, Any]
-    __pydantic_config__: ClassVar[ConfigDict]
-
-    _type_adapter: ClassVar[TypeAdapter[Any]]
-
-    def __init__(self) -> None:
-        """Prevent base class from being instantiated."""
-        raise TypeError("Can't instantiate TOMBaseObject base class.")
+    # Set fast defaults, subclasses inherit and override as needed.
+    model_config: ClassVar[ConfigDict] = ConfigDict(
+        defer_build=False,
+        validate_assignment=False,
+        revalidate_instances="never",
+        validate_default=False,
+        protected_namespaces=(),
+    )
 
     ###### I/O methods #####
 
     @classmethod
-    def get_type_adapter(cls) -> TypeAdapter[Self]:
-        """Get a type adapter for this class."""
-        try:
-            return cls.__dict__["_type_adapter"]
-        except KeyError:
-            cls._type_adapter = TypeAdapter(cls)
-            return cls._type_adapter
-
-    @classmethod
     def from_dict(cls, obj: dict[str, Any]) -> Self:
         """Deserialize an instance from a python dictionary representation."""
-        return cls.get_type_adapter().validate_python(obj)
+        return cls.model_validate(obj)
 
     def to_dict(self) -> dict[str, Any]:
         """Serialize an instance to python dictionary representation."""
-        try:
-            adapter = self.__class__._type_adapter
-        except AttributeError:
-            adapter = self.get_type_adapter()
-        return adapter.dump_python(self, mode="json")
+        return self.model_dump(mode="json")
 
     @classmethod
     def from_json(cls, json: str | bytes) -> Self:
         """Deserialize an instance from JSON."""
-        # return cls.from_dict(orjson.loads(json))
         # NOTE: Outperforms orjson for larger objects due to single Rust pass
-        return cls.get_type_adapter().validate_json(json)
+        return cls.model_validate_json(json)
 
     @overload
     def to_json(self) -> str: ...
@@ -78,12 +54,8 @@ class TOMBaseObject(ABC):
 
         Uses pydantic's own json serialization because it appears faster in testing.
         """
-        # NOTE: Outperforms orjson for larger objects due to single Rust pass
-        try:
-            adapter = self.__class__._type_adapter
-        except AttributeError:
-            adapter = self.get_type_adapter()
-        json = adapter.dump_json(self)
+        # __pydantic_serializer__.to_json returns bytes directly
+        json = self.__pydantic_serializer__.to_json(self)
         if as_str:
             return json.decode()
         return json
@@ -91,15 +63,12 @@ class TOMBaseObject(ABC):
     @classmethod
     def from_msgpack(cls, msgpack: bytes) -> Self:
         """Deserialize an instance from MessagePack."""
-        return cls.get_type_adapter().validate_python(ormsgpack.unpackb(msgpack))
+        return cls.model_validate(ormsgpack.unpackb(msgpack))
 
     def to_msgpack(self) -> bytes:
         """Serialize an instance to MessagePack."""
-        try:
-            adapter = self.__class__._type_adapter
-        except AttributeError:
-            adapter = self.get_type_adapter()
-        return ormsgpack.packb(adapter.dump_python(self, mode="json"))
+        # looks redundant but skips over python-level dict handling
+        return ormsgpack.packb(orjson.loads(self.__pydantic_serializer__.to_json(self)))
 
     ##### Misc. #####
 
@@ -109,19 +78,13 @@ class TOMBaseObject(ABC):
         *,
         by_alias: bool = True,
         ref_template: str = DEFAULT_REF_TEMPLATE,
-        union_format: Literal["any_of", "primitive_type_array"] = "any_of",
         schema_generator: type[GenerateJsonSchema] = GenerateJsonSchema,
         mode: JsonSchemaMode = "validation",
     ) -> dict[str, Any]:
         """Get the json schema for this model."""
-        try:
-            adapter = cls.__class__._type_adapter
-        except AttributeError:
-            adapter = cls.get_type_adapter()
-        return adapter.json_schema(
+        return cls.json_schema(
             by_alias=by_alias,
             ref_template=ref_template,
-            union_format=union_format,
             schema_generator=schema_generator,
             mode=mode,
         )

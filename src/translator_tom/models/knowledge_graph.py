@@ -1,10 +1,9 @@
 from __future__ import annotations
 
 import itertools
-from typing import Annotated, Literal, Self, cast, override
+from typing import Annotated, ClassVar, Literal, Self, cast, override
 
 from pydantic import ConfigDict, Field
-from pydantic.dataclasses import dataclass
 from stablehash import stablehash
 
 from translator_tom.models.analysis import Analysis
@@ -27,7 +26,6 @@ from translator_tom.models.shared import (
 from translator_tom.utils.object_base import TOMBaseObject
 
 
-@dataclass(kw_only=True, config=ConfigDict(extra="allow"), eq=False)
 class KnowledgeGraph(TOMBaseObject):
     """The knowledge graph associated with a set of results.
 
@@ -37,6 +35,8 @@ class KnowledgeGraph(TOMBaseObject):
     returned from the knowledge sources and inference agents wrapped by
     the given TRAPI implementation.
     """
+
+    model_config: ClassVar[ConfigDict] = ConfigDict(extra="allow")
 
     nodes: dict[CURIE, Node]
     """Dictionary of Node instances used in the KnowledgeGraph, referenced elsewhere in the TRAPI output by the dictionary key."""
@@ -156,7 +156,6 @@ class KnowledgeGraph(TOMBaseObject):
         # )
 
 
-@dataclass(kw_only=True, config=ConfigDict(extra="ignore"), eq=False)
 class Node(TOMBaseObject):
     """A node in the KnowledgeGraph which represents some biomedical concept.
 
@@ -209,7 +208,6 @@ class Node(TOMBaseObject):
             self.attributes = list({**attrs, **new_attrs}.values())
 
 
-@dataclass(kw_only=True, config=ConfigDict(extra="ignore"), eq=False)
 class Edge(TOMBaseObject):
     """A specification of the semantic relationship linking two concepts that are expressed as nodes in the knowledge "thought" graph resulting from a query upon the underlying knowledge source."""
 
@@ -255,6 +253,26 @@ class Edge(TOMBaseObject):
         raise ValueError(
             f"Edge {self.subject} -{self.predicate}-> {self.object} has no primary_knowledge_source!"
         )
+
+    @property
+    def last_downstream_source(self) -> RetrievalSource | None:
+        """Get the last/most downstream source in the chain."""
+        upstreams = set(
+            itertools.chain(
+                *[source.upstream_resource_ids or [] for source in self.sources]
+            )
+        )
+        return next(
+            iter(
+                source for source in self.sources if source.resource_id not in upstreams
+            ),
+            None,
+        )
+
+    @property
+    def is_self_edge(self) -> bool:
+        """Check if the edge is a self-edge."""
+        return self.subject == self.object
 
     @override
     def hash(self) -> str:
@@ -326,23 +344,9 @@ class Edge(TOMBaseObject):
             constraint.met_by(self.qualifiers_list) for constraint in constraints
         )
 
-    def get_last_downstream_source(self) -> RetrievalSource | None:
-        """Get the last/most downstream source in the chain."""
-        upstreams = set(
-            itertools.chain(
-                *[source.upstream_resource_ids or [] for source in self.sources]
-            )
-        )
-        return next(
-            iter(
-                source for source in self.sources if source.resource_id not in upstreams
-            ),
-            None,
-        )
-
     def append_aggregator(self, source: Infores) -> None:
         """Append an aggregator source to the present chain with appropriate upstreams."""
-        last_downstream = self.get_last_downstream_source()
+        last_downstream = self.last_downstream_source
         if last_downstream is None:
             raise ValueError("Provenance chain is invalid.")
         self.sources.append(

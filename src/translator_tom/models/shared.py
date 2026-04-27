@@ -2,7 +2,10 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from enum import Enum
-from typing import Literal, override
+from typing import Annotated, Any, Literal, override
+
+from pydantic import JsonValue
+from pydantic_core import core_schema
 
 ##### Internal IDs with no set structure
 
@@ -101,3 +104,23 @@ class KnowledgeTypeEnum(str, Enum):
 
 
 KnowledgeType = Literal["lookup", "inferred"]
+
+
+##### Custom annotations
+
+
+class _AnyCoreSchema:
+    """Pydantic annotation that installs `any_schema` for both validate and dump.
+
+    Skips python calls when serializing to reduce overhead.
+    """
+
+    @classmethod
+    def __get_pydantic_core_schema__(
+        cls, source: Any, handler: Any
+    ) -> core_schema.CoreSchema:
+        return core_schema.any_schema()
+
+
+FastJsonValue = Annotated[JsonValue, _AnyCoreSchema()]
+"""`JsonValue` for type-checking, but validate/dump like Any to skip overhead."""

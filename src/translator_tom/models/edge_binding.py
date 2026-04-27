@@ -2,8 +2,6 @@ from __future__ import annotations
 
 from typing import override
 
-from pydantic import ConfigDict
-from pydantic.dataclasses import dataclass
 from stablehash import stablehash
 
 from translator_tom.models.attribute import Attribute
@@ -11,7 +9,6 @@ from translator_tom.models.shared import EdgeID
 from translator_tom.utils.object_base import TOMBaseObject
 
 
-@dataclass(kw_only=True, config=ConfigDict(extra="allow"), eq=False)
 class EdgeBinding(TOMBaseObject):
     """A instance of EdgeBinding is a single KnowledgeGraph Edge mapping, identified by the corresponding 'id' object key identifier of the Edge within the Knowledge Graph.
 

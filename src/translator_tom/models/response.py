@@ -1,9 +1,8 @@
 from __future__ import annotations
 
-from typing import Self
+from typing import ClassVar, Self
 
 from pydantic import ConfigDict, Field
-from pydantic.dataclasses import dataclass
 
 from translator_tom.models.log_entry import LogEntry
 from translator_tom.models.message import Message
@@ -12,7 +11,6 @@ from translator_tom.utils.config import TRAPI_CONFIG
 from translator_tom.utils.object_base import TOMBaseObject
 
 
-@dataclass(kw_only=True, config=ConfigDict(extra="allow"), eq=False)
 class Response(TOMBaseObject):
     """The Response object contains the main payload when a TRAPI query endpoint interprets and responds to the submitted query successfully (i.e., HTTP Status Code 200).
 
@@ -20,6 +18,8 @@ class Response(TOMBaseObject):
     (query graph, knowledge graph, and results). The status, description, and logs
     properties provide additional details about the response.
     """
+
+    model_config: ClassVar[ConfigDict] = ConfigDict(extra="allow")
 
     message: Message
     """Contains the knowledge of the response (query graph, knowledge graph, and results)."""

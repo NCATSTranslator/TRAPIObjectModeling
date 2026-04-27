@@ -2,10 +2,9 @@ from __future__ import annotations
 
 import datetime
 from enum import Enum
-from typing import Literal, Self
+from typing import ClassVar, Literal, Self
 
 from pydantic import ConfigDict
-from pydantic.dataclasses import dataclass
 
 from translator_tom.utils.object_base import TOMBaseObject
 
@@ -29,7 +28,6 @@ class LogLevel(str, Enum):
 LogLevelValue = Literal["ERROR", "WARNING", "INFO", "DEBUG"]
 
 
-@dataclass(kw_only=True, config=ConfigDict(extra="allow"), eq=False)
 class LogEntry(TOMBaseObject):
     """The LogEntry object contains information useful for tracing and debugging across Translator components.
 
@@ -41,6 +39,8 @@ class LogEntry(TOMBaseObject):
     one of a standardized set of codes describing the condition of
     the component sending the message.
     """
+
+    model_config: ClassVar[ConfigDict] = ConfigDict(extra="allow")
 
     timestamp: datetime.datetime  # TODO: enforce correct serialization
     """Timestamp in ISO 8601 format, providing the LogEntry time

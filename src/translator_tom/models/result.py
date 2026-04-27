@@ -1,10 +1,9 @@
 from __future__ import annotations
 
 import itertools
-from typing import Annotated, override
+from typing import Annotated, ClassVar, override
 
 from pydantic import ConfigDict, Field
-from pydantic.dataclasses import dataclass
 from stablehash import stablehash
 
 from translator_tom.models.analysis import Analysis, PathfinderAnalysis
@@ -13,13 +12,14 @@ from translator_tom.models.shared import EdgeID, Infores, QNodeID
 from translator_tom.utils.object_base import TOMBaseObject
 
 
-@dataclass(kw_only=True, config=ConfigDict(extra="allow"), eq=False)
 class Result(TOMBaseObject):
     """A Result object specifies the nodes and edges in the knowledge graph that satisfy the structure or conditions of a user-submitted query graph.
 
     It must contain a NodeBindings object (list of query graph node
     to knowledge graph node mappings) and a list of Analysis objects.
     """
+
+    model_config: ClassVar[ConfigDict] = ConfigDict(extra="allow")
 
     node_bindings: Annotated[
         dict[QNodeID, Annotated[list[NodeBinding], Field(min_length=1)]],

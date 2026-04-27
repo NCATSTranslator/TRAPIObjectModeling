@@ -2,15 +2,12 @@ from __future__ import annotations
 
 from typing import override
 
-from pydantic import ConfigDict
-from pydantic.dataclasses import dataclass
 from stablehash import stablehash
 
 from translator_tom.models.shared import CURIE
 from translator_tom.utils.object_base import TOMBaseObject
 
 
-@dataclass(kw_only=True, config=ConfigDict(extra="ignore"), eq=False)
 class MetaAttribute(TOMBaseObject):
     """An element describing a type of attribute that can be served."""
 

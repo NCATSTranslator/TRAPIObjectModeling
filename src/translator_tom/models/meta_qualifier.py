@@ -1,13 +1,9 @@
 from __future__ import annotations
 
-from pydantic import ConfigDict
-from pydantic.dataclasses import dataclass
-
 from translator_tom.models.shared import CURIE
 from translator_tom.utils.object_base import TOMBaseObject
 
 
-@dataclass(kw_only=True, config=ConfigDict(extra="ignore"), eq=False)
 class MetaQualifier(TOMBaseObject):
     """An element describing a set of values that can be served for a given qualifier type."""
 
