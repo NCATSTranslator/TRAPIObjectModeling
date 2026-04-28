@@ -99,7 +99,7 @@ class Analysis(BaseAnalysis):
             (
                 super().hash(),
                 {
-                    qedge_id: frozenset(bindings)
+                    qedge_id: frozenset(b.hash() for b in bindings)
                     for qedge_id, bindings in self.edge_bindings.items()
                 },
             )
@@ -132,7 +132,7 @@ class PathfinderAnalysis(BaseAnalysis):
             (
                 super().hash(),
                 {
-                    qpath_id: frozenset(bindings)
+                    qpath_id: frozenset(b.hash() for b in bindings)
                     for qpath_id, bindings in self.path_bindings.items()
                 },
             )

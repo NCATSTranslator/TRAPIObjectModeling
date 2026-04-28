@@ -38,7 +38,7 @@ class AuxiliaryGraph(TOMBaseObject):
     @override
     def hash(self) -> str:
         return stablehash(
-            (frozenset(self.edges), frozenset(self.attributes))
+            (frozenset(self.edges), frozenset(a.hash() for a in self.attributes))
         ).hexdigest()
 
     def normalize(self, mapping: dict[EdgeID, EdgeID]) -> None:

@@ -38,7 +38,7 @@ class Result(TOMBaseObject):
     def hash(self) -> str:
         return stablehash(
             {
-                qnode_id: frozenset(bindings)
+                qnode_id: frozenset(b.hash() for b in bindings)
                 for qnode_id, bindings in self.node_bindings.items()
             }
         ).hexdigest()

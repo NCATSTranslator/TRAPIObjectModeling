@@ -46,5 +46,5 @@ class NodeBinding(TOMBaseObject):
     @override
     def hash(self) -> str:
         return stablehash(
-            (self.id, self.query_id, frozenset(self.attributes))
+            (self.id, self.query_id, frozenset(a.hash() for a in self.attributes))
         ).hexdigest()

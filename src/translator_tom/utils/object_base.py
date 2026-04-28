@@ -1,4 +1,4 @@
-from typing import Any, ClassVar, Literal, Self, overload, override
+from typing import Any, ClassVar, Literal, Self, cast, overload, override
 
 import orjson
 import ormsgpack
@@ -9,6 +9,24 @@ from pydantic.json_schema import (
     JsonSchemaMode,
 )
 from stablehash import stablehash
+
+
+def _stable_repr(val: Any) -> Any:
+    """Recursively replace TOMBaseObjects with their hash().
+
+    Avoids instabilities caused by stablehash's access of TOMBaseObject fields via __getstate__.
+    """
+    if isinstance(val, TOMBaseObject):
+        return val.hash()
+    if isinstance(val, dict):
+        return {k: _stable_repr(v) for k, v in cast("dict[Any, Any]", val).items()}
+    if isinstance(val, list):
+        return [_stable_repr(v) for v in cast("list[Any]", val)]
+    if isinstance(val, tuple):
+        return tuple(_stable_repr(v) for v in cast("tuple[Any, ...]", val))
+    if isinstance(val, (set, frozenset)):
+        return frozenset(_stable_repr(v) for v in cast("set[Any]", val))
+    return val
 
 
 class TOMBaseObject(BaseModel):
@@ -91,11 +109,15 @@ class TOMBaseObject(BaseModel):
 
     def __getitem__(self, key: str) -> Any:
         """Get an extra item, if present."""
-        return self.__dict__[key]
+        if self.__pydantic_extra__ is None:
+            raise ValueError(f"{type(self)} does not allow extra values.")
+        return self.__pydantic_extra__[key]
 
     def get(self, key: str, default: Any | None) -> Any:
         """Get an extra item or the given default."""
-        return self.__dict__.get(key, default)
+        if self.__pydantic_extra__ is None:
+            raise ValueError(f"{type(self)} does not allow extra values.")
+        return self.__pydantic_extra__.get(key, default)
 
     def hash(self) -> str:
         """Hash the object into a hex string."""
@@ -104,7 +126,7 @@ class TOMBaseObject(BaseModel):
             (
                 self.__class__.__name__,
                 *tuple(
-                    (key, val)
+                    (key, _stable_repr(val))
                     for key, val in self.__dict__.items()
                     if key in self.__pydantic_fields__
                 ),

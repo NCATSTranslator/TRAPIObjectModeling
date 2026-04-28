@@ -150,11 +150,6 @@ class KnowledgeGraph(TOMBaseObject):
         # pruned_edges = prior_edge_count - len(self.edges)
         # pruned_nodes = prior_node_count - len(self.nodes)
 
-        # TODO: logging setup?
-        # log.debug(
-        #     f"KG Pruning: {len(kgraph['nodes'])} (-{pruned_nodes}) nodes and {len(kgraph['edges'])} (-{pruned_edges}) edges remain."
-        # )
-
 
 class Node(TOMBaseObject):
     """A node in the KnowledgeGraph which represents some biomedical concept.
@@ -281,7 +276,7 @@ class Edge(TOMBaseObject):
                 self.subject,
                 self.object,
                 self.predicate,
-                frozenset(self.qualifiers_list),
+                frozenset(q.hash() for q in self.qualifiers_list),
                 self.primary_knowledge_source.resource_id,
             )
         ).hexdigest()

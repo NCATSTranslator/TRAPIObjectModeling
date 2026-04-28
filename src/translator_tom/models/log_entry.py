@@ -4,7 +4,7 @@ import datetime
 from enum import Enum
 from typing import ClassVar, Literal, Self
 
-from pydantic import ConfigDict
+from pydantic import AwareDatetime, ConfigDict
 
 from translator_tom.utils.object_base import TOMBaseObject
 
@@ -42,7 +42,7 @@ class LogEntry(TOMBaseObject):
 
     model_config: ClassVar[ConfigDict] = ConfigDict(extra="allow")
 
-    timestamp: datetime.datetime  # TODO: enforce correct serialization
+    timestamp: AwareDatetime
     """Timestamp in ISO 8601 format, providing the LogEntry time
 
     either in univeral coordinated time (UTC) using the 'Z' tag
@@ -65,5 +65,8 @@ class LogEntry(TOMBaseObject):
     ) -> Self:
         """Return a new LogEntry with a timestamp from now."""
         return cls(
-            timestamp=datetime.datetime.now(), level=level, code=code, message=message
+            timestamp=datetime.datetime.now().astimezone(),
+            level=level,
+            code=code,
+            message=message,
         )

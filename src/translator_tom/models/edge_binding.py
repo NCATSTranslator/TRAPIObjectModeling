@@ -31,4 +31,6 @@ class EdgeBinding(TOMBaseObject):
 
     @override
     def hash(self) -> str:
-        return stablehash((self.id, frozenset(self.attributes))).hexdigest()
+        return stablehash(
+            (self.id, frozenset(a.hash() for a in self.attributes))
+        ).hexdigest()
