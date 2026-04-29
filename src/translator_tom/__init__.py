@@ -14,8 +14,7 @@ __all__ = [
     "AuxiliaryGraph",
     "BaseAnalysis",
     "BaseQueryGraph",
-    "BiolinkEntity",
-    "BiolinkPredicate",
+    "Biolink",
     "Curie",
     "DenyList",
     "Edge",
@@ -52,10 +51,9 @@ __all__ = [
     "Response",
     "Result",
     "RetrievalSource",
-    "SetInterpetationEnum",
+    "SetInterpretationEnum",
     "TOMBaseObject",
     "TopOrBottomEnum",
-    "biolink",
     "infores",
     "operations",
 ]
@@ -99,7 +97,7 @@ from translator_tom.models.query_graph import (
     QNode,
     QPath,
     QueryGraph,
-    SetInterpetationEnum,
+    SetInterpretationEnum,
 )
 from translator_tom.models.response import Response
 from translator_tom.models.result import Result
@@ -109,12 +107,9 @@ from translator_tom.models.retrieval_source import (
 )
 from translator_tom.models.shared import (
     CURIE,
-    BiolinkEntity,
-    BiolinkPredicate,
     Curie,
     Infores,
     KnowledgeTypeEnum,
-    biolink,
     infores,
 )
 from translator_tom.models.workflow_operations import (
@@ -128,12 +123,13 @@ from translator_tom.models.workflow_operations import (
     TopOrBottomEnum,
     operations,
 )
+from translator_tom.utils.biolink import Biolink
 from translator_tom.utils.object_base import TOMBaseObject
 
 components = [
     Attribute,
-    BiolinkEntity,
-    BiolinkPredicate,
+    Biolink.Entity,
+    Biolink.Predicate,
     CURIE,
     Edge,
     EdgeBinding,

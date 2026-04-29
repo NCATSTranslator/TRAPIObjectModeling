@@ -10,11 +10,9 @@ from translator_tom.models.meta_qualifier import MetaQualifier
 from translator_tom.models.qualifier import QualifierConstraint
 from translator_tom.models.shared import (
     CURIE,
-    BiolinkEntity,
-    BiolinkPredicate,
     KnowledgeType,
-    biolink,
 )
+from translator_tom.utils.biolink import Biolink
 from translator_tom.utils.object_base import TOMBaseObject
 
 
@@ -25,7 +23,7 @@ class MetaKnowledgeGraph(TOMBaseObject):
     and predicates for each node and edge.
     """
 
-    nodes: dict[BiolinkEntity, MetaNode]
+    nodes: dict[Biolink.Entity, MetaNode]
     """Collection of the most specific node categories provided by this TRAPI web service, indexed by Biolink class CURIEs.
 
     A node category is only exposed here if there is
@@ -72,13 +70,13 @@ class MetaNode(TOMBaseObject):
 class MetaEdge(TOMBaseObject):
     """Edge in a meta knowledge map describing relationship between a subject Biolink class and an object Biolink class."""
 
-    subject: BiolinkEntity
+    subject: Biolink.Entity
     """Subject node category of this relationship edge."""
 
-    predicate: BiolinkPredicate
+    predicate: Biolink.Predicate
     """Biolink relationship between the subject and object categories."""
 
-    object: BiolinkEntity
+    object: Biolink.Entity
     """Object node category of this relationship edge."""
 
     knowledge_types: Annotated[list[KnowledgeType] | None, Field(min_length=1)] = None
@@ -94,7 +92,7 @@ class MetaEdge(TOMBaseObject):
     qualifiers: list[MetaQualifier] | None = None
     """Qualifiers that are possible to be found on this edge type."""
 
-    association: BiolinkEntity | None = None
+    association: Biolink.Entity | None = None
     """The Biolink association type (entity) that this edge represents.
 
     Associations are classes in Biolink
@@ -135,14 +133,13 @@ class MetaEdge(TOMBaseObject):
             self.attributes = other.attributes
         elif self.attributes and other.attributes:
             attrs = {attr.hash(): attr for attr in self.attributes}
-            new_attrs = {
-                attr.hash(): attr
-                for attr in other.attributes
+            kl_at = (Biolink("knowledge_level"), Biolink("agent_type"))
+            for attr in other.attributes:
                 # Avoid multiple KL/AT
-                if attr.attribute_type_id
-                not in (biolink("knowledge_level"), biolink("agent_type"))
-            }
-            self.attributes = list({**attrs, **new_attrs}.values())
+                if attr.attribute_type_id in kl_at:
+                    continue
+                attrs[attr.hash()] = attr
+            self.attributes = list(attrs.values())
 
         if not other.qualifiers:
             return

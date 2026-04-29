@@ -10,13 +10,12 @@ from translator_tom.models.path_constraint import PathConstraint
 from translator_tom.models.qualifier import QualifierConstraint
 from translator_tom.models.shared import (
     CURIE,
-    BiolinkEntity,
-    BiolinkPredicate,
     KnowledgeType,
     QEdgeID,
     QNodeID,
     QPathID,
 )
+from translator_tom.utils.biolink import Biolink
 from translator_tom.utils.object_base import TOMBaseObject
 
 
@@ -67,20 +66,20 @@ class PathfinderQueryGraph(BaseQueryGraph):
     """
 
 
-class SetInterpetationEnum(str, Enum):
+class SetInterpretationEnum(str, Enum):
     """Indicates how multiple CURIEs in the ids property MUST be interpreted."""
 
     BATCH = "BATCH"
     """BATCH indicates that the query is intended to be a batch query and each CURIE is treated independently."""
 
     MANY = "MANY"
-    """ALL means that all specified CURIES MUST appear in each Result."""
-
-    ALL = "ALL"
     """MANY means that member CURIEs MUST form one or more sets in the Results, and sets with more members are generally considered more desirable that sets with fewer members."""
 
+    ALL = "ALL"
+    """ALL means that all specified CURIES MUST appear in each Result."""
 
-SetInterpetation = Literal["BATCH", "MANY", "ALL"]
+
+SetInterpretation = Literal["BATCH", "MANY", "ALL"]
 
 
 class QNode(TOMBaseObject):
@@ -108,13 +107,13 @@ class QNode(TOMBaseObject):
     caching operations.
     """
 
-    categories: Annotated[list[BiolinkEntity] | None, Field(min_length=1)] = None
+    categories: Annotated[list[Biolink.Entity] | None, Field(min_length=1)] = None
     """These should be Biolink Model categories and are allowed to be of type 'abstract' or 'mixin' (only in QGraphs!).
 
     Use of 'deprecated' categories should be avoided.
     """
 
-    set_interpretation: SetInterpetation | None = None
+    set_interpretation: SetInterpretation | None = None
     """Indicates how multiple CURIEs in the ids property MUST be interpreted.
 
     BATCH indicates that the query is intended to be
@@ -146,7 +145,7 @@ class QNode(TOMBaseObject):
         return self.ids if self.ids is not None else []
 
     @property
-    def categories_list(self) -> list[BiolinkEntity]:
+    def categories_list(self) -> list[Biolink.Entity]:
         """Get the categories as a guaranteed list, even if they are represented as None."""
         return self.categories if self.categories is not None else []
 
@@ -186,7 +185,7 @@ class QEdge(TOMBaseObject):
     further extended in the future.
     """
 
-    predicates: Annotated[list[BiolinkPredicate] | None, Field(min_length=1)] = None
+    predicates: Annotated[list[Biolink.Predicate] | None, Field(min_length=1)] = None
     """These should be Biolink Model predicates and are allowed to be of type 'abstract' or 'mixin' (only in QGraphs!).
 
     Use of 'deprecated' predicates should be avoided."""
@@ -212,7 +211,7 @@ class QEdge(TOMBaseObject):
     """
 
     @property
-    def predicates_list(self) -> list[BiolinkPredicate]:
+    def predicates_list(self) -> list[Biolink.Predicate]:
         """Get the predicates as a guaranteed list, even if they are represented as None."""
         return self.predicates if self.predicates is not None else []
 
@@ -247,7 +246,7 @@ class QPath(TOMBaseObject):
     object: QNodeID
     """Corresponds to the map key identifier of the object concept node for the end of the queried path."""
 
-    predicates: Annotated[list[BiolinkPredicate] | None, Field(min_length=1)] = None
+    predicates: Annotated[list[Biolink.Predicate] | None, Field(min_length=1)] = None
     """QPath predicates are intended to convey what type of paths are desired, NOT a constraint on the types of predicates that may be in result paths.
 
     If no predicate is listed, the ARA SHOULD find paths such that the
@@ -265,7 +264,7 @@ class QPath(TOMBaseObject):
     """
 
     @property
-    def predicates_list(self) -> list[BiolinkPredicate]:
+    def predicates_list(self) -> list[Biolink.Predicate]:
         """Get the predicates as a guaranteed list, even if they are represented as None."""
         return self.predicates if self.predicates is not None else []
 

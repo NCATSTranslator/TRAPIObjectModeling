@@ -23,6 +23,14 @@ Via an external context definition, the CURIE prefix and colon may be replaced b
 prefix, such as http://identifiers.org/uniprot/, to form a full URI.
 """
 
+Infores = CURIE
+"""A CURIE which begins with `infores:`"""
+
+
+def infores(ref: str) -> Infores:
+    """Return a properly-formed infores."""
+    return f"infores:{ref.removeprefix('infores:')}"
+
 
 class _CurieMeta(type):
     """Metaclass that allows for calling Curie."""
@@ -59,35 +67,8 @@ class Curie(metaclass=_CurieMeta):
         """Ensure the only prefix the CURIE has is the given one."""
         return f"{prefix}:{Curie.get_reference(curie)}"
 
-    rmprefix: Callable[[CURIE], str] = get_reference
-    rmref: Callable[[CURIE], str] = get_prefix
-
-
-Infores = str
-"""A CURIE which begins with `infores:`"""
-
-
-def infores(ref: str) -> Infores:
-    """Return a properly-formed infores."""
-    return f"infores:{ref.removeprefix('infores:')}"
-
-
-BiolinkPredicate = str
-"""CURIE for a Biolink 'predicate' slot, taken from the Biolink slot ('is_a') hierarchy rooted in biolink:related_to (snake_case).
-This predicate defines the Biolink relationship between the subject and
-object nodes of a biolink:Association defining a knowledge graph edge.
-"""
-
-BiolinkEntity = str
-"""Compact URI (CURIE) for a Biolink class, biolink:NamedThing or a child thereof.
-The CURIE must use the prefix 'biolink:'
-followed by the PascalCase class name.
-"""
-
-
-def biolink(ref: str) -> str:
-    """Return a properly-formed biolink element."""
-    return f"biolink:{ref.removeprefix('biolink:')}"
+    rmprefix: Callable[[CURIE], str] = staticmethod(get_reference)
+    rmref: Callable[[CURIE], str] = staticmethod(get_prefix)
 
 
 ##### Enums

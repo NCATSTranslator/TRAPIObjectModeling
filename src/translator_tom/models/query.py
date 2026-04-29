@@ -9,10 +9,6 @@ from translator_tom.models.message import Message
 from translator_tom.models.workflow_operations import Operation
 from translator_tom.utils.object_base import TOMBaseObject
 
-# FIX: need to somehow warn or guard against this
-# PROBLEM: hashing being enabled means that these classes can be stored in sets and used as keys and such
-# This becomes a problem if the instance is mutated, because then its hash changes
-
 
 class Query(TOMBaseObject):
     """The Query class is used to package a user request for information.

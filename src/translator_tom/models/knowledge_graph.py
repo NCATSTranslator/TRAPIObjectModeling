@@ -17,12 +17,11 @@ from translator_tom.models.retrieval_source import (
 )
 from translator_tom.models.shared import (
     CURIE,
-    BiolinkEntity,
-    BiolinkPredicate,
+    AuxGraphID,
     EdgeID,
     Infores,
-    biolink,
 )
+from translator_tom.utils.biolink import Biolink
 from translator_tom.utils.object_base import TOMBaseObject
 
 
@@ -50,7 +49,7 @@ class KnowledgeGraph(TOMBaseObject):
         return cls(nodes={}, edges={})
 
     def normalize(self) -> dict[EdgeID, EdgeID]:
-        """Normalize the kgraph edge IDs and return a mapping of new:old."""
+        """Normalize the kgraph edge IDs and return a mapping of old:new."""
         mapping = dict[EdgeID, EdgeID]()
 
         for edge_id in list(self.edges.keys()):
@@ -160,7 +159,7 @@ class Node(TOMBaseObject):
     name: str | None = None
     """Formal name of the entity."""
 
-    categories: Annotated[list[BiolinkEntity], Field(min_length=1)]
+    categories: Annotated[list[Biolink.Entity], Field(min_length=1)]
     """These should be Biolink Model categories and are NOT allowed to be of type 'abstract' or 'mixin'.
 
     Returning 'deprecated' categories should also be avoided.
@@ -206,7 +205,7 @@ class Node(TOMBaseObject):
 class Edge(TOMBaseObject):
     """A specification of the semantic relationship linking two concepts that are expressed as nodes in the knowledge "thought" graph resulting from a query upon the underlying knowledge source."""
 
-    predicate: BiolinkPredicate
+    predicate: Biolink.Predicate
     """The type of relationship between the subject and object for the statement expressed in an Edge.
 
     These should be Biolink Model predicate terms and are NOT allowed
@@ -287,14 +286,13 @@ class Edge(TOMBaseObject):
             self.attributes = other.attributes
         elif self.attributes and other.attributes:
             attrs = {attr.hash(): attr for attr in self.attributes}
-            new_attrs = {
-                attr.hash(): attr
-                for attr in other.attributes
+            kl_at = (Biolink("knowledge_level"), Biolink("agent_type"))
+            for attr in other.attributes:
                 # Avoid multiple KL/AT
-                if attr.attribute_type_id
-                not in (biolink("knowledge_level"), biolink("agent_type"))
-            }
-            self.attributes = list({**attrs, **new_attrs}.values())
+                if attr.attribute_type_id in kl_at:
+                    continue
+                attrs[attr.hash()] = attr
+            self.attributes = list(attrs.values())
 
         if (not self.sources) and other.sources:
             self.sources = other.sources

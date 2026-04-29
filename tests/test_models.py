@@ -4,14 +4,14 @@ from pydantic import ValidationError
 
 from translator_tom import (
     Attribute,
+    Biolink,
     Message,
     QEdge,
     QNode,
     QueryGraph,
     Response,
     Result,
-    SetInterpetationEnum,
-    biolink,
+    SetInterpretationEnum,
 )
 
 
@@ -424,7 +424,7 @@ def test_hash_property_update():
 
     h = hash(qnode)
 
-    qnode.set_interpretation = SetInterpetationEnum.ALL.value
+    qnode.set_interpretation = SetInterpretationEnum.ALL.value
 
     assert hash(qnode) != h
 
@@ -463,7 +463,7 @@ def test_hash_deeply_nested_update():
 
     assert m.query_graph
     assert m.query_graph.nodes["n1"].categories
-    m.query_graph.nodes["n1"].categories.append(biolink("Gene"))
+    m.query_graph.nodes["n1"].categories.append(Biolink("Gene"))
 
     assert hash(m) != h
 

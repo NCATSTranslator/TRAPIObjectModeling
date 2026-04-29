@@ -4,7 +4,7 @@ from typing import Annotated, ClassVar
 
 from pydantic import ConfigDict, Field
 
-from translator_tom.models.shared import BiolinkEntity
+from translator_tom.utils.biolink import Biolink
 from translator_tom.utils.object_base import TOMBaseObject
 
 
@@ -14,7 +14,7 @@ class PathConstraint(TOMBaseObject):
     model_config: ClassVar[ConfigDict] = ConfigDict(extra="allow")
 
     intermediate_categories: (
-        Annotated[list[BiolinkEntity], Field(min_length=1)] | None
+        Annotated[list[Biolink.Entity], Field(min_length=1)] | None
     ) = None
     """A list of Biolink model categories by which to constrain paths returned.
 
@@ -24,7 +24,7 @@ class PathConstraint(TOMBaseObject):
     """
 
     @property
-    def intermediate_categories_list(self) -> list[BiolinkEntity]:
+    def intermediate_categories_list(self) -> list[Biolink.Entity]:
         """Get the intermediate_categories as a guaranteed list, even if they are represented as None."""
         return (
             self.intermediate_categories

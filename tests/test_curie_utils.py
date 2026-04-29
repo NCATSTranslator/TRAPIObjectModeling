@@ -1,6 +1,7 @@
 """Tests for CURIE utility functions in shared.py."""
 
-from translator_tom.models.shared import Curie, biolink, infores
+from translator_tom.models.shared import Curie, infores
+from translator_tom.utils.biolink import Biolink
 
 
 class TestMakeCurie:
@@ -66,13 +67,13 @@ class TestInfores:
 
 
 class TestBiolink:
-    """Tests for the biolink() helper."""
+    """Tests for the Biolink() helper."""
 
     def test_bare_reference(self) -> None:
-        assert biolink("related_to") == "biolink:related_to"
+        assert Biolink("related_to") == "biolink:related_to"
 
     def test_idempotent(self) -> None:
-        assert biolink("biolink:Gene") == "biolink:Gene"
+        assert Biolink("biolink:Gene") == "biolink:Gene"
 
     def test_empty(self) -> None:
-        assert biolink("") == "biolink:"
+        assert Biolink("") == "biolink:"

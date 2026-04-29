@@ -38,5 +38,3 @@ def test_result_hashable():
     assert len(result_dict["raw_data"]) == 1
     assert isinstance(result_dict["raw_data"], list)
     assert result_obj["raw_data"][0] == "test"
-
-    # TODO: turns out extra doesn't serialize, so we have to fix that somehow...
