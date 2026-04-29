@@ -1,26 +1,26 @@
 #!/bin/env python3
 import datetime
 import gzip
-import orjson
-import os
-from pathlib import Path
 import re
 import timeit
+from pathlib import Path
+
+import orjson
+
+main_dir = Path(__file__).parent.resolve()
 
 datetime_now = str(datetime.datetime.now())
-print(f"INFO: {datetime_now}: Starting import of Reasoner Pydantic classes")
 t0 = timeit.default_timer()
 t1 = timeit.default_timer()
 
 datetime_now = str(datetime.datetime.now())
-print(f"INFO: {datetime_now}: Import complete in {t1 - t0} seconds")
 
 files_to_test = ["./small.json", "./medium.json", "./large.json.gz"]
 # files_to_test = ["./medium.json"]
 
 for response_file_name in files_to_test:
     t0 = timeit.default_timer()
-    response_path = Path(response_file_name)
+    response_path = main_dir / response_file_name
     print(
         f"INFO: {datetime_now}: Starting read of local JSON file {response_path} of size {response_path.stat().st_size / 1024 / 1024} MB"
     )
@@ -54,6 +54,12 @@ for response_file_name in files_to_test:
                     f"{datetime.date.today()}T{log['timestamp']}"
                 )
                 log["timestamp"] = new_dt.astimezone().isoformat()
+            # Ensure TZ-aware
+            log["timestamp"] = (
+                datetime.datetime.fromisoformat(log["timestamp"])
+                .astimezone()
+                .isoformat()
+            )
 
     if not response_path.suffix.endswith(".gz"):
         with response_path.open("wb") as outfile:
