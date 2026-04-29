@@ -31,6 +31,8 @@ The time to beat in the original implementation was 0.007s Small, 0.05s Med, and
 
 In some sections (such as `knowledge_type`), only certain values are used by existing systems, despite the field being an open string. In these cases I have added the implictly defined enum so in TOM it is explicit, as this may help to catch early validation errors. This does technically bring TOM out of sync with TRAPI, so it's worth group consideration.
 
+I avoided doing this in areas where an enum is implied, but am unsure if Translator-wide use respects (e.g. Response.status)
+
 ### Literal over Enum
 
 Python Literals are slightly faster for serialization, so internally, literals are used. Enums are still provided for ease of use.
@@ -54,4 +56,4 @@ Some properties are non-required, but default to an empty list. I'm setting thes
 
 ### Open questions
 
-- Should `Attribute.meets_constraint()` error if the value is incompatible with the operator?
+- Should `AttributeConstraint.met_by()` error if the value is incompatible with the operator?
