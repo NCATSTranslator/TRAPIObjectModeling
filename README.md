@@ -57,3 +57,13 @@ Some properties are non-required, but default to an empty list. I'm setting thes
 ### Open questions
 
 - Should `AttributeConstraint.met_by()` error if the value is incompatible with the operator?
+
+## Semantic Validation WIP
+
+There's initial tooling for semantic validation. It's not complete, but the general idea is:
+
+1. Import `from translator_tom import semantic_validate`
+2. Call `semantic_validate(<some model>)`
+3. Get back a list of warnings and a list of errors, with clear and specific descriptions and location tuples
+
+This may end up being seen as redundant given the Reasoner Validator, but it was quick to prototype and could serve slightly-tanget use-cases (or become a core which the validator wraps around).
