@@ -3,11 +3,6 @@ from typing import Any, ClassVar, Literal, Self, cast, overload, override
 import orjson
 import ormsgpack
 from pydantic import BaseModel, ConfigDict
-from pydantic.json_schema import (
-    DEFAULT_REF_TEMPLATE,
-    GenerateJsonSchema,
-    JsonSchemaMode,
-)
 from stablehash import stablehash
 
 
@@ -90,23 +85,6 @@ class TOMBaseObject(BaseModel):
 
     ##### Misc. #####
 
-    @classmethod
-    def json_schema(
-        cls,
-        *,
-        by_alias: bool = True,
-        ref_template: str = DEFAULT_REF_TEMPLATE,
-        schema_generator: type[GenerateJsonSchema] = GenerateJsonSchema,
-        mode: JsonSchemaMode = "validation",
-    ) -> dict[str, Any]:
-        """Get the json schema for this model."""
-        return cls.json_schema(
-            by_alias=by_alias,
-            ref_template=ref_template,
-            schema_generator=schema_generator,
-            mode=mode,
-        )
-
     def __getitem__(self, key: str) -> Any:
         """Get an extra item, if present."""
         if self.__pydantic_extra__ is None:
@@ -125,7 +103,7 @@ class TOMBaseObject(BaseModel):
         return stablehash(
             (
                 self.__class__.__name__,
-                *tuple(
+                *(
                     (key, _stable_repr(val))
                     for key, val in self.__dict__.items()
                     if key in self.__pydantic_fields__

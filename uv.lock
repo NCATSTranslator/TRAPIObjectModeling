@@ -1515,6 +1515,7 @@ dependencies = [
     { name = "orjson" },
     { name = "ormsgpack" },
     { name = "pydantic" },
+    { name = "pydantic-core" },
     { name = "pydantic-settings" },
     { name = "stablehash" },
 ]
@@ -1539,6 +1540,7 @@ requires-dist = [
     { name = "orjson", specifier = ">=3.11.3" },
     { name = "ormsgpack", specifier = ">=1.11.0" },
     { name = "pydantic", specifier = ">=2.12.0" },
+    { name = "pydantic-core", specifier = ">=2.41.1" },
     { name = "pydantic-settings", specifier = ">=2.13.1" },
     { name = "stablehash", specifier = ">=0.3.0" },
 ]

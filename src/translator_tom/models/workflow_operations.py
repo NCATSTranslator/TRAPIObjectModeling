@@ -154,7 +154,7 @@ class EnrichResultsParameters(OperationParameters):
     """Parameters for the EnrichResults operation."""
 
     pvalue_threshold: Annotated[
-        int | float | None, Field(examples=[1e-7], ge=0, le=0)
+        int | float | None, Field(examples=[1e-7], ge=0, le=1)
     ] = 1e-6
     """The cutoff p-value for enrichment."""
 

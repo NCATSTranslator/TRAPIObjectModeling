@@ -180,7 +180,7 @@ class MetaEdge(TOMBaseObject):
             for c in constraints
         )
 
-    def meets_qualifer_constraints(
+    def meets_qualifier_constraints(
         self, constraints: list[QualifierConstraint]
     ) -> bool:
         """Check if the meta edge satisfies the qualifier constraints."""

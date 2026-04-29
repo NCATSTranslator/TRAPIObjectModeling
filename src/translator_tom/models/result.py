@@ -21,10 +21,7 @@ class Result(TOMBaseObject):
 
     model_config: ClassVar[ConfigDict] = ConfigDict(extra="allow")
 
-    node_bindings: Annotated[
-        dict[QNodeID, Annotated[list[NodeBinding], Field(min_length=1)]],
-        Field(min_length=1),
-    ]
+    node_bindings: dict[QNodeID, Annotated[list[NodeBinding], Field(min_length=1)]]
     """The dictionary of Input Query Graph to Result Knowledge Graph node bindings where the dictionary keys are the key identifiers of the Query Graph nodes and the associated values of those keys are instances of NodeBinding schema type (see below).
 
     This value is an array of NodeBindings since a given query node may have multiple
@@ -57,47 +54,39 @@ class Result(TOMBaseObject):
         """Update the result in-place with another result."""
         if not other.analyses:
             return
-        if (not self.analyses) and other.analyses:
+        if not self.analyses:
             self.analyses = other.analyses
             return
 
+        by_hash = {ana.hash(): ana for ana in self.analyses}
         for analysis in other.analyses:
-            not_present = True
-            for ana in self.analyses:
-                if analysis == ana:
-                    ana.update(analysis)  # pyright:ignore[reportArgumentType] Equality means they're the same type
-                    not_present = False
-            if not_present:
+            existing = by_hash.get(analysis.hash())
+            if existing is not None:
+                existing.update(analysis)  # pyright:ignore[reportArgumentType] Equality means they're the same type
+            else:
                 self.analyses.append(analysis)
 
     @staticmethod
-    def merge_result_lists(old: list[Result], new: list[Result]) -> None:
-        """Merge the new results into the existing results."""
-        results = {res.hash(): res for res in old}
+    def merge_results(
+        results: list[Result], new: list[Result] | None = None
+    ) -> list[Result]:
+        """Merge the given results in-place.
 
-        for result in new:
+        If new results are provided, merge them into the first list.
+        Does not mutate `new`.
+        """
+        if new is None:
+            new = []
+        merged = dict[str, Result]()
+        for result in (*results, *new):
             result_hash = result.hash()
-            if result_hash in results:
-                results[result_hash].update(result)
+            if result_hash in merged:
+                merged[result_hash].update(result)
             else:
-                results[result_hash] = result
-
-        old.clear()
-        old.extend(results.values())
-
-    @staticmethod
-    def merge_results(results: list[Result]) -> list[Result]:
-        """Merge the given results in-place."""
-        merged_results: dict[str, Result] = {}
-        for result in results:
-            result_hash = result.hash()
-            if result_hash in merged_results:
-                merged_results[result_hash].update(result)
-            else:
-                merged_results[result_hash] = result
+                merged[result_hash] = result
 
         results.clear()
-        results.extend(merged_results.values())
+        results.extend(merged.values())
         return results
 
     def merge_analyses_by_resource_id(self) -> None:
@@ -106,18 +95,16 @@ class Result(TOMBaseObject):
         Useful when a service unintentionally adds multiple analyses to a single result,
         Combines all of those analyses.
         """
-        merged = dict[Infores, Analysis | PathfinderAnalysis]()
-        analyses = list[Analysis | PathfinderAnalysis](list(self.analyses))
-        for _ in range(len(analyses)):
-            analysis = analyses.pop()
-            if analysis.resource_id not in merged:
-                merged[analysis.resource_id] = analysis
-            for analysis_to_compare in analyses:
-                if (
-                    type(analysis) is type(analysis_to_compare)
-                    and analysis.resource_id == analysis_to_compare.resource_id
-                    and analysis != analysis_to_compare
-                ):
-                    merged[analysis.resource_id].update(analysis_to_compare)  # pyright:ignore[reportArgumentType] We've checked they're the same type
+        merged: dict[
+            tuple[type[Analysis | PathfinderAnalysis], Infores],
+            Analysis | PathfinderAnalysis,
+        ] = {}
+        for analysis in self.analyses:
+            key = (type(analysis), analysis.resource_id)
+            existing = merged.get(key)
+            if existing is None:
+                merged[key] = analysis
+            else:
+                existing.update(analysis)  # pyright:ignore[reportArgumentType] key includes type, so they match
 
         self.analyses = list(merged.values())

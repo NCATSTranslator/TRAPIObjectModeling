@@ -229,6 +229,32 @@ class QEdge(TOMBaseObject):
             self.qualifier_constraints if self.qualifier_constraints is not None else []
         )
 
+    def get_inverse(self) -> QEdge:
+        """Get an inverse copy of the QEdge."""
+        inverse_predicates = list[Biolink.Predicate]()
+        failed_predicates = list[Biolink.Predicate]()
+        for predicate in self.predicates_list:
+            inverse = Biolink.get_inverse(predicate)
+            if inverse is None:
+                failed_predicates.append(predicate)
+                continue
+            inverse_predicates.append(inverse)
+
+        if len(failed_predicates) > 0:
+            raise ValueError(f"Cannot invert predicates {failed_predicates}.")
+
+        return QEdge(
+            knowledge_type=self.knowledge_type,
+            predicates=inverse_predicates or None,
+            subject=self.object,
+            object=self.subject,
+            attribute_constraints=self.attribute_constraints,
+            qualifier_constraints=(
+                [qconstr.get_inverse() for qconstr in self.qualifier_constraints_list]
+                or None
+            ),
+        )
+
 
 class QPath(TOMBaseObject):
     """A path in the QueryGraph used for pathfinder queries.

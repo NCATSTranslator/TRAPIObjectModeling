@@ -2,9 +2,10 @@ from __future__ import annotations
 
 import re
 from enum import Enum
-from typing import Annotated, ClassVar, Literal
+from typing import Annotated, ClassVar, Literal, override
 
 from pydantic import ConfigDict, Field
+from stablehash import stablehash
 
 from translator_tom.models.meta_attribute import MetaAttribute
 from translator_tom.models.shared import CURIE, FastJsonValue
@@ -134,14 +135,32 @@ class Attribute(TOMBaseObject):
         """Get the attributes as a guaranteed list, even if they are represented as None."""
         return self.attributes if self.attributes is not None else []
 
+    @override
+    def hash(self) -> str:
+        # Skip more expensive default hash traversal
+        # (No TOMBaseObject in FastJsonValue)
+        return stablehash(
+            (
+                self.attribute_type_id,
+                self.original_attribute_name,
+                self.value,
+                self.value_type_id,
+                self.attribute_source,
+                self.value_url,
+                self.description,
+                frozenset(a.hash() for a in self.attributes_list),
+            )
+        ).hexdigest()
+
     @staticmethod
     def merge_attribute_lists(old: list[Attribute], new: list[Attribute]) -> None:
         """Merge the new attributes into the existing attributes."""
         attrs = {attr.hash(): attr for attr in old}
-        new_attrs = {attr.hash(): attr for attr in new}
+        for attr in new:
+            attrs[attr.hash()] = attr
 
         old.clear()
-        old.extend(list({**attrs, **new_attrs}.values()))
+        old.extend(attrs.values())
 
 
 class AttributeConstraint(TOMBaseObject):
@@ -224,6 +243,22 @@ class AttributeConstraint(TOMBaseObject):
     if possible. This property SHOULD be provided if a unit_id is
     provided. This is redundant but recommended for human readability.
     """
+
+    @override
+    def hash(self) -> str:
+        # Skip more expensive default hash traversal
+        # (No TOMBaseObject in FastJsonValue)
+        return stablehash(
+            (
+                self.id,
+                self.name,
+                self.negated,
+                self.operator,
+                self.value,
+                self.unit_id,
+                self.unit_name,
+            )
+        ).hexdigest()
 
     def met_by(self, attribute: Attribute | MetaAttribute) -> bool:
         """Check if the given attribute satisfies the constraint."""

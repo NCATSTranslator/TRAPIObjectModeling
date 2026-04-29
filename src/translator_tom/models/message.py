@@ -83,7 +83,7 @@ class Message(TOMBaseObject):
         if (not self.results) and other.results:
             self.results = other.results
         elif self.results and other.results:
-            Result.merge_result_lists(self.results, other.results)
+            Result.merge_results(self.results, other.results)
 
         if (not self.auxiliary_graphs) and other.auxiliary_graphs:
             self.auxiliary_graphs = other.auxiliary_graphs

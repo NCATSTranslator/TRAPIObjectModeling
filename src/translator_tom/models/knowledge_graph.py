@@ -74,7 +74,10 @@ class KnowledgeGraph(TOMBaseObject):
             mapping.update(self.normalize())
         if pre_normalized in ("neither", "self"):
             # Normalize a shallow copy of the other dict so as not to modify the original
-            other = KnowledgeGraph(nodes=dict(other.nodes), edges=dict(other.edges))
+            # (model_construct skips validation)
+            other = KnowledgeGraph.model_construct(
+                nodes=dict(other.nodes), edges=dict(other.edges)
+            )
             mapping.update(other.normalize())
 
         for node_id, node in other.nodes.items():
@@ -101,7 +104,7 @@ class KnowledgeGraph(TOMBaseObject):
             for analysis in result.analyses:
                 if isinstance(analysis, Analysis):
                     for edge_binding_set in analysis.edge_bindings.values():
-                        bound_edges.update([binding.id for binding in edge_binding_set])
+                        bound_edges.update(binding.id for binding in edge_binding_set)
                 else:
                     for path_binding in itertools.chain(
                         *(analysis.path_bindings.values())
@@ -138,7 +141,7 @@ class KnowledgeGraph(TOMBaseObject):
             # Have to cast because support graphs always has value of type list[str]
             # But attribute value is generally of type Any
             for aux_graph_id in cast(list[str], edge_aux_graphs.value):
-                edges_to_check.extend(edge for edge in aux_graphs[aux_graph_id].edges)
+                edges_to_check.extend(aux_graphs[aux_graph_id].edges)
 
         # prior_edge_count = len(self.edges)
         # prior_node_count = len(self.nodes)
@@ -183,6 +186,11 @@ class Node(TOMBaseObject):
 
     def meets_constraints(self, constraints: list[AttributeConstraint]) -> bool:
         """Check if all constraints are satisfied by the node's attributes."""
+        if len(constraints) == 0:
+            return True
+        elif len(self.attributes) == 0:
+            return False
+
         attrs_by_type: dict[CURIE, list[Attribute]] = {}
         for attr in self.attributes:
             attrs_by_type.setdefault(attr.attribute_type_id, []).append(attr)
@@ -198,8 +206,9 @@ class Node(TOMBaseObject):
 
         if other.attributes:
             attrs = {attr.hash(): attr for attr in self.attributes}
-            new_attrs = {attr.hash(): attr for attr in other.attributes}
-            self.attributes = list({**attrs, **new_attrs}.values())
+            for attr in other.attributes:
+                attrs[attr.hash()] = attr
+            self.attributes = list(attrs.values())
 
 
 class Edge(TOMBaseObject):
@@ -268,6 +277,15 @@ class Edge(TOMBaseObject):
         """Check if the edge is a self-edge."""
         return self.subject == self.object
 
+    @property
+    def support_graphs(self) -> list[AuxGraphID]:
+        """Get the support graph IDs referenced by this edge."""
+        support_graphs = list[AuxGraphID]()
+        for attr in self.attributes_list:
+            if attr.attribute_type_id == Biolink("support_graphs"):
+                support_graphs.extend(cast(list[AuxGraphID], attr.value))
+        return support_graphs
+
     @override
     def hash(self) -> str:
         return stablehash(
@@ -305,7 +323,8 @@ class Edge(TOMBaseObject):
                 if new_source := new_sources.get(source_hash):
                     # Update new source so it overwrites the old source
                     new_source.update(source)
-            self.sources = list({**sources, **new_sources}.values())
+            sources.update(new_sources)
+            self.sources = list(sources.values())
 
     def meets_attribute_constraints(
         self, constraints: list[AttributeConstraint]
@@ -320,11 +339,11 @@ class Edge(TOMBaseObject):
         for attr in self.attributes_list:
             attrs_by_type.setdefault(attr.attribute_type_id, []).append(attr)
         return all(
-            all(c.met_by(attr) for attr in attrs_by_type.get(c.id, []))
+            any(c.met_by(attr) for attr in attrs_by_type.get(c.id, []))
             for c in constraints
         )
 
-    def meets_qualifer_constraints(
+    def meets_qualifier_constraints(
         self, constraints: list[QualifierConstraint]
     ) -> bool:
         """Check if the edge satisfies the qualifier constraints."""

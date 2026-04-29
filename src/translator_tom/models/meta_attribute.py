@@ -17,7 +17,7 @@ class MetaAttribute(TOMBaseObject):
     attribute_source: str | None = None
     """Source of an attribute provided by this TRAPI web service."""
 
-    original_attribute_names: list[str] | None
+    original_attribute_names: list[str] | None = None
     """Names of an the attribute as provided by the source."""
 
     constraint_use: bool | None = False
@@ -47,7 +47,8 @@ class MetaAttribute(TOMBaseObject):
     ) -> None:
         """Merge the new attributes into the existing attributes."""
         attrs = {attr.hash(): attr for attr in old}
-        new_attrs = {attr.hash(): attr for attr in new}
+        for attr in new:
+            attrs[attr.hash()] = attr
 
         old.clear()
-        old.extend(list({**attrs, **new_attrs}.values()))
+        old.extend(attrs.values())

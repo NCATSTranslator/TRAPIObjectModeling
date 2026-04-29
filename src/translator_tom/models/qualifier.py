@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import itertools
 from collections.abc import Iterable
 from typing import Annotated, Self
 
@@ -47,10 +48,66 @@ class QualifierConstraint(TOMBaseObject):
 
     def met_by(self, qualifiers: Iterable[Qualifier] | Iterable[MetaQualifier]) -> bool:
         """Check that the given qualifiers satisfy the constraint."""
-        # TODO: implement (with qualifier type / value hierarchy considerations)
-        raise NotImplementedError("Qualifier constraint solving not yet implemented.")
+        qualifier_pairs: list[tuple[Biolink.Qualifier, set[str]]] = [
+            (
+                qualifier.qualifier_type_id,
+                {qualifier.qualifier_value}
+                if isinstance(qualifier, Qualifier)
+                else set(qualifier.applicable_values_list),
+            )
+            for qualifier in qualifiers
+        ]
+
+        for constr in self.qualifier_set:
+            applicable_types = set(Biolink.get_descendants(constr.qualifier_type_id))
+            applicable_values: set[str] | None = None
+            met = False
+            for qual_type, value_set in qualifier_pairs:
+                if qual_type not in applicable_types:
+                    continue
+                if applicable_values is None:
+                    # expand values once a type matches
+                    applicable_values = set(
+                        itertools.chain.from_iterable(
+                            Biolink.get_descendant_values(t, constr.qualifier_value)
+                            for t in applicable_types
+                        )
+                    )
+                if applicable_values & value_set:
+                    met = True
+                    break
+            if not met:
+                return False
+
+        return True
 
     @classmethod
     def new(cls) -> Self:
         """Return an empty instance, without having to pass required containers."""
         return cls(qualifier_set=[])
+
+    def get_inverse(self) -> QualifierConstraint:
+        """Return a (SPO) inverse of the constraint, for reversing edges."""
+        new_qualifier_set = list[Qualifier]()
+        for qualifier in self.qualifier_set:
+            new_qualifier = qualifier.model_copy()
+            if "object" in qualifier.qualifier_type_id:
+                new_qualifier.qualifier_type_id = qualifier.qualifier_type_id.replace(
+                    "object", "subject"
+                )
+            elif "subject" in qualifier.qualifier_type_id:
+                new_qualifier.qualifier_type_id = qualifier.qualifier_type_id.replace(
+                    "subject", "object"
+                )
+            elif inverse := (
+                qualifier.qualifier_type_id == "biolink:qualified_predicate"
+                and Biolink.get_inverse(qualifier.qualifier_value)
+            ):
+                new_qualifier.qualifier_value = inverse
+            else:
+                raise ValueError(
+                    f"Cannot inverse qualifier because its value is non-inversible predicate {qualifier.qualifier_value}"
+                )
+            new_qualifier_set.append(new_qualifier)
+
+        return QualifierConstraint(qualifier_set=new_qualifier_set)
