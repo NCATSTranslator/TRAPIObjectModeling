@@ -3,10 +3,10 @@ from __future__ import annotations
 from typing import Annotated, ClassVar, override
 
 from pydantic import ConfigDict, Field
-from stablehash import stablehash
 
 from translator_tom.models.attribute import Attribute
 from translator_tom.models.shared import AuxGraphID, EdgeID
+from translator_tom.utils.hash import tomhash
 from translator_tom.utils.object_base import TOMBaseObject
 
 
@@ -37,9 +37,9 @@ class AuxiliaryGraph(TOMBaseObject):
 
     @override
     def hash(self) -> str:
-        return stablehash(
+        return tomhash(
             (frozenset(self.edges), frozenset(a.hash() for a in self.attributes))
-        ).hexdigest()
+        )
 
     def normalize(self, mapping: dict[EdgeID, EdgeID]) -> None:
         """Normalize the auxiliary graph given a mapping of old:new EdgeIDs."""

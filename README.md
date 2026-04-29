@@ -45,6 +45,10 @@ In OpenAPI, `additionalProperties` governs whether an object may have extra prop
 
 Some properties are non-required, but default to an empty list. I'm setting these as None, to save serialized space. This is in-line with intended TRAPI 2.0 changes, and doesn't break interoperability.
 
+### Hash calc + representation
+
+- Hashing is used in several cases, including KG normalization. We use `stablehash` to ensure hashes are stable, and output hashes as unpadded base64url, with 120 bits truncation, by default. This offers a nice tradeoff of collision safety and hash shortening; all hashes are exactly 20 characters long. It does reduce the immediate recognizeability and readability of hashes to use base64, though, so I thought to raise it for discussion.
+
 ### Differences from reasoner-pydantic
 
 - Extra fields do not contribute to hashes

@@ -4,12 +4,12 @@ import copy
 from typing import ClassVar, override
 
 from pydantic import ConfigDict
-from stablehash import stablehash
 
 from translator_tom.models.attribute import Attribute
 from translator_tom.models.edge_binding import EdgeBinding
 from translator_tom.models.path_binding import PathBinding
 from translator_tom.models.shared import CURIE, AuxGraphID, QEdgeID, QPathID
+from translator_tom.utils.hash import tomhash
 from translator_tom.utils.object_base import TOMBaseObject
 
 
@@ -58,14 +58,14 @@ class BaseAnalysis(TOMBaseObject):
 
     @override
     def hash(self) -> str:
-        return stablehash(
+        return tomhash(
             (
                 self.resource_id,
                 self.score,
                 frozenset(self.support_graphs_list),
                 self.scoring_method,
             )
-        ).hexdigest()
+        )
 
     def _update_base(self, other: BaseAnalysis) -> None:
         if (not self.attributes) and other.attributes:
@@ -95,7 +95,7 @@ class Analysis(BaseAnalysis):
 
     @override
     def hash(self) -> str:
-        return stablehash(
+        return tomhash(
             (
                 super().hash(),
                 {
@@ -103,7 +103,7 @@ class Analysis(BaseAnalysis):
                     for qedge_id, bindings in self.edge_bindings.items()
                 },
             )
-        ).hexdigest()
+        )
 
     def update(self, other: Analysis) -> None:
         """Update the analysis in-place with another analysis."""
@@ -129,7 +129,7 @@ class PathfinderAnalysis(BaseAnalysis):
 
     @override
     def hash(self) -> str:
-        return stablehash(
+        return tomhash(
             (
                 super().hash(),
                 {
@@ -137,7 +137,7 @@ class PathfinderAnalysis(BaseAnalysis):
                     for qpath_id, bindings in self.path_bindings.items()
                 },
             )
-        ).hexdigest()
+        )
 
     def update(self, other: PathfinderAnalysis) -> None:
         """Update the analysis in-place with another analysis."""

@@ -3,10 +3,10 @@ from __future__ import annotations
 from typing import ClassVar, override
 
 from pydantic import ConfigDict
-from stablehash import stablehash
 
 from translator_tom.models.attribute import Attribute
 from translator_tom.models.shared import CURIE
+from translator_tom.utils.hash import tomhash
 from translator_tom.utils.object_base import TOMBaseObject
 
 
@@ -45,6 +45,6 @@ class NodeBinding(TOMBaseObject):
 
     @override
     def hash(self) -> str:
-        return stablehash(
+        return tomhash(
             (self.id, self.query_id, frozenset(a.hash() for a in self.attributes))
-        ).hexdigest()
+        )

@@ -2,10 +2,9 @@ from __future__ import annotations
 
 from typing import override
 
-from stablehash import stablehash
-
 from translator_tom.models.attribute import Attribute
 from translator_tom.models.shared import EdgeID
+from translator_tom.utils.hash import tomhash
 from translator_tom.utils.object_base import TOMBaseObject
 
 
@@ -31,6 +30,4 @@ class EdgeBinding(TOMBaseObject):
 
     @override
     def hash(self) -> str:
-        return stablehash(
-            (self.id, frozenset(a.hash() for a in self.attributes))
-        ).hexdigest()
+        return tomhash((self.id, frozenset(a.hash() for a in self.attributes)))

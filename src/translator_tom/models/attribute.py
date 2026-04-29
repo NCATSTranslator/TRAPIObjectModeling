@@ -5,10 +5,10 @@ from enum import Enum
 from typing import Annotated, ClassVar, Literal, override
 
 from pydantic import ConfigDict, Field
-from stablehash import stablehash
 
 from translator_tom.models.meta_attribute import MetaAttribute
 from translator_tom.models.shared import CURIE, FastJsonValue
+from translator_tom.utils.hash import tomhash
 from translator_tom.utils.object_base import TOMBaseObject
 
 
@@ -139,7 +139,7 @@ class Attribute(TOMBaseObject):
     def hash(self) -> str:
         # Skip more expensive default hash traversal
         # (No TOMBaseObject in FastJsonValue)
-        return stablehash(
+        return tomhash(
             (
                 self.attribute_type_id,
                 self.original_attribute_name,
@@ -150,7 +150,7 @@ class Attribute(TOMBaseObject):
                 self.description,
                 frozenset(a.hash() for a in self.attributes_list),
             )
-        ).hexdigest()
+        )
 
     @staticmethod
     def merge_attribute_lists(old: list[Attribute], new: list[Attribute]) -> None:
@@ -248,7 +248,7 @@ class AttributeConstraint(TOMBaseObject):
     def hash(self) -> str:
         # Skip more expensive default hash traversal
         # (No TOMBaseObject in FastJsonValue)
-        return stablehash(
+        return tomhash(
             (
                 self.id,
                 self.name,
@@ -258,7 +258,7 @@ class AttributeConstraint(TOMBaseObject):
                 self.unit_id,
                 self.unit_name,
             )
-        ).hexdigest()
+        )
 
     def met_by(self, attribute: Attribute | MetaAttribute) -> bool:
         """Check if the given attribute satisfies the constraint."""

@@ -1,3 +1,4 @@
+from enum import Enum
 from typing import ClassVar, override
 
 from pydantic_settings import (
@@ -7,11 +8,23 @@ from pydantic_settings import (
 )
 
 
+class HashRepEnum(int, Enum):
+    """Supported hashing modes."""
+
+    B64 = 3
+    B32 = 2
+    HEX = 1
+
+
 class TRAPIConfig(BaseSettings):
     """Settings used for TRAPI handling."""
 
     biolink_version: str = "4.3.2"
     schema_version: str = "1.6.0"
+    hash_bytes: int = (
+        15  # 120 bits, fairly safe for collision, exactly 20 chars in base64
+    )
+    hash_representation: HashRepEnum = HashRepEnum.B64
 
     model_config: ClassVar[SettingsConfigDict] = SettingsConfigDict(
         case_sensitive=False

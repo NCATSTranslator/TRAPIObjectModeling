@@ -4,9 +4,9 @@ from enum import Enum
 from typing import ClassVar, Literal, override
 
 from pydantic import ConfigDict
-from stablehash import stablehash
 
 from translator_tom.models.shared import Infores
+from translator_tom.utils.hash import tomhash
 from translator_tom.utils.object_base import TOMBaseObject
 
 
@@ -86,7 +86,7 @@ class RetrievalSource(TOMBaseObject):
 
     @override
     def hash(self) -> str:
-        return stablehash((self.resource_id, self.resource_role)).hexdigest()
+        return tomhash((self.resource_id, self.resource_role))
 
     def update(self, other: RetrievalSource) -> None:
         """Update the first source in-place, merging information from the second."""

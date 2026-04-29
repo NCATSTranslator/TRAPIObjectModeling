@@ -4,7 +4,6 @@ import itertools
 from typing import Annotated, ClassVar, Literal, Self, cast, override
 
 from pydantic import ConfigDict, Field
-from stablehash import stablehash
 
 from translator_tom.models.analysis import Analysis
 from translator_tom.models.attribute import Attribute, AttributeConstraint
@@ -22,6 +21,7 @@ from translator_tom.models.shared import (
     Infores,
 )
 from translator_tom.utils.biolink import Biolink
+from translator_tom.utils.hash import tomhash
 from translator_tom.utils.object_base import TOMBaseObject
 
 
@@ -182,7 +182,7 @@ class Node(TOMBaseObject):
         # Categories and attributes shouldn't matter; what makes a node unique is its ID
         # name and is_set sort of naturally follow.
         # Either way, we don't merge nodes by hash, rather we do by index.
-        return stablehash((self.name, self.is_set)).hexdigest()
+        return tomhash((self.name, self.is_set))
 
     def meets_constraints(self, constraints: list[AttributeConstraint]) -> bool:
         """Check if all constraints are satisfied by the node's attributes."""
@@ -288,7 +288,7 @@ class Edge(TOMBaseObject):
 
     @override
     def hash(self) -> str:
-        return stablehash(
+        return tomhash(
             (
                 self.subject,
                 self.object,
@@ -296,7 +296,7 @@ class Edge(TOMBaseObject):
                 frozenset(q.hash() for q in self.qualifiers_list),
                 self.primary_knowledge_source.resource_id,
             )
-        ).hexdigest()
+        )
 
     def update(self, other: Edge) -> None:
         """Update the edge in-place with another edge."""

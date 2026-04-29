@@ -2,9 +2,8 @@ from __future__ import annotations
 
 from typing import override
 
-from stablehash import stablehash
-
 from translator_tom.models.shared import CURIE
+from translator_tom.utils.hash import tomhash
 from translator_tom.utils.object_base import TOMBaseObject
 
 
@@ -37,9 +36,9 @@ class MetaAttribute(TOMBaseObject):
 
     @override
     def hash(self) -> str:
-        return stablehash(
+        return tomhash(
             (self.attribute_type_id, self.attribute_source, self.constraint_use)
-        ).hexdigest()
+        )
 
     @staticmethod
     def merge_attribute_lists(

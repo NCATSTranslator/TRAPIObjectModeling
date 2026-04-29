@@ -2,7 +2,8 @@ from typing import Any, ClassVar, Literal, Self, cast, overload, override
 
 import ormsgpack
 from pydantic import BaseModel, ConfigDict
-from stablehash import stablehash
+
+from translator_tom.utils.hash import tomhash, tomhash_to_int
 
 
 def _stable_repr(val: Any) -> Any:
@@ -100,7 +101,7 @@ class TOMBaseObject(BaseModel):
     def hash(self) -> str:
         """Hash the object into a hex string."""
         # NOTE: only hashes fields that are not extra
-        return stablehash(
+        return tomhash(
             (
                 self.__class__.__name__,
                 *(
@@ -109,11 +110,11 @@ class TOMBaseObject(BaseModel):
                     if key in self.__pydantic_fields__
                 ),
             )
-        ).hexdigest()
+        )
 
     @override
     def __hash__(self) -> int:
-        return int(self.hash(), base=16)
+        return tomhash_to_int(self.hash())
 
     @override
     def __eq__(self, other: object) -> bool:

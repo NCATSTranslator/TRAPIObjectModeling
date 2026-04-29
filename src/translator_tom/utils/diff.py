@@ -1,8 +1,7 @@
 from typing import Any, TypeVar, cast
 
-from stablehash import stablehash
-
 from translator_tom import TOMBaseObject
+from translator_tom.utils.hash import tomhash
 
 T = TypeVar("T", bound=TOMBaseObject)
 
@@ -39,8 +38,8 @@ def diff(a: T, b: T, *, strict: bool = True) -> list[tuple[str | int, ...]]:
                 if hash_a == hash_b:
                     continue
         else:
-            hash_a = stablehash(value_a).hexdigest()
-            hash_b = stablehash(value_b).hexdigest()
+            hash_a = tomhash(value_a)
+            hash_b = tomhash(value_b)
             if hash_a == hash_b:
                 continue
 

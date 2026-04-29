@@ -4,11 +4,11 @@ import itertools
 from typing import Annotated, ClassVar, override
 
 from pydantic import ConfigDict, Field
-from stablehash import stablehash
 
 from translator_tom.models.analysis import Analysis, PathfinderAnalysis
 from translator_tom.models.node_binding import NodeBinding
 from translator_tom.models.shared import EdgeID, Infores, QNodeID
+from translator_tom.utils.hash import tomhash
 from translator_tom.utils.object_base import TOMBaseObject
 
 
@@ -33,12 +33,12 @@ class Result(TOMBaseObject):
 
     @override
     def hash(self) -> str:
-        return stablehash(
+        return tomhash(
             {
                 qnode_id: frozenset(b.hash() for b in bindings)
                 for qnode_id, bindings in self.node_bindings.items()
             }
-        ).hexdigest()
+        )
 
     def normalize(self, mapping: dict[EdgeID, EdgeID]) -> None:
         """Normalize the result given a mapping of old:new EdgeIDs."""
