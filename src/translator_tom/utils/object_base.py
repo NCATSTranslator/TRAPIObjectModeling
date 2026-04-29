@@ -80,9 +80,8 @@ class TOMBaseObject(BaseModel):
 
     def to_msgpack(self) -> bytes:
         """Serialize an instance to MessagePack."""
-        return ormsgpack.packb(
-            self.__pydantic_serializer__.to_python(self, mode="json")
-        )
+        # ormsgpack can serialize pydantic directly
+        return ormsgpack.packb(self, option=ormsgpack.OPT_SERIALIZE_PYDANTIC)
 
     ##### Misc. #####
 
