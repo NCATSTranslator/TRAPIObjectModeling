@@ -1,6 +1,5 @@
 from typing import Any, ClassVar, Literal, Self, cast, overload, override
 
-import orjson
 import ormsgpack
 from pydantic import BaseModel, ConfigDict
 from stablehash import stablehash
@@ -80,8 +79,9 @@ class TOMBaseObject(BaseModel):
 
     def to_msgpack(self) -> bytes:
         """Serialize an instance to MessagePack."""
-        # looks redundant but skips over python-level dict handling
-        return ormsgpack.packb(orjson.loads(self.__pydantic_serializer__.to_json(self)))
+        return ormsgpack.packb(
+            self.__pydantic_serializer__.to_python(self, mode="json")
+        )
 
     ##### Misc. #####
 
