@@ -29,19 +29,22 @@ class Biolink(metaclass=_BiolinkMeta):
     Biolink.toolkit provides direct bmt access.
     """
 
-    Predicate = Annotated[CURIE, Field(pattern=r"^biolink:[a-z][a-z_]*$")]
+    # Predicate = Annotated[CURIE, Field(pattern=r"^biolink:[a-z][a-z_]*$")]
+    Predicate = CURIE
     """CURIE for a Biolink 'predicate' slot, taken from the Biolink slot ('is_a') hierarchy rooted in biolink:related_to (snake_case).
     This predicate defines the Biolink relationship between the subject and
     object nodes of a biolink:Association defining a knowledge graph edge.
     """
 
-    Entity = Annotated[CURIE, Field(pattern=r"^biolink:[A-Z][a-zA-Z]*$")]
+    # Entity = Annotated[CURIE, Field(pattern=r"^biolink:[A-Z][a-zA-Z]*$")]
+    Entity = CURIE
     """Compact URI (CURIE) for a Biolink class, biolink:NamedThing or a child thereof.
     The CURIE must use the prefix 'biolink:'
     followed by the PascalCase class name.
     """
 
-    Qualifier = Annotated[CURIE, Field(pattern=r"^biolink:[a-z][a-z_]*$")]
+    # Qualifier = Annotated[CURIE, Field(pattern=r"^biolink:[a-z][a-z_]*$")]
+    Qualifier = CURIE
     """CURIE for a Biolink 'qualifier' type id such as subject_aspect_qualifier."""
 
     toolkit: ClassVar[bmt.Toolkit] = bmt.Toolkit(
