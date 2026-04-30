@@ -43,7 +43,7 @@ Some properties are non-required, but default to an empty list. I'm setting thes
 
 ### Hash calc + representation
 
-- Hashing is used in several cases, including KG normalization. We use `stablehash` to ensure hashes are stable, and output hashes as unpadded base64url, with 120 bits truncation, by default. This offers a nice tradeoff of collision safety and hash shortening; all hashes are exactly 20 characters long. It does reduce the immediate recognizeability and readability of hashes to use base64, though, so I thought to raise it for discussion.
+Hashing is used in several cases, including KG normalization. We use `stablehash` to ensure hashes are stable, and output hashes as unpadded base64url, with 120 bits truncation, by default. This offers a nice tradeoff of collision safety and hash shortening; all hashes are exactly 20 characters long. It does reduce the immediate recognizeability and readability of hashes to use base64, though, so I thought to raise it for discussion.
 
 ### Differences from reasoner-pydantic
 
@@ -54,16 +54,12 @@ Some properties are non-required, but default to an empty list. I'm setting thes
 - BiolinkEntity, BiolinkPredicate, and BiolinkQualifier are now sub-types on the Biolink utility class.
   - This causes one issue: BiolinkPredicate and BiolinkEntity don't show up the JsonSchema generated from these models (but the patterns are preserved )
 
-### Open questions
-
-- Should `AttributeConstraint.met_by()` error if the value is incompatible with the operator?
-
 ## Semantic Validation WIP
 
 There's initial tooling for semantic validation. It's not complete, but the general idea is:
 
 1. Import `from translator_tom import semantic_validate`
-2. Call `semantic_validate(<some model>)`
-3. Get back a list of warnings and a list of errors, with clear and specific descriptions and location tuples
+1. Call `semantic_validate(<some model>)`
+1. Get back a list of warnings and a list of errors, with clear and specific descriptions and location tuples
 
 This may end up being seen as redundant given the Reasoner Validator, but it was quick to prototype and could serve slightly-tanget use-cases (or become a core which the validator wraps around).
