@@ -82,6 +82,8 @@ class Attribute(TOMBaseObject):
     (for example to provide confidence intervals on a value).
     """
 
+    model_config: ClassVar[ConfigDict] = ConfigDict(extra="forbid")
+
     attribute_type_id: CURIE
     """The 'key' of the attribute object, holding a CURIE of an ontology property defining the attribute (preferably the CURIE of a Biolink association slot).
 
@@ -166,8 +168,10 @@ class Attribute(TOMBaseObject):
 class AttributeConstraint(TOMBaseObject):
     """Generic query constraint for a query node or query edge."""
 
-    # `negated` serializes as "not" (reserved word) via Field(alias="not").
-    model_config: ClassVar[ConfigDict] = ConfigDict(serialize_by_alias=True)
+    # `negated` must always serialize as "not"
+    model_config: ClassVar[ConfigDict] = ConfigDict(
+        extra="forbid", serialize_by_alias=True
+    )
 
     id: CURIE
     """CURIE of the concept being constrained.

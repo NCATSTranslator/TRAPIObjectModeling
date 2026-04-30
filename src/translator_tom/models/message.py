@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import copy
-from typing import Literal
+from typing import ClassVar, Literal
+
+from pydantic import ConfigDict
 
 from translator_tom.models.auxiliary_graph import AuxiliaryGraph, AuxiliaryGraphsDict
 from translator_tom.models.knowledge_graph import KnowledgeGraph
@@ -21,6 +23,8 @@ class Message(TOMBaseObject):
     properties is context-dependent to the encompassing object and
     the TRAPI operation requested.
     """
+
+    model_config: ClassVar[ConfigDict] = ConfigDict(extra="forbid")
 
     results: list[Result] | None = None
     """List of all returned Result objects for the query posed.

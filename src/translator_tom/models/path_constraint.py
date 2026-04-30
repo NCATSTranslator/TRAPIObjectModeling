@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from typing import Annotated, ClassVar
+from typing import Annotated
 
-from pydantic import ConfigDict, Field
+from pydantic import Field
 
 from translator_tom.utils.biolink import Biolink
 from translator_tom.utils.object_base import TOMBaseObject
@@ -10,8 +10,6 @@ from translator_tom.utils.object_base import TOMBaseObject
 
 class PathConstraint(TOMBaseObject):
     """A constraint for paths. ARAs must comply with constraints when finding paths."""
-
-    model_config: ClassVar[ConfigDict] = ConfigDict(extra="allow")
 
     intermediate_categories: (
         Annotated[list[Biolink.Entity], Field(min_length=1)] | None

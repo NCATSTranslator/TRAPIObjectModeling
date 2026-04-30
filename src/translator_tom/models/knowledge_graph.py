@@ -35,8 +35,6 @@ class KnowledgeGraph(TOMBaseObject):
     the given TRAPI implementation.
     """
 
-    model_config: ClassVar[ConfigDict] = ConfigDict(extra="allow")
-
     nodes: dict[CURIE, Node]
     """Dictionary of Node instances used in the KnowledgeGraph, referenced elsewhere in the TRAPI output by the dictionary key."""
 
@@ -159,6 +157,8 @@ class Node(TOMBaseObject):
     Nodes are identified by the keys in the KnowledgeGraph Node mapping.
     """
 
+    model_config: ClassVar[ConfigDict] = ConfigDict(extra="forbid")
+
     name: str | None = None
     """Formal name of the entity."""
 
@@ -213,6 +213,8 @@ class Node(TOMBaseObject):
 
 class Edge(TOMBaseObject):
     """A specification of the semantic relationship linking two concepts that are expressed as nodes in the knowledge "thought" graph resulting from a query upon the underlying knowledge source."""
+
+    model_config: ClassVar[ConfigDict] = ConfigDict(extra="forbid")
 
     predicate: Biolink.Predicate
     """The type of relationship between the subject and object for the statement expressed in an Edge.

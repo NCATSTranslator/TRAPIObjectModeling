@@ -1,8 +1,6 @@
 from __future__ import annotations
 
-from typing import ClassVar, Self
-
-from pydantic import ConfigDict
+from typing import Self
 
 from translator_tom.models.log_entry import LogLevelValue
 from translator_tom.models.message import Message
@@ -20,8 +18,6 @@ class Query(TOMBaseObject):
     override the default log level in order to receive more fine-grained
     log information when debugging an issue.
     """
-
-    model_config: ClassVar[ConfigDict] = ConfigDict(extra="allow")
 
     message: Message
     """The query Message is a serialization of the user request.

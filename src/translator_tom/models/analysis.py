@@ -1,9 +1,7 @@
 from __future__ import annotations
 
 import copy
-from typing import ClassVar, override
-
-from pydantic import ConfigDict
+from typing import override
 
 from translator_tom.models.attribute import Attribute
 from translator_tom.models.edge_binding import EdgeBinding
@@ -22,8 +20,6 @@ class BaseAnalysis(TOMBaseObject):
     supporting the analysis (e.g. method or data that supported
     generation of the score).
     """
-
-    model_config: ClassVar[ConfigDict] = ConfigDict(extra="allow")
 
     resource_id: CURIE
     """The id of the resource generating this Analysis."""
@@ -84,8 +80,6 @@ class BaseAnalysis(TOMBaseObject):
 class Analysis(BaseAnalysis):
     """An analysis for results from a non-Pathfinder query SHOULD have edge_bindings and SHOULD NOT have path_bindings."""
 
-    model_config: ClassVar[ConfigDict] = ConfigDict(extra="allow")
-
     edge_bindings: dict[QEdgeID, list[EdgeBinding]]
     """The dictionary of input Query Graph to Knowledge Graph edge bindings where the dictionary keys are the key identifiers of the Query Graph edges and the associated values of those keys are instances of EdgeBinding schema type (see below).
 
@@ -121,8 +115,6 @@ class Analysis(BaseAnalysis):
 
 class PathfinderAnalysis(BaseAnalysis):
     """An analysis for results from a Pathfinder query SHOULD have path_bindings and SHOULD NOT have edge_bindings."""
-
-    model_config: ClassVar[ConfigDict] = ConfigDict(extra="allow")
 
     path_bindings: dict[QPathID, list[PathBinding]]
     """The dictionary of input Query Graph paths to Analysis paths, specifically only for pathfinder queries."""

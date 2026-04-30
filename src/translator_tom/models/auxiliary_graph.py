@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from typing import Annotated, ClassVar, override
+from typing import Annotated, override
 
-from pydantic import ConfigDict, Field
+from pydantic import Field
 
 from translator_tom.models.attribute import Attribute
 from translator_tom.models.shared import AuxGraphID, EdgeID
@@ -21,8 +21,6 @@ class AuxiliaryGraph(TOMBaseObject):
     from a Result Analysis as information used to generate a score, or
     from a Path Binding as the path for that Analysis.
     """
-
-    model_config: ClassVar[ConfigDict] = ConfigDict(extra="allow")
 
     edges: Annotated[list[EdgeID], Field(min_length=1)]
     """List of edges that form the Auxiliary Graph.

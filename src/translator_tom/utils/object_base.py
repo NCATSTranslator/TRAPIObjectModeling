@@ -34,6 +34,7 @@ class TOMBaseObject(BaseModel):
         revalidate_instances="never",
         validate_default=False,
         protected_namespaces=(),
+        extra="allow",
     )
 
     ###### I/O methods #####

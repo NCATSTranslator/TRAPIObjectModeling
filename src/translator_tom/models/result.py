@@ -1,9 +1,9 @@
 from __future__ import annotations
 
 import itertools
-from typing import Annotated, ClassVar, override
+from typing import Annotated, override
 
-from pydantic import ConfigDict, Field
+from pydantic import Field
 
 from translator_tom.models.analysis import Analysis, PathfinderAnalysis
 from translator_tom.models.node_binding import NodeBinding
@@ -18,8 +18,6 @@ class Result(TOMBaseObject):
     It must contain a NodeBindings object (list of query graph node
     to knowledge graph node mappings) and a list of Analysis objects.
     """
-
-    model_config: ClassVar[ConfigDict] = ConfigDict(extra="allow")
 
     node_bindings: dict[QNodeID, Annotated[list[NodeBinding], Field(min_length=1)]]
     """The dictionary of Input Query Graph to Result Knowledge Graph node bindings where the dictionary keys are the key identifiers of the Query Graph nodes and the associated values of those keys are instances of NodeBinding schema type (see below).

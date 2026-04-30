@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from typing import Annotated, Self
+from typing import Annotated, ClassVar, Self
 
-from pydantic import Field
+from pydantic import ConfigDict, Field
 
 from translator_tom.models.attribute import AttributeConstraint
 from translator_tom.models.meta_attribute import MetaAttribute
@@ -46,6 +46,8 @@ class MetaKnowledgeGraph(TOMBaseObject):
 class MetaNode(TOMBaseObject):
     """Description of a node category provided by this TRAPI web service."""
 
+    model_config: ClassVar[ConfigDict] = ConfigDict(extra="forbid")
+
     id_prefixes: Annotated[list[str], Field(min_length=1)]
     """List of CURIE prefixes for the node category that this TRAPI web service understands and accepts on the input."""
 
@@ -69,6 +71,8 @@ class MetaNode(TOMBaseObject):
 
 class MetaEdge(TOMBaseObject):
     """Edge in a meta knowledge map describing relationship between a subject Biolink class and an object Biolink class."""
+
+    model_config: ClassVar[ConfigDict] = ConfigDict(extra="forbid")
 
     subject: Biolink.Entity
     """Subject node category of this relationship edge."""

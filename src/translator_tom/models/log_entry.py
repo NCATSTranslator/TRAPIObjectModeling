@@ -2,9 +2,9 @@ from __future__ import annotations
 
 import datetime
 from enum import Enum
-from typing import ClassVar, Literal, Self
+from typing import Literal, Self
 
-from pydantic import AwareDatetime, ConfigDict
+from pydantic import AwareDatetime
 
 from translator_tom.utils.object_base import TOMBaseObject
 
@@ -39,8 +39,6 @@ class LogEntry(TOMBaseObject):
     one of a standardized set of codes describing the condition of
     the component sending the message.
     """
-
-    model_config: ClassVar[ConfigDict] = ConfigDict(extra="allow")
 
     timestamp: AwareDatetime
     """Timestamp in ISO 8601 format, providing the LogEntry time

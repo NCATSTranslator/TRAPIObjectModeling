@@ -2,9 +2,9 @@ from __future__ import annotations
 
 import itertools
 from collections.abc import Iterable
-from typing import Annotated, Self
+from typing import Annotated, ClassVar, Self
 
-from pydantic import Field
+from pydantic import ConfigDict, Field
 
 from translator_tom.models.meta_qualifier import MetaQualifier
 from translator_tom.utils.biolink import Biolink
@@ -13,6 +13,8 @@ from translator_tom.utils.object_base import TOMBaseObject
 
 class Qualifier(TOMBaseObject):
     """An additional nuance attached to an assertion."""
+
+    model_config: ClassVar[ConfigDict] = ConfigDict(extra="forbid")
 
     qualifier_type_id: Annotated[
         Biolink.Qualifier, Field(pattern=r"^biolink:[a-z][a-z_]*$")
@@ -42,6 +44,8 @@ class QualifierConstraint(TOMBaseObject):
     constraining on the qualifier_type "biolink:object_aspect_qualifier"
     with a qualifier_value of "expression".
     """
+
+    model_config: ClassVar[ConfigDict] = ConfigDict(extra="forbid")
 
     qualifier_set: list[Qualifier]
     """A set of Qualifiers that serves to add nuance to a query, by constraining allowed values held by Qualifiers on queried Edges."""

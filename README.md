@@ -37,10 +37,6 @@ I avoided doing this in areas where an enum is implied, but am unsure if Transla
 
 Python Literals are slightly faster for serialization, so internally, literals are used. Enums are still provided for ease of use.
 
-### Lenient interpretation of `additionalProperties: false`
-
-In OpenAPI, `additionalProperties` governs whether an object may have extra properties not defined in the spec. It can be either `true` or `false`. In Pydantic, we can use `allow`, `ignore`, or `forbid`. I have elected to use `ignore` in places where the yaml specification states `additionalProperties: false` such that disallowed extra properties are dropped, rather than raising a validation error, prioritizing answering queries over policing their correctness. However, this does mean that disallowed extra properties are dropped silently, which could make spotting certain problems in non-TOM applications harder.
-
 ### Using None where None is allowed, despite default
 
 Some properties are non-required, but default to an empty list. I'm setting these as None, to save serialized space. This is in-line with intended TRAPI 2.0 changes, and doesn't break interoperability.
@@ -56,7 +52,7 @@ Some properties are non-required, but default to an empty list. I'm setting thes
 - MetaAttribute hash does not take into account name fields
 - Message does not auto-normalize, and results do not auto-merge. You have to manually call the appropriate methods.
 - BiolinkEntity, BiolinkPredicate, and BiolinkQualifier are now sub-types on the Biolink utility class.
-  - This causes one issue: BiolinkPredicate and BiolinkEntity don't show up the JsonSchema generated from these models (but the patterns are preserved  )
+  - This causes one issue: BiolinkPredicate and BiolinkEntity don't show up the JsonSchema generated from these models (but the patterns are preserved )
 
 ### Open questions
 

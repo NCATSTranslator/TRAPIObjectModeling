@@ -1,9 +1,9 @@
 from __future__ import annotations
 
 from enum import Enum
-from typing import Annotated, ClassVar, Literal
+from typing import Annotated, Literal
 
-from pydantic import ConfigDict, Field
+from pydantic import Field
 
 from translator_tom.models.attribute import AttributeConstraint
 from translator_tom.models.path_constraint import PathConstraint
@@ -27,8 +27,6 @@ class BaseQueryGraph(TOMBaseObject):
     expected to obey the constraints of the associated query graph element.
     """
 
-    model_config: ClassVar[ConfigDict] = ConfigDict(extra="allow")
-
     nodes: dict[QNodeID, QNode]
     """The node specifications.
 
@@ -41,8 +39,6 @@ class BaseQueryGraph(TOMBaseObject):
 class QueryGraph(BaseQueryGraph):
     """A non-Pathfinder query SHOULD have edges following the QEdge schema and SHOULD NOT have paths."""
 
-    model_config: ClassVar[ConfigDict] = ConfigDict(extra="allow")
-
     edges: dict[QEdgeID, QEdge]
     """The edge specifications.
 
@@ -54,8 +50,6 @@ class QueryGraph(BaseQueryGraph):
 
 class PathfinderQueryGraph(BaseQueryGraph):
     """A Pathfinder query SHOULD have paths following the QPath schema and SHOULD NOT have edges."""
-
-    model_config: ClassVar[ConfigDict] = ConfigDict(extra="allow")
 
     paths: Annotated[dict[QPathID, QPath], Field(min_length=1, max_length=1)]
     """The QueryGraph path specification, used only for pathfinder type queries.
@@ -88,8 +82,6 @@ class QNode(TOMBaseObject):
     If a CURIE is not specified, any nodes matching the category
     of the QNode will be returned in the Results.
     """
-
-    model_config: ClassVar[ConfigDict] = ConfigDict(extra="allow")
 
     ids: Annotated[list[CURIE] | None, Field(min_length=1)] = None
     """A CURIE identifier (or list of identifiers) for this node.
@@ -170,8 +162,6 @@ class QEdge(TOMBaseObject):
     an exact match to the given QEdge predicate term,
     or to a term that is a descendant of the QEdge predicate term.
     """
-
-    model_config: ClassVar[ConfigDict] = ConfigDict(extra="allow")
 
     knowledge_type: KnowledgeType | None = None
     """Indicates the type of knowledge that the client wants from the server between the subject and object.
@@ -263,8 +253,6 @@ class QPath(TOMBaseObject):
     Paths returned that bind to this QPath can represent some
     relationship between subject and object.
     """
-
-    model_config: ClassVar[ConfigDict] = ConfigDict(extra="allow")
 
     subject: QNodeID
     """Corresponds to the map key identifier of the subject concept node for the start of the queried path."""

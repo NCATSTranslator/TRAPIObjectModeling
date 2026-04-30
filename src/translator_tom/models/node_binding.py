@@ -1,8 +1,6 @@
 from __future__ import annotations
 
-from typing import ClassVar, override
-
-from pydantic import ConfigDict
+from typing import override
 
 from translator_tom.models.attribute import Attribute
 from translator_tom.models.shared import CURIE
@@ -17,8 +15,6 @@ class NodeBinding(TOMBaseObject):
     (such annotation is not yet fully standardized).
     Each Node Binding must bind directly to node in the original Query Graph.
     """
-
-    model_config: ClassVar[ConfigDict] = ConfigDict(extra="allow")
 
     id: CURIE
     """The CURIE of a Node within the Knowledge Graph."""

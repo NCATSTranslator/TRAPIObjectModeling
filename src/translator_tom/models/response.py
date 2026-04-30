@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from typing import ClassVar, Self
+from typing import Self
 
-from pydantic import ConfigDict, Field
+from pydantic import Field
 
 from translator_tom.models.log_entry import LogEntry
 from translator_tom.models.message import Message
@@ -18,8 +18,6 @@ class Response(TOMBaseObject):
     (query graph, knowledge graph, and results). The status, description, and logs
     properties provide additional details about the response.
     """
-
-    model_config: ClassVar[ConfigDict] = ConfigDict(extra="allow")
 
     message: Message
     """Contains the knowledge of the response (query graph, knowledge graph, and results)."""
