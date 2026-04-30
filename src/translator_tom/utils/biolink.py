@@ -1,11 +1,10 @@
 from __future__ import annotations
 
 from functools import lru_cache
-from typing import Annotated, ClassVar, TypeVar, cast, final, override
+from typing import ClassVar, TypeVar, cast, final, override
 
 import bmt
 from bmt import utils
-from pydantic import Field
 
 from translator_tom.models.shared import CURIE, Curie
 from translator_tom.utils.config import TRAPI_CONFIG
