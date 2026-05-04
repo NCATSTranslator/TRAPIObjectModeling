@@ -9,7 +9,7 @@ from pydantic import AwareDatetime
 from translator_tom.utils.object_base import TOMBaseObject
 
 
-class LogLevel(str, Enum):
+class LogLevelEnum(str, Enum):
     """Standardized log levels."""
 
     ERROR = "ERROR"
@@ -25,7 +25,7 @@ class LogLevel(str, Enum):
     """The log presents information about query execution that may be useful to devs."""
 
 
-LogLevelValue = Literal["ERROR", "WARNING", "INFO", "DEBUG"]
+LogLevel = Literal["ERROR", "WARNING", "INFO", "DEBUG"]
 
 
 class LogEntry(TOMBaseObject):
@@ -49,7 +49,7 @@ class LogEntry(TOMBaseObject):
     (e.g. 2020-09-03T18:13:49-04:00).
     """
 
-    level: LogLevelValue | None = None
+    level: LogLevel | None = None
 
     code: str | None = None
     """One of a standardized set of short codes e.g. QueryNotTraversable, KPNotAvailable, KPResponseMalformed."""
@@ -59,7 +59,7 @@ class LogEntry(TOMBaseObject):
 
     @classmethod
     def new(
-        cls, message: str, level: LogLevelValue | None = None, code: str | None = None
+        cls, message: str, level: LogLevel | None = None, code: str | None = None
     ) -> Self:
         """Return a new LogEntry with a timestamp from now."""
         return cls(

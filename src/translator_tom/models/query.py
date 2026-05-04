@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Self
 
-from translator_tom.models.log_entry import LogLevelValue
+from translator_tom.models.log_entry import LogLevel
 from translator_tom.models.message import Message
 from translator_tom.models.workflow_operations import Operation
 from translator_tom.utils.object_base import TOMBaseObject
@@ -28,7 +28,7 @@ class Query(TOMBaseObject):
     require non-empty results and knowledge_graph fields.
     """
 
-    log_level: LogLevelValue | None = None
+    log_level: LogLevel | None = None
     """The least critical level of logs to return."""
 
     workflow: list[Operation] | None = None
