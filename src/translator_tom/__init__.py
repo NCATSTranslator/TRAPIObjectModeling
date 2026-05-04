@@ -14,6 +14,7 @@ __all__ = [
     "AttributeConstraint",
     "AuxGraphID",
     "AuxiliaryGraph",
+    "AuxiliaryGraphsDict",
     "BaseAnalysis",
     "BaseQueryGraph",
     "Biolink",
@@ -90,7 +91,7 @@ from translator_tom.models.attribute import (
 from translator_tom.models.auxiliary_graph import AuxiliaryGraph, AuxiliaryGraphsDict
 from translator_tom.models.edge_binding import EdgeBinding
 from translator_tom.models.knowledge_graph import Edge, KnowledgeGraph, Node
-from translator_tom.models.log_entry import LogEntry, LogLevelEnum
+from translator_tom.models.log_entry import LogEntry, LogLevel, LogLevelEnum
 from translator_tom.models.message import Message
 from translator_tom.models.meta_attribute import MetaAttribute
 from translator_tom.models.meta_knowledge_graph import (
