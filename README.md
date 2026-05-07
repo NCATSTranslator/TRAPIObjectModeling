@@ -45,20 +45,20 @@ query_json = """
 """
 
 query = Query.from_json(query_json)
-assert len(query.nodes) == 2  # True
+assert len(query.message.query_graph.nodes) == 2  # True
 ```
 
 Similarly, you can validate from JSON with a FastAPI endpoint:
 
 ```python
 from fastapi import FastAPI
-from translator_tom imoprt Query
+from translator_tom import Query
 
 app = FastAPI()
 
 @app.post("/query")
 def query(body: Query) -> str:
-    return f"Got {len(query.nodes)} query nodes!"
+    return f"Got {len(body.message.query_graph.nodes)} query nodes!"
 ```
 
 ### Dict Validation
@@ -88,10 +88,10 @@ query_dict = {
 }
 
 query = Query.from_dict(query_dict)
-assert len(query.nodes) == 2  # True
+assert len(query.message.query_graph.nodes) == 2  # True
 
 query = Query(**query_dict)  # Also works (less clear, not recommended)
-assert len(query.nodes) == 2  # True
+assert len(query.message.query_graph.nodes) == 2  # True
 ```
 
 ### Construction
@@ -122,7 +122,7 @@ query = Query(
         }
     },
 )
-assert len(query.nodes) == 2  # True
+assert len(query.message.query_graph.nodes) == 2  # True
 ```
 
 Another way is to use `Model.model_construct()`.
@@ -155,7 +155,7 @@ query = Query(
         )
     ),
 )
-assert len(query.nodes) == 2  # True
+assert len(query.message.query_graph.nodes) == 2  # True
 ```
 
 ### Convenience Methods
@@ -182,7 +182,7 @@ More in-depth utility methods include `.normalize()` for Message/KnowledgeGraph/
 A very WIP item is Semantic Validation:
 
 ```python
-from translator_tom import semantic_validate
+from translator_tom.validation import semantic_validate
 
 warnings, errors = semantic_validate(some_model)  # Any TOM model
 ```
