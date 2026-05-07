@@ -1,9 +1,12 @@
 [project]
 name = "translator_tom"
-version = "1.0.0"
+version = "1.0.1"
 description = "TRAPI Object Models: A performant python data model and centralized utilities for the Translator Reasoner API."
 readme = "README.md"
 requires-python = ">=3.10"
+authors = [
+    { name = "Willow Callaghan", email = "43009413+tokebe@users.noreply.github.com" },
+]
 dependencies = [
     "bmt>=1.4.6",
     "orjson>=3.11.3",
@@ -14,6 +17,19 @@ dependencies = [
     "stablehash>=0.3.0",
     "typing-extensions>=4.15.0",
 ]
+classifiers = [
+    "Intended Audience :: Science/Research",
+    "Topic :: Scientific/Engineering :: Bio-Informatics",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+]
+
+[project.urls]
+Homepage = "https://github.com/NCATSTranslator/TRAPIObjectModeling"
+Repository = "https://github.com/NCATSTranslator/TRAPIObjectModeling"
+Issues = "https://github.com/NCATSTranslator/TRAPIObjectModeling/issues"
 
 [dependency-groups]
 dev = [
