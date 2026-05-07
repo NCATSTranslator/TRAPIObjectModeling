@@ -1,4 +1,4 @@
-# TRAPIObjectModeling
+# TRAPI Object Modeling: `translator_tom`
 
 A library for statically typed, fast serialize/deserialize TRAPI in Python, for Translator-wide use.
 
