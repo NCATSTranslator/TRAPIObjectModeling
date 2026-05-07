@@ -53,7 +53,7 @@ class Response(TOMBase):
     @classmethod
     def new(cls) -> Self:
         """Return an empty instance, without having to pass required containers."""
-        return cls(
+        return cls.model_construct(
             message=Message(),
             logs=[],
             schema_version=TRAPI_CONFIG.schema_version,

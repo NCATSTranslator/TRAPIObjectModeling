@@ -68,7 +68,7 @@ class LogEntry(TOMBase):
         cls, message: str, level: LogLevel | None = None, code: str | None = None
     ) -> Self:
         """Return a new LogEntry with a timestamp from now."""
-        return cls(
+        return cls.model_construct(
             timestamp=datetime.datetime.now().astimezone(),
             level=level,
             code=code,

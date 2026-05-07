@@ -49,7 +49,7 @@ class KnowledgeGraph(TOMBase):
     @classmethod
     def new(cls) -> Self:
         """Return an empty instance, without having to pass required containers."""
-        return cls(nodes={}, edges={})
+        return cls.model_construct(nodes={}, edges={})
 
     def normalize(self) -> dict[EdgeID, EdgeID]:
         """Normalize the kgraph edge IDs and return a mapping of old:new."""

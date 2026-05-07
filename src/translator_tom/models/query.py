@@ -61,4 +61,4 @@ class Query(TOMBase):
     @classmethod
     def new(cls) -> Self:
         """Return an empty instance, without having to pass required containers."""
-        return cls(message=Message())
+        return cls.model_construct(message=Message.model_construct())

@@ -45,7 +45,7 @@ class MetaKnowledgeGraph(TOMBase):
     @classmethod
     def new(cls) -> Self:
         """Return an empty instance, without having to pass required containers."""
-        return cls(nodes={}, edges=[])
+        return cls.model_construct(nodes={}, edges=[])
 
 
 class MetaNode(TOMBase):

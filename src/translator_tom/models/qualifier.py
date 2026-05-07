@@ -58,7 +58,7 @@ class QualifierConstraint(TOMBase):
     @classmethod
     def new(cls) -> Self:
         """Return an empty instance, without having to pass required containers."""
-        return cls(qualifier_set=[])
+        return cls.model_construct(qualifier_set=[])
 
     def met_by(self, qualifiers: Iterable[Qualifier] | Iterable[MetaQualifier]) -> bool:
         """Check that the given qualifiers satisfy the constraint."""
