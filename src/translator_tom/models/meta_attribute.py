@@ -4,10 +4,12 @@ from typing import override
 
 from translator_tom.models.shared import CURIE
 from translator_tom.utils.hash import tomhash
-from translator_tom.utils.object_base import TOMBaseObject
+from translator_tom.utils.object_base import TOMBase
+
+__all__ = ["MetaAttribute"]
 
 
-class MetaAttribute(TOMBaseObject):
+class MetaAttribute(TOMBase):
     """An element describing a type of attribute that can be served."""
 
     attribute_type_id: CURIE

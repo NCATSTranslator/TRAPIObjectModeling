@@ -1,10 +1,12 @@
 from __future__ import annotations
 
 from translator_tom.utils.biolink import Biolink
-from translator_tom.utils.object_base import TOMBaseObject
+from translator_tom.utils.object_base import TOMBase
+
+__all__ = ["MetaQualifier"]
 
 
-class MetaQualifier(TOMBaseObject):
+class MetaQualifier(TOMBase):
     """An element describing a set of values that can be served for a given qualifier type."""
 
     qualifier_type_id: Biolink.Qualifier

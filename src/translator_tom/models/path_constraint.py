@@ -5,10 +5,12 @@ from typing import Annotated
 from pydantic import Field
 
 from translator_tom.utils.biolink import Biolink
-from translator_tom.utils.object_base import TOMBaseObject
+from translator_tom.utils.object_base import TOMBase
+
+__all__ = ["PathConstraint"]
 
 
-class PathConstraint(TOMBaseObject):
+class PathConstraint(TOMBase):
     """A constraint for paths. ARAs must comply with constraints when finding paths."""
 
     intermediate_categories: (

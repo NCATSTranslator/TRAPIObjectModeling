@@ -6,10 +6,76 @@ from typing import Annotated, Literal, override
 from pydantic import Field
 
 from translator_tom.models.shared import FastJsonValue, Infores, QEdgeID, QNodeID
-from translator_tom.utils.object_base import TOMBaseObject
+from translator_tom.utils.object_base import TOMBase
+
+__all__ = [
+    "AboveOrBelow",
+    "AboveOrBelowEnum",
+    "AllowList",
+    "AnnotateEdgesParameters",
+    "AnnotateNodesParameters",
+    "AscendingOrDescending",
+    "AscendingOrDescendingEnum",
+    "BaseOperation",
+    "DenyList",
+    "EnrichResultsParameters",
+    "FillAllowListParameters",
+    "FillDenyListParameters",
+    "FilterKgraphContinuousKedgeAttributeParameters",
+    "FilterKgraphDiscreteKedgeAttributeParameters",
+    "FilterKgraphDiscreteKnodeAttributeParameters",
+    "FilterKgraphParametersBase",
+    "FilterKgraphPercentileParameters",
+    "FilterKgraphStdDevParameters",
+    "FilterKgraphTopNParameters",
+    "FilterResultsTopNParameters",
+    "Operation",
+    "OperationAnnotate",
+    "OperationAnnotateEdges",
+    "OperationAnnotateNodes",
+    "OperationBind",
+    "OperationCompleteResults",
+    "OperationEnrichResults",
+    "OperationFill",
+    "OperationFilterKgraph",
+    "OperationFilterKgraphContinuousKedgeAttribute",
+    "OperationFilterKgraphDiscreteKedgeAttribute",
+    "OperationFilterKgraphDiscreteKnodeAttribute",
+    "OperationFilterKgraphOrphans",
+    "OperationFilterKgraphPercentile",
+    "OperationFilterKgraphStdDev",
+    "OperationFilterKgraphTopN",
+    "OperationFilterResults",
+    "OperationFilterResultsTopN",
+    "OperationLookup",
+    "OperationLookupAndScore",
+    "OperationOverlay",
+    "OperationOverlayComputeJaccard",
+    "OperationOverlayComputeNgd",
+    "OperationOverlayConnectKnodes",
+    "OperationOverlayFisherExactTest",
+    "OperationParameters",
+    "OperationRestate",
+    "OperationScore",
+    "OperationSortResults",
+    "OperationSortResultsEdgeAttribute",
+    "OperationSortResultsNodeAttribute",
+    "OperationSortResultsScore",
+    "OverlayComputeJaccardParameters",
+    "OverlayComputeNgdParameters",
+    "OverlayFisherExactTestParameters",
+    "PlusOrMinus",
+    "PlusOrMinusEnum",
+    "RunnerParameters",
+    "SortResultNodeAttributeParameters",
+    "SortResultsEdgeAttributeParameters",
+    "SortResultsScoreParameters",
+    "TopOrBottom",
+    "TopOrBottomEnum",
+]
 
 
-class AllowList(TOMBaseObject):
+class AllowList(TOMBase):
     """List of operation providers (by infores ID) that may be used to complete operation."""
 
     allowlist: Annotated[
@@ -22,7 +88,7 @@ class AllowList(TOMBaseObject):
     """
 
 
-class DenyList(TOMBaseObject):
+class DenyList(TOMBase):
     """List of operation providers (by infores ID) that may not be used to complete operation."""
 
     denylist: Annotated[
@@ -38,21 +104,21 @@ class DenyList(TOMBaseObject):
 RunnerParameters = AllowList | DenyList
 
 
-class AscendingOrDescending(str, Enum):
+class AscendingOrDescendingEnum(str, Enum):
     """Indicates whether results should be sorted in ascending or descending order."""
 
     ascending = "ascending"
     descending = "descending"
 
 
-AscendingOrDescendingValue = Literal["ascending", "descending"]
+AscendingOrDescending = Literal["ascending", "descending"]
 
 
-class OperationParameters(TOMBaseObject):
+class OperationParameters(TOMBase):
     """Base class for various operation parameters."""
 
 
-class BaseOperation(TOMBaseObject):
+class BaseOperation(TOMBase):
     """Base class for types of workflow operation to execute."""
 
     runner_parameters: RunnerParameters | None = None
@@ -631,7 +697,7 @@ class SortResultsEdgeAttributeParameters(OperationParameters):
     edge_attribute: Annotated[str, Field(examples=["normalized_google_distance"])]
     """The name of the edge attribute to order by."""
 
-    ascending_or_descending: AscendingOrDescendingValue
+    ascending_or_descending: AscendingOrDescending
 
     qedge_keys: Annotated[list[QEdgeID], Field(examples=["[e01]"])]
     """This indicates if you only want to consider edges with specific edge_keys.
@@ -659,7 +725,7 @@ class SortResultNodeAttributeParameters(OperationParameters):
     node_attribute: Annotated[str, Field(examples=["normalized_google_distance"])]
     """The name of the node attribute to order by."""
 
-    ascending_or_descending: AscendingOrDescendingValue
+    ascending_or_descending: AscendingOrDescending
 
     qnode_keys: Annotated[list[QNodeID] | None, Field(examples=["[e01]"])]
     """This indicates if you only want to consider nodes with specific node_keys.
@@ -689,7 +755,7 @@ class OperationSortResultsNodeAttribute(BaseOperation):
 class SortResultsScoreParameters(OperationParameters):
     """Parameters for the SortResultsScore operation."""
 
-    ascending_or_descending: AscendingOrDescendingValue
+    ascending_or_descending: AscendingOrDescending
 
 
 class OperationSortResultsScore(BaseOperation):
@@ -701,39 +767,6 @@ class OperationSortResultsScore(BaseOperation):
     id: Literal["sort_results_score"]
     parameters: SortResultsScoreParameters
 
-
-operations = [
-    OperationAnnotate,
-    OperationAnnotateEdges,
-    OperationAnnotateNodes,
-    OperationBind,
-    OperationCompleteResults,
-    OperationEnrichResults,
-    OperationFill,
-    OperationFilterKgraph,
-    OperationFilterKgraphContinuousKedgeAttribute,
-    OperationFilterKgraphDiscreteKedgeAttribute,
-    OperationFilterKgraphDiscreteKnodeAttribute,
-    OperationFilterKgraphOrphans,
-    OperationFilterKgraphPercentile,
-    OperationFilterKgraphStdDev,
-    OperationFilterKgraphTopN,
-    OperationFilterResults,
-    OperationFilterResultsTopN,
-    OperationLookup,
-    OperationLookupAndScore,
-    OperationOverlay,
-    OperationOverlayComputeJaccard,
-    OperationOverlayComputeNgd,
-    OperationOverlayConnectKnodes,
-    OperationOverlayFisherExactTest,
-    OperationRestate,
-    OperationScore,
-    OperationSortResults,
-    OperationSortResultsEdgeAttribute,
-    OperationSortResultsNodeAttribute,
-    OperationSortResultsScore,
-]
 
 Operation = Annotated[
     (

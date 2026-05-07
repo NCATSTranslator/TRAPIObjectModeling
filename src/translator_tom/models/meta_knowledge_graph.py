@@ -13,10 +13,15 @@ from translator_tom.models.shared import (
     KnowledgeType,
 )
 from translator_tom.utils.biolink import Biolink
-from translator_tom.utils.object_base import TOMBaseObject
+from translator_tom.utils.object_base import TOMBase
+
+__all__ = [
+    "MetaEdge",
+    "MetaKnowledgeGraph",
+]
 
 
-class MetaKnowledgeGraph(TOMBaseObject):
+class MetaKnowledgeGraph(TOMBase):
     """Knowledge-map representation of this TRAPI web service.
 
     The meta knowledge graph is composed of the union of most specific categories
@@ -43,7 +48,7 @@ class MetaKnowledgeGraph(TOMBaseObject):
         return cls(nodes={}, edges=[])
 
 
-class MetaNode(TOMBaseObject):
+class MetaNode(TOMBase):
     """Description of a node category provided by this TRAPI web service."""
 
     model_config: ClassVar[ConfigDict] = ConfigDict(extra="forbid")
@@ -69,7 +74,7 @@ class MetaNode(TOMBaseObject):
             MetaAttribute.merge_attribute_lists(self.attributes, other.attributes)
 
 
-class MetaEdge(TOMBaseObject):
+class MetaEdge(TOMBase):
     """Edge in a meta knowledge map describing relationship between a subject Biolink class and an object Biolink class."""
 
     model_config: ClassVar[ConfigDict] = ConfigDict(extra="forbid")

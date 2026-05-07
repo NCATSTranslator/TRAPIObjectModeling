@@ -1,3 +1,7 @@
+from __future__ import annotations
+
+__all__ = ["TOMBase"]
+
 from typing import Any, ClassVar, Literal, Self, cast, overload, override
 
 import ormsgpack
@@ -11,7 +15,7 @@ def _stable_repr(val: Any) -> Any:
 
     Avoids instabilities caused by stablehash's access of TOMBaseObject fields via __getstate__.
     """
-    if isinstance(val, TOMBaseObject):
+    if isinstance(val, TOMBase):
         return val.hash()
     if isinstance(val, dict):
         return {k: _stable_repr(v) for k, v in cast("dict[Any, Any]", val).items()}
@@ -24,7 +28,7 @@ def _stable_repr(val: Any) -> Any:
     return val
 
 
-class TOMBaseObject(BaseModel):
+class TOMBase(BaseModel):
     """A base class handling (de)serialization and providing method requirements."""
 
     # Set fast defaults, subclasses inherit and override as needed.
@@ -86,25 +90,21 @@ class TOMBaseObject(BaseModel):
 
     ##### Misc. #####
 
-    def __getitem__(self, key: str) -> Any:
-        """Get an extra field, if extra is allowed."""
-        if self.__pydantic_extra__ is None:
-            raise ValueError(f"{type(self)} does not allow extra values.")
-        return self.__pydantic_extra__[key]
+    @property
+    def extra_dict(self) -> dict[str, JsonValue]:
+        """Return a dict which is either the model extra fields, or empty if not present.
 
-    def __setitem__(self, key: str, value: JsonValue) -> None:
-        """Set an extra field, if extra is allowed."""
-        if self.__pydantic_extra__ is None:
-            raise ValueError(f"{type(self)} does not allow extra values.")
-        self.__pydantic_extra__[key] = value
+        Don't modify this dict, use set or __setitem__.
+        """
+        return self.__pydantic_extra__ or {}
 
-    def get(self, key: str, default: Any | None) -> Any:
+    def extra_get(self, key: str, default: Any | None = None) -> Any:
         """Get an extra field or the given default, if extra is allowed."""
         if self.__pydantic_extra__ is None:
             raise ValueError(f"{type(self)} does not allow extra values.")
         return self.__pydantic_extra__.get(key, default)
 
-    def set(self, key: str, value: JsonValue) -> None:
+    def extra_set(self, key: str, value: JsonValue) -> None:
         """Set an extra field to the given value, if extra is allowed."""
         if self.__pydantic_extra__ is None:
             raise ValueError(f"{type(self)} does not allow extra values.")
@@ -132,7 +132,7 @@ class TOMBaseObject(BaseModel):
     def __eq__(self, other: object) -> bool:
         """Check for equality between self an other, using hashes."""
         return bool(
-            isinstance(other, TOMBaseObject)
+            isinstance(other, TOMBase)
             and isinstance(other, type(self))
             and self.hash() == other.hash()
         )

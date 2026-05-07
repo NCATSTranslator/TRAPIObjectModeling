@@ -8,10 +8,12 @@ from translator_tom.models.log_entry import LogEntry
 from translator_tom.models.message import Message
 from translator_tom.models.workflow_operations import Operation
 from translator_tom.utils.config import TRAPI_CONFIG
-from translator_tom.utils.object_base import TOMBaseObject
+from translator_tom.utils.object_base import TOMBase
+
+__all__ = ["Response"]
 
 
-class Response(TOMBaseObject):
+class Response(TOMBase):
     """The Response object contains the main payload when a TRAPI query endpoint interprets and responds to the submitted query successfully (i.e., HTTP Status Code 200).
 
     The message property contains the knowledge of the response

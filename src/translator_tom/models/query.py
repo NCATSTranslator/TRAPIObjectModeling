@@ -5,10 +5,12 @@ from typing import Self
 from translator_tom.models.log_entry import LogLevel
 from translator_tom.models.message import Message
 from translator_tom.models.workflow_operations import Operation
-from translator_tom.utils.object_base import TOMBaseObject
+from translator_tom.utils.object_base import TOMBase
+
+__all__ = ["Query"]
 
 
-class Query(TOMBaseObject):
+class Query(TOMBase):
     """The Query class is used to package a user request for information.
 
     A Query object consists of a required Message object with optional

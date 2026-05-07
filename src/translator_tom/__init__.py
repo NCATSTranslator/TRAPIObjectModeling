@@ -2,11 +2,7 @@
 
 __all__ = [
     "CURIE",
-    "AboveOrBelow",
-    "AboveOrBelowEnum",
-    "AllowList",
     "Analysis",
-    "AscendingOrDescending",
     "AsyncQuery",
     "AsyncQueryResponse",
     "AsyncQueryStatusResponse",
@@ -19,10 +15,10 @@ __all__ = [
     "BaseQueryGraph",
     "Biolink",
     "Curie",
-    "DenyList",
     "Edge",
     "EdgeBinding",
     "EdgeID",
+    "FastJsonValue",
     "Infores",
     "KnowledgeGraph",
     "KnowledgeType",
@@ -39,15 +35,12 @@ __all__ = [
     "Node",
     "NodeBinding",
     "Operation",
-    "OperationParameters",
     "Operator",
     "OperatorEnum",
     "PathBinding",
     "PathConstraint",
     "PathfinderAnalysis",
     "PathfinderQueryGraph",
-    "PlusOrMinus",
-    "PlusOrMinusEnum",
     "QEdge",
     "QEdgeID",
     "QNode",
@@ -65,13 +58,14 @@ __all__ = [
     "RetrievalSource",
     "SetInterpretation",
     "SetInterpretationEnum",
-    "TOMBaseObject",
-    "TopOrBottom",
-    "TopOrBottomEnum",
+    "TOMBase",
     "infores",
-    "operations",
+    "tomhash",
+    "tomhash_to_int",
+    "workflow",
 ]
 
+from translator_tom.models import workflow_operations as workflow
 from translator_tom.models.analysis import (
     Analysis,
     BaseAnalysis,
@@ -127,6 +121,7 @@ from translator_tom.models.shared import (
     AuxGraphID,
     Curie,
     EdgeID,
+    FastJsonValue,
     Infores,
     KnowledgeType,
     KnowledgeTypeEnum,
@@ -136,18 +131,8 @@ from translator_tom.models.shared import (
     infores,
 )
 from translator_tom.models.workflow_operations import (
-    AboveOrBelow,
-    AboveOrBelowEnum,
-    AllowList,
-    AscendingOrDescending,
-    DenyList,
     Operation,
-    OperationParameters,
-    PlusOrMinus,
-    PlusOrMinusEnum,
-    TopOrBottom,
-    TopOrBottomEnum,
-    operations,
 )
 from translator_tom.utils.biolink import Biolink
-from translator_tom.utils.object_base import TOMBaseObject
+from translator_tom.utils.hash import tomhash, tomhash_to_int
+from translator_tom.utils.object_base import TOMBase

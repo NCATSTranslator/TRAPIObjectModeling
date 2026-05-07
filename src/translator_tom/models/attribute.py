@@ -9,7 +9,13 @@ from pydantic import ConfigDict, Field
 from translator_tom.models.meta_attribute import MetaAttribute
 from translator_tom.models.shared import CURIE, FastJsonValue
 from translator_tom.utils.hash import tomhash
-from translator_tom.utils.object_base import TOMBaseObject
+from translator_tom.utils.object_base import TOMBase
+
+__all__ = [
+    "Attribute",
+    "AttributeConstraint",
+    "Operator",
+]
 
 
 class OperatorEnum(str, Enum):
@@ -72,7 +78,7 @@ class OperatorEnum(str, Enum):
 Operator = Literal["==", "===", ">", "<", "matches"]
 
 
-class Attribute(TOMBaseObject):
+class Attribute(TOMBase):
     """Generic attribute for a node or an edge that expands the key-value pair concept by including fields for additional metadata.
 
     These fields can be used to describe the source of the statement made in a key-value
@@ -165,12 +171,12 @@ class Attribute(TOMBaseObject):
         old.extend(attrs.values())
 
 
-class AttributeConstraint(TOMBaseObject):
+class AttributeConstraint(TOMBase):
     """Generic query constraint for a query node or query edge."""
 
     # `negated` must always serialize as "not"
     model_config: ClassVar[ConfigDict] = ConfigDict(
-        extra="forbid", serialize_by_alias=True
+        extra="forbid", serialize_by_alias=True, populate_by_name=True
     )
 
     id: CURIE
@@ -304,3 +310,22 @@ class AttributeConstraint(TOMBaseObject):
                     )
 
         return not result if self.negated else result
+
+    @staticmethod
+    def set_met_by(
+        constraints: list[AttributeConstraint],
+        attributes: list[Attribute] | list[MetaAttribute],
+    ) -> bool:
+        """Check if the given set of constraints are met by the given attributes."""
+        if len(constraints) == 0:
+            return True
+        elif len(attributes) == 0:
+            return False
+
+        attrs_by_type: dict[CURIE, list[Attribute | MetaAttribute]] = {}
+        for attr in attributes:
+            attrs_by_type.setdefault(attr.attribute_type_id, []).append(attr)
+        return all(
+            any(c.met_by(attr) for attr in attrs_by_type.get(c.id, []))
+            for c in constraints
+        )

@@ -16,10 +16,21 @@ from translator_tom.models.shared import (
     QPathID,
 )
 from translator_tom.utils.biolink import Biolink
-from translator_tom.utils.object_base import TOMBaseObject
+from translator_tom.utils.object_base import TOMBase
+
+__all__ = [
+    "BaseQueryGraph",
+    "PathfinderQueryGraph",
+    "QEdge",
+    "QNode",
+    "QPath",
+    "QueryGraph",
+    "SetInterpretation",
+    "SetInterpretationEnum",
+]
 
 
-class BaseQueryGraph(TOMBaseObject):
+class BaseQueryGraph(TOMBase):
     """A graph representing a biomedical question.
 
     It serves as a template for
@@ -76,7 +87,7 @@ class SetInterpretationEnum(str, Enum):
 SetInterpretation = Literal["BATCH", "MANY", "ALL"]
 
 
-class QNode(TOMBaseObject):
+class QNode(TOMBase):
     """A node in the QueryGraph used to represent an entity in a query.
 
     If a CURIE is not specified, any nodes matching the category
@@ -152,7 +163,7 @@ class QNode(TOMBaseObject):
         return self.constraints if self.constraints is not None else []
 
 
-class QEdge(TOMBaseObject):
+class QEdge(TOMBase):
     """An edge in the QueryGraph used as a filter pattern specification in a query.
 
     If the optional predicate property is not specified,
@@ -233,6 +244,12 @@ class QEdge(TOMBaseObject):
         if len(failed_predicates) > 0:
             raise ValueError(f"Cannot invert predicates {failed_predicates}.")
 
+        # TODO: attribute constraint inversion with respect to the edge direction
+        if len(self.attribute_constraints_list):
+            raise NotImplementedError(
+                "Attribute constraint inversion not yet implemented."
+            )
+
         return QEdge(
             knowledge_type=self.knowledge_type,
             predicates=inverse_predicates or None,
@@ -246,7 +263,7 @@ class QEdge(TOMBaseObject):
         )
 
 
-class QPath(TOMBaseObject):
+class QPath(TOMBase):
     """A path in the QueryGraph used for pathfinder queries.
 
     Both subject and object MUST reference QNodes that have a CURIE in their ids field.

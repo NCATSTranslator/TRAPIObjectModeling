@@ -1,3 +1,10 @@
+from __future__ import annotations
+
+__all__ = [
+    "TRAPI_CONFIG",
+    "HashRepEnum",
+]
+
 from enum import Enum
 from typing import ClassVar, override
 

@@ -9,10 +9,12 @@ from translator_tom.models.analysis import Analysis, PathfinderAnalysis
 from translator_tom.models.node_binding import NodeBinding
 from translator_tom.models.shared import EdgeID, Infores, QNodeID
 from translator_tom.utils.hash import tomhash
-from translator_tom.utils.object_base import TOMBaseObject
+from translator_tom.utils.object_base import TOMBase
+
+__all__ = ["Result"]
 
 
-class Result(TOMBaseObject):
+class Result(TOMBase):
     """A Result object specifies the nodes and edges in the knowledge graph that satisfy the structure or conditions of a user-submitted query graph.
 
     It must contain a NodeBindings object (list of query graph node
@@ -47,6 +49,12 @@ class Result(TOMBaseObject):
                 *(bindings for bindings in analysis.edge_bindings.values())
             ):
                 binding.id = mapping.get(binding.id, binding.id)
+
+    @staticmethod
+    def normalize_list(results: list[Result], mapping: dict[EdgeID, EdgeID]) -> None:
+        """Normalize a result list given a mapping of old:new EdgeIDs."""
+        for result in results:
+            result.normalize(mapping)
 
     def update(self, other: Result) -> None:
         """Update the result in-place with another result."""

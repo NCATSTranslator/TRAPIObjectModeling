@@ -7,10 +7,14 @@ from pydantic import Field
 from translator_tom.models.attribute import Attribute
 from translator_tom.models.shared import AuxGraphID, EdgeID
 from translator_tom.utils.hash import tomhash
-from translator_tom.utils.object_base import TOMBaseObject
+from translator_tom.utils.object_base import TOMBase
+
+__all__ = [
+    "AuxiliaryGraph",
+]
 
 
-class AuxiliaryGraph(TOMBaseObject):
+class AuxiliaryGraph(TOMBase):
     """A single AuxiliaryGraph instance that is used by Knowledge Graph Edges, Result Analysis support graphs, and Path Bindings.
 
     Edges comprising an Auxiliary Graph are a subset of the
@@ -42,6 +46,14 @@ class AuxiliaryGraph(TOMBaseObject):
     def normalize(self, mapping: dict[EdgeID, EdgeID]) -> None:
         """Normalize the auxiliary graph given a mapping of old:new EdgeIDs."""
         self.edges = [mapping.get(edge_id, edge_id) for edge_id in self.edges]
+
+    @staticmethod
+    def normalize_aux_dict(
+        auxiliary_graphs_dict: AuxiliaryGraphsDict, mapping: dict[EdgeID, EdgeID]
+    ) -> None:
+        """Normalize an AuxiliaryGraphsDict given a mapping of old:new EdgeIDs."""
+        for auxg in auxiliary_graphs_dict.values():
+            auxg.normalize(mapping)
 
     def update(self, other: AuxiliaryGraph) -> None:
         """Update the auxiliary graph in-place using the other."""

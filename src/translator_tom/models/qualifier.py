@@ -8,10 +8,15 @@ from pydantic import ConfigDict, Field
 
 from translator_tom.models.meta_qualifier import MetaQualifier
 from translator_tom.utils.biolink import Biolink
-from translator_tom.utils.object_base import TOMBaseObject
+from translator_tom.utils.object_base import TOMBase
+
+__all__ = [
+    "Qualifier",
+    "QualifierConstraint",
+]
 
 
-class Qualifier(TOMBaseObject):
+class Qualifier(TOMBase):
     """An additional nuance attached to an assertion."""
 
     model_config: ClassVar[ConfigDict] = ConfigDict(extra="forbid")
@@ -35,7 +40,7 @@ class Qualifier(TOMBaseObject):
     """
 
 
-class QualifierConstraint(TOMBaseObject):
+class QualifierConstraint(TOMBase):
     """Defines a query constraint based on the qualifier_types and qualifier_values of a set of Qualifiers attached to an edge.
 
     For example, it can constrain a
@@ -49,6 +54,11 @@ class QualifierConstraint(TOMBaseObject):
 
     qualifier_set: list[Qualifier]
     """A set of Qualifiers that serves to add nuance to a query, by constraining allowed values held by Qualifiers on queried Edges."""
+
+    @classmethod
+    def new(cls) -> Self:
+        """Return an empty instance, without having to pass required containers."""
+        return cls(qualifier_set=[])
 
     def met_by(self, qualifiers: Iterable[Qualifier] | Iterable[MetaQualifier]) -> bool:
         """Check that the given qualifiers satisfy the constraint."""
@@ -84,11 +94,6 @@ class QualifierConstraint(TOMBaseObject):
                 return False
 
         return True
-
-    @classmethod
-    def new(cls) -> Self:
-        """Return an empty instance, without having to pass required containers."""
-        return cls(qualifier_set=[])
 
     def get_inverse(self) -> QualifierConstraint:
         """Return a (SPO) inverse of the constraint, for reversing edges."""

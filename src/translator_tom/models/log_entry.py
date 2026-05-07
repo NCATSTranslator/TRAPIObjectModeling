@@ -6,7 +6,13 @@ from typing import Literal, Self
 
 from pydantic import AwareDatetime
 
-from translator_tom.utils.object_base import TOMBaseObject
+from translator_tom.utils.object_base import TOMBase
+
+__all__ = [
+    "LogEntry",
+    "LogLevel",
+    "LogLevelEnum",
+]
 
 
 class LogLevelEnum(str, Enum):
@@ -28,7 +34,7 @@ class LogLevelEnum(str, Enum):
 LogLevel = Literal["ERROR", "WARNING", "INFO", "DEBUG"]
 
 
-class LogEntry(TOMBaseObject):
+class LogEntry(TOMBase):
     """The LogEntry object contains information useful for tracing and debugging across Translator components.
 
     Although an individual component (for example, an ARA or KP) may have its

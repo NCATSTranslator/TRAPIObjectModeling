@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+__all__ = ["Biolink"]
+
 from functools import lru_cache
 from typing import ClassVar, TypeVar, cast, final, override
 
@@ -54,10 +56,39 @@ class Biolink(metaclass=_BiolinkMeta):
     # Direct passthroughs to the toolkit, exposed for convenience.
     is_qualifier = staticmethod(toolkit.is_qualifier)
     is_symmetric = staticmethod(toolkit.is_symmetric)
-    is_predicate = staticmethod(toolkit.is_predicate)
-    is_category = staticmethod(toolkit.is_category)
     get_element = staticmethod(toolkit.get_element)
-    get_ancestors = staticmethod(toolkit.get_ancestors)
+
+    @staticmethod
+    def rmprefix(element: str) -> str:
+        """Remove the `biolink:` prefix from a given element."""
+        return Curie.rmprefix(element, "biolink")
+
+    @staticmethod
+    def is_valid_predicate(predicate: Biolink.Predicate) -> bool:
+        """Validate that a given predicate is a real biolink predicate, including mixins."""
+        return Biolink.toolkit.is_predicate(predicate) or any(
+            Biolink("related_to") in Biolink.get_ancestors(desc)
+            for desc in Biolink.get_descendants(predicate)
+        )
+
+    @staticmethod
+    def is_valid_category(category: Biolink.Entity) -> bool:
+        """Validate that a given category is a real biolink category, including mixins."""
+        return Biolink.toolkit.is_category(category) or any(
+            Biolink("NamedThing") in Biolink.get_ancestors(desc)
+            for desc in Biolink.get_descendants(category)
+        )
+
+    @staticmethod
+    def is_valid_association(association: Biolink.Entity) -> bool:
+        """Validate that a given association is a real biolink association."""
+        element = Biolink.get_element(association)
+        return element is not None and element.is_a == "association"
+
+    @staticmethod
+    def get_ancestors(element_str: str) -> list[str]:
+        """Get the ancestors of a given element."""
+        return Biolink.toolkit.get_ancestors(element_str, formatted=True)
 
     @staticmethod
     def get_formatted(element_str: str) -> str | None:

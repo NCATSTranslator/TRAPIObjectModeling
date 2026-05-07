@@ -5,10 +5,12 @@ from typing import override
 from translator_tom.models.attribute import Attribute
 from translator_tom.models.shared import CURIE
 from translator_tom.utils.hash import tomhash
-from translator_tom.utils.object_base import TOMBaseObject
+from translator_tom.utils.object_base import TOMBase
+
+__all__ = ["NodeBinding"]
 
 
-class NodeBinding(TOMBaseObject):
+class NodeBinding(TOMBase):
     """An instance of NodeBinding is a single KnowledgeGraph Node mapping, identified by the corresponding 'id' object key identifier of the Node within the Knowledge Graph.
 
     Instances of NodeBinding may include extra annotation in the form of additional properties

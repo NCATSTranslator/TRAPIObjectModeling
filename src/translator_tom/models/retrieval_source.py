@@ -5,7 +5,13 @@ from typing import Literal, override
 
 from translator_tom.models.shared import Infores
 from translator_tom.utils.hash import tomhash
-from translator_tom.utils.object_base import TOMBaseObject
+from translator_tom.utils.object_base import TOMBase
+
+__all__ = [
+    "ResourceRole",
+    "ResourceRoleEnum",
+    "RetrievalSource",
+]
 
 
 class ResourceRoleEnum(str, Enum):
@@ -34,7 +40,7 @@ ResourceRole = Literal[
 ]
 
 
-class RetrievalSource(TOMBaseObject):
+class RetrievalSource(TOMBase):
     """Provides information about how a particular InformationResource served as a source from which knowledge expressed in an Edge, or data used to generate this knowledge, was retrieved."""
 
     resource_id: Infores

@@ -7,7 +7,7 @@ from typing import Any, Literal, Protocol, runtime_checkable
 from pydantic import AnyUrl, TypeAdapter, ValidationError
 
 from translator_tom.utils.biolink import Biolink
-from translator_tom.utils.object_base import TOMBaseObject
+from translator_tom.utils.object_base import TOMBase
 
 url_adapter = TypeAdapter(AnyUrl)
 
@@ -76,7 +76,7 @@ class SubjectObjectMapping(Protocol):
 
 @singledispatch
 def semantic_validate(
-    obj: TOMBaseObject,  # pyright:ignore[reportUnusedParameter]
+    obj: TOMBase,  # pyright:ignore[reportUnusedParameter]
     location: Location | None = None,  # pyright:ignore[reportUnusedParameter]
     **kwargs: Any,  # pyright:ignore[reportUnusedParameter]
 ) -> SemanticValidationResult:
@@ -91,7 +91,7 @@ def semantic_validate(
 
 
 def validate_many(
-    *obj: TOMBaseObject, locations: list[Location] | None = None, **kwargs: Any
+    *obj: TOMBase, locations: list[Location] | None = None, **kwargs: Any
 ) -> SemanticValidationResult:
     """Validate every TOMBaseObject item, returning their combined feedback."""
     warnings, errors = (
@@ -108,7 +108,7 @@ def validate_many(
 
 
 def valid_if_missing(
-    obj: TOMBaseObject | None,
+    obj: TOMBase | None,
     location: Location | None = None,
     **kwargs: Any,
 ) -> SemanticValidationResult:
@@ -118,7 +118,7 @@ def valid_if_missing(
     return semantic_validate(obj, location, **kwargs)
 
 
-def passes_semantic_validation(obj: TOMBaseObject, **kwargs: Any) -> bool:
+def passes_semantic_validation(obj: TOMBase, **kwargs: Any) -> bool:
     """Check if an instance passes semantic validation, discarding messages."""
     _, errors = semantic_validate(obj, **kwargs)
     return len(errors) == 0
@@ -160,125 +160,73 @@ def validate_url(
         )
 
 
-def validate_predicate(
-    predicate: Biolink.Predicate, location: Location | None = None
+def validate_biolink_element(
+    element: str,
+    element_type: Literal["category", "predicate", "association"],
+    location: Location | None = None,
 ) -> SemanticValidationResult:
-    """Validate that a given predicate is a real biolink predicate."""
+    """Validate a given element."""
     warnings, errors = SemanticValidationWarningList(), SemanticValidationErrorList()
 
-    if not Biolink.is_predicate(predicate):
+    element_valid = {
+        "category": Biolink.is_valid_category,
+        "predicate": Biolink.is_valid_predicate,
+        "association": Biolink.is_valid_association,
+    }[element_type](element)
+
+    if not element_valid:
         errors.append(
             SemanticValidationError(
-                f"Predicate `{predicate}` is not a valid BioLink predicate.", location
+                f"{element_type.title()} `{element}` is not a valid BioLink {element_type}.",
+                location,
             )
         )
         return warnings, errors
 
-    if predicate != Biolink.get_formatted(predicate):
+    if element != Biolink.get_formatted(element):
         errors.append(
             SemanticValidationError(
-                f"Predicate `{predicate}` is not in a valid format for use.", location
+                f"{element_type.title()} `{element}` is not in a valid format for use.",
+                location,
             )
         )
         return warnings, errors
 
-    element = Biolink.get_element(predicate)
-    if element is None:
-        raise ValueError("Valid predicate `{predicate}` is not a valid element?")
+    bmt_element = Biolink.get_element(element)
+    if bmt_element is None:
+        raise ValueError(f"Valid {element_type} `{element}` is not a valid element?")
 
-    if element.deprecated:
-        warning_msg = f"Predicate `{predicate}` is deprecated."
-        if element.deprecated_element_has_exact_replacement is not None:
-            warning_msg += f" Use replacement instead: `{Biolink.get_formatted(element.deprecated_element_has_exact_replacement)}`."
-        elif element.deprecated_element_has_possible_replacement:
-            warning_msg += f" Possible replacement: `{Biolink.get_formatted(element.deprecated_element_has_possible_replacement)}`."
+    if bmt_element.deprecated:
+        warning_msg = f"{element_type.title()} `{element}` is deprecated."
+        if bmt_element.deprecated_element_has_exact_replacement is not None:
+            warning_msg += f" Use replacement instead: `{Biolink.get_formatted(bmt_element.deprecated_element_has_exact_replacement)}`."
+        elif bmt_element.deprecated_element_has_possible_replacement:
+            warning_msg += f" Possible replacement: `{Biolink.get_formatted(bmt_element.deprecated_element_has_possible_replacement)}`."
 
         warnings.append(SemanticValidationWarning(warning_msg, location))
 
     return warnings, errors
+
+
+def validate_predicate(
+    predicate: Biolink.Predicate, location: Location | None = None
+) -> SemanticValidationResult:
+    """Validate that a given predicate is a real biolink predicate."""
+    return validate_biolink_element(predicate, "predicate", location)
 
 
 def validate_category(
     category: Biolink.Entity, location: Location | None = None
 ) -> SemanticValidationResult:
-    """Validate that a given predicate is a real biolink predicate."""
-    warnings, errors = SemanticValidationWarningList(), SemanticValidationErrorList()
-
-    try:
-        valid_category = not Biolink.is_category(category) or any(
-            "biolink:NamedThing" in Biolink.get_ancestors(desc, formatted=True)
-            for desc in Biolink.get_descendants(category)
-        )
-    except Exception:
-        valid_category = False
-
-    if not valid_category:
-        errors.append(
-            SemanticValidationError(
-                f"Category `{category}` is not a valid BioLink category.", location
-            )
-        )
-        return warnings, errors
-
-    if category != Biolink.get_formatted(category):
-        errors.append(
-            SemanticValidationError(
-                f"Category `{category}` is not in a valid format for use.", location
-            )
-        )
-        return warnings, errors
-
-    element = Biolink.get_element(category)
-    if element is None:
-        raise ValueError("Valid category `{category}` is not a valid element?")
-
-    if element.deprecated:
-        warning_msg = f"Category `{category}` is deprecated."
-        if element.deprecated_element_has_exact_replacement is not None:
-            warning_msg += f" Use replacement instead: `{Biolink.get_formatted(element.deprecated_element_has_exact_replacement)}`."
-        elif element.deprecated_element_has_possible_replacement:
-            warning_msg += f" Possible replacement: `{Biolink.get_formatted(element.deprecated_element_has_possible_replacement)}`."
-
-        warnings.append(SemanticValidationWarning(warning_msg, location))
-
-    return warnings, errors
+    """Validate that a given category is a real biolink category."""
+    return validate_biolink_element(category, "category", location)
 
 
 def validate_association(
     association: Biolink.Entity, location: Location | None = None
 ) -> SemanticValidationResult:
     """Validate that a given association is a real biolink association."""
-    warnings, errors = SemanticValidationWarningList(), SemanticValidationErrorList()
-
-    element = Biolink.get_element(association)
-    if element is None or element.is_a == "association":
-        errors.append(
-            SemanticValidationError(
-                f"Association `{association}` is not a valid BioLink association.",
-                location,
-            )
-        )
-        return warnings, errors
-
-    if association != Biolink.get_formatted(association):
-        errors.append(
-            SemanticValidationError(
-                f"Association `{association}` is not in a valid format for use.",
-                location,
-            )
-        )
-        return warnings, errors
-
-    if element.deprecated:
-        warning_msg = f"Association `{association}` is deprecated."
-        if element.deprecated_element_has_exact_replacement is not None:
-            warning_msg += f" Use replacement instead: `{Biolink.get_formatted(element.deprecated_element_has_exact_replacement)}`."
-        elif element.deprecated_element_has_possible_replacement:
-            warning_msg += f" Possible replacement: `{Biolink.get_formatted(element.deprecated_element_has_possible_replacement)}`."
-
-        warnings.append(SemanticValidationWarning(warning_msg, location))
-
-    return warnings, errors
+    return validate_biolink_element(association, "association", location)
 
 
 def always_valid() -> SemanticValidationResult:

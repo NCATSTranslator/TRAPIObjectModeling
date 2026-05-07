@@ -1,9 +1,13 @@
+from __future__ import annotations
+
+__all__ = ["diff"]
+
 from typing import Any, TypeVar, cast
 
-from translator_tom import TOMBaseObject
+from translator_tom import TOMBase
 from translator_tom.utils.hash import tomhash
 
-T = TypeVar("T", bound=TOMBaseObject)
+T = TypeVar("T", bound=TOMBase)
 
 
 def diff(a: T, b: T, *, strict: bool = True) -> list[tuple[str | int, ...]]:
@@ -31,10 +35,10 @@ def diff(a: T, b: T, *, strict: bool = True) -> list[tuple[str | int, ...]]:
             differing.append(path)
             continue
 
-        if isinstance(value_a, TOMBaseObject):
+        if isinstance(value_a, TOMBase):
             if not strict:
                 hash_a = value_a.hash()
-                hash_b = cast("TOMBaseObject", value_b).hash()
+                hash_b = cast("TOMBase", value_b).hash()
                 if hash_a == hash_b:
                     continue
         else:
@@ -43,7 +47,7 @@ def diff(a: T, b: T, *, strict: bool = True) -> list[tuple[str | int, ...]]:
             if hash_a == hash_b:
                 continue
 
-        if isinstance(value_a, TOMBaseObject):
+        if isinstance(value_a, TOMBase):
             stack.extend(
                 (
                     (*path, field),

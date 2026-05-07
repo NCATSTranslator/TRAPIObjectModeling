@@ -5,10 +5,12 @@ from typing import override
 from translator_tom.models.attribute import Attribute
 from translator_tom.models.shared import EdgeID
 from translator_tom.utils.hash import tomhash
-from translator_tom.utils.object_base import TOMBaseObject
+from translator_tom.utils.object_base import TOMBase
+
+__all__ = ["EdgeBinding"]
 
 
-class EdgeBinding(TOMBaseObject):
+class EdgeBinding(TOMBase):
     """A instance of EdgeBinding is a single KnowledgeGraph Edge mapping, identified by the corresponding 'id' object key identifier of the Edge within the Knowledge Graph.
 
     Instances of EdgeBinding may include extra annotation

@@ -6,7 +6,12 @@ from pydantic import Field
 
 from translator_tom.models.log_entry import LogEntry
 from translator_tom.models.query import Query
-from translator_tom.utils.object_base import TOMBaseObject
+from translator_tom.utils.object_base import TOMBase
+
+__all__ = [
+    "AsyncQuery",
+    "AsyncQueryResponse",
+]
 
 
 class AsyncQuery(Query):
@@ -24,7 +29,7 @@ class AsyncQuery(Query):
     """
 
 
-class AsyncQueryResponse(TOMBaseObject):
+class AsyncQueryResponse(TOMBase):
     """The AsyncQueryResponse object contains a payload that must be returned from a submitted async_query."""
 
     status: str | None = None
@@ -37,7 +42,7 @@ class AsyncQueryResponse(TOMBaseObject):
     """An identifier for the submitted job that can be used with async_query_status to receive an update on the status of the job."""
 
 
-class AsyncQueryStatusResponse(TOMBaseObject):
+class AsyncQueryStatusResponse(TOMBase):
     """The AsyncQueryStatusResponse object contains a payload that describes the current status of a previously submitted async_query."""
 
     status: str

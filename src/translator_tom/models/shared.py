@@ -1,11 +1,25 @@
 from __future__ import annotations
 
-from collections.abc import Callable
 from enum import Enum
-from typing import Annotated, Any, Literal, override
+from typing import Annotated, Any, Literal, final, override
 
 from pydantic import JsonValue
 from pydantic_core import core_schema
+
+__all__ = [
+    "CURIE",
+    "AuxGraphID",
+    "Curie",
+    "EdgeID",
+    "FastJsonValue",
+    "Infores",
+    "KnowledgeType",
+    "KnowledgeTypeEnum",
+    "QEdgeID",
+    "QNodeID",
+    "QPathID",
+    "infores",
+]
 
 ##### Internal IDs with no set structure
 
@@ -41,6 +55,7 @@ class _CurieMeta(type):
         return f"{prefix}:{reference}"
 
 
+@final
 class Curie(metaclass=_CurieMeta):
     """A holding class for CURIE utility methods."""
 
@@ -58,8 +73,16 @@ class Curie(metaclass=_CurieMeta):
         return Curie.split(curie)[0]
 
     @staticmethod
-    def get_reference(curie: CURIE) -> str:
-        """Get the reference of a CURIE."""
+    def get_reference(curie: CURIE, prefix: str | None = None) -> str:
+        """Get the reference of a CURIE.
+
+        If supplied with a `prefix` (with or without `:` delimiter), only that prefix
+        will be removed.
+        """
+        if prefix is not None:
+            if not prefix.endswith(":"):
+                prefix = f"{prefix}:"
+            return curie.removeprefix(prefix)
         return Curie.split(curie)[1]
 
     @staticmethod
@@ -67,8 +90,8 @@ class Curie(metaclass=_CurieMeta):
         """Ensure the only prefix the CURIE has is the given one."""
         return f"{prefix}:{Curie.get_reference(curie)}"
 
-    rmprefix: Callable[[CURIE], str] = staticmethod(get_reference)
-    rmref: Callable[[CURIE], str] = staticmethod(get_prefix)
+    rmprefix = staticmethod(get_reference)
+    rmref = staticmethod(get_prefix)
 
 
 ##### Enums

@@ -10,10 +10,12 @@ from translator_tom.models.knowledge_graph import KnowledgeGraph
 from translator_tom.models.query_graph import PathfinderQueryGraph, QueryGraph
 from translator_tom.models.result import Result
 from translator_tom.models.shared import EdgeID
-from translator_tom.utils.object_base import TOMBaseObject
+from translator_tom.utils.object_base import TOMBase
+
+__all__ = ["Message"]
 
 
-class Message(TOMBaseObject):
+class Message(TOMBase):
     """The message object holds the main content of a Query or a Response in three properties: query_graph, results, and knowledge_graph.
 
     The query_graph property contains the query configuration, the results
@@ -105,11 +107,8 @@ class Message(TOMBaseObject):
 
         mapping = self.knowledge_graph.normalize()
 
-        for auxg in self.auxiliary_graphs_dict.values():
-            auxg.normalize(mapping)
-
-        for result in self.results_list:
-            result.normalize(mapping)
+        AuxiliaryGraph.normalize_aux_dict(self.auxiliary_graphs_dict, mapping)
+        Result.normalize_list(self.results_list, mapping)
 
         return mapping
 

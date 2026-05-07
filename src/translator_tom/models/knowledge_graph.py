@@ -22,10 +22,15 @@ from translator_tom.models.shared import (
 )
 from translator_tom.utils.biolink import Biolink
 from translator_tom.utils.hash import tomhash
-from translator_tom.utils.object_base import TOMBaseObject
+from translator_tom.utils.object_base import TOMBase
+
+__all__ = [
+    "Edge",
+    "KnowledgeGraph",
+]
 
 
-class KnowledgeGraph(TOMBaseObject):
+class KnowledgeGraph(TOMBase):
     """The knowledge graph associated with a set of results.
 
     The instances of Node and Edge defining this graph represent instances of
@@ -151,7 +156,7 @@ class KnowledgeGraph(TOMBaseObject):
         # pruned_nodes = prior_node_count - len(self.nodes)
 
 
-class Node(TOMBaseObject):
+class Node(TOMBase):
     """A node in the KnowledgeGraph which represents some biomedical concept.
 
     Nodes are identified by the keys in the KnowledgeGraph Node mapping.
@@ -186,18 +191,7 @@ class Node(TOMBaseObject):
 
     def meets_constraints(self, constraints: list[AttributeConstraint]) -> bool:
         """Check if all constraints are satisfied by the node's attributes."""
-        if len(constraints) == 0:
-            return True
-        elif len(self.attributes) == 0:
-            return False
-
-        attrs_by_type: dict[CURIE, list[Attribute]] = {}
-        for attr in self.attributes:
-            attrs_by_type.setdefault(attr.attribute_type_id, []).append(attr)
-        return all(
-            any(c.met_by(attr) for attr in attrs_by_type.get(c.id, []))
-            for c in constraints
-        )
+        return AttributeConstraint.set_met_by(constraints, self.attributes)
 
     def update(self, other: Node) -> None:
         """Update the node in-place with another node."""
@@ -211,7 +205,7 @@ class Node(TOMBaseObject):
             self.attributes = list(attrs.values())
 
 
-class Edge(TOMBaseObject):
+class Edge(TOMBase):
     """A specification of the semantic relationship linking two concepts that are expressed as nodes in the knowledge "thought" graph resulting from a query upon the underlying knowledge source."""
 
     model_config: ClassVar[ConfigDict] = ConfigDict(extra="forbid")
@@ -332,18 +326,7 @@ class Edge(TOMBaseObject):
         self, constraints: list[AttributeConstraint]
     ) -> bool:
         """Check if all attribute constraints are satisfied by the edge's attributes."""
-        if len(constraints) == 0:
-            return True
-        elif len(self.attributes_list) == 0:
-            return False
-
-        attrs_by_type: dict[CURIE, list[Attribute]] = {}
-        for attr in self.attributes_list:
-            attrs_by_type.setdefault(attr.attribute_type_id, []).append(attr)
-        return all(
-            any(c.met_by(attr) for attr in attrs_by_type.get(c.id, []))
-            for c in constraints
-        )
+        return AttributeConstraint.set_met_by(constraints, self.attributes_list)
 
     def meets_qualifier_constraints(
         self, constraints: list[QualifierConstraint]

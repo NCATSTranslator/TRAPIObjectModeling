@@ -1,3 +1,7 @@
+from __future__ import annotations
+
+__all__ = ["tomhash", "tomhash_to_int"]
+
 import base64
 from collections.abc import Callable
 
