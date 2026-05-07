@@ -2,9 +2,10 @@ from __future__ import annotations
 
 import datetime
 from enum import Enum
-from typing import Literal, Self
+from typing import Literal
 
 from pydantic import AwareDatetime
+from typing_extensions import Self
 
 from translator_tom.utils.object_base import TOMBase
 

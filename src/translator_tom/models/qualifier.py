@@ -2,9 +2,10 @@ from __future__ import annotations
 
 import itertools
 from collections.abc import Iterable
-from typing import Annotated, ClassVar, Self
+from typing import Annotated, ClassVar
 
 from pydantic import ConfigDict, Field
+from typing_extensions import Self
 
 from translator_tom.models.meta_qualifier import MetaQualifier
 from translator_tom.utils.biolink import Biolink

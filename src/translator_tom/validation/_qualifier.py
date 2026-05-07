@@ -12,18 +12,18 @@ from translator_tom.validation._util import (
 
 
 @semantic_validate.register(Qualifier)
-def _validate_qualifier(  # pyright: ignore[reportUnusedFunction]
-    obj: Qualifier,  # pyright: ignore[reportUnusedParameter]
-    location: Location | None = None,  # pyright: ignore[reportUnusedParameter]
+def _validate_qualifier(
+    obj: Qualifier,
+    location: Location | None = None,
     **_: Any,
 ) -> SemanticValidationResult:
     return always_valid()
 
 
 @semantic_validate.register(QualifierConstraint)
-def _validate_qualifier_constraint(  # pyright: ignore[reportUnusedFunction]
-    obj: QualifierConstraint,  # pyright: ignore[reportUnusedParameter]
-    location: Location | None = None,  # pyright: ignore[reportUnusedParameter]
+def _validate_qualifier_constraint(
+    obj: QualifierConstraint,
+    location: Location | None = None,
     **_: Any,
 ) -> SemanticValidationResult:
     return always_valid()

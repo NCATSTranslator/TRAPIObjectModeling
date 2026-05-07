@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 import itertools
-from typing import Annotated, ClassVar, Literal, Self, cast, override
+from typing import Annotated, ClassVar, Literal, cast
 
 from pydantic import ConfigDict, Field
+from typing_extensions import Self, override
 
 from translator_tom.models.analysis import Analysis
 from translator_tom.models.attribute import Attribute, AttributeConstraint

@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 from enum import Enum
-from typing import Annotated, Literal, override
+from typing import Annotated, Literal
 
 from pydantic import Field
+from typing_extensions import override
 
 from translator_tom.models.shared import FastJsonValue, Infores, QEdgeID, QNodeID
 from translator_tom.utils.object_base import TOMBase

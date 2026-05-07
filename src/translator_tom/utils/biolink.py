@@ -3,10 +3,11 @@ from __future__ import annotations
 __all__ = ["Biolink"]
 
 from functools import lru_cache
-from typing import ClassVar, TypeVar, cast, final, override
+from typing import ClassVar, TypeVar, cast, final
 
 import bmt
 from bmt import utils
+from typing_extensions import override
 
 from translator_tom.models.shared import CURIE, Curie
 from translator_tom.utils.config import TRAPI_CONFIG

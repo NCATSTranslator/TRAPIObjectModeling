@@ -20,7 +20,7 @@ from translator_tom.validation._util import (
 
 
 @semantic_validate.register(NodeBinding)
-def _validate_node_binding(  # pyright: ignore[reportUnusedFunction]
+def _validate_node_binding(
     obj: NodeBinding,
     location: Location | None = None,
     *,

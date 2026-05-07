@@ -76,9 +76,9 @@ class SubjectObjectMapping(Protocol):
 
 @singledispatch
 def semantic_validate(
-    obj: TOMBase,  # pyright:ignore[reportUnusedParameter]
-    location: Location | None = None,  # pyright:ignore[reportUnusedParameter]
-    **kwargs: Any,  # pyright:ignore[reportUnusedParameter]
+    obj: TOMBase,
+    location: Location | None = None,
+    **kwargs: Any,
 ) -> SemanticValidationResult:
     """Validate a TOM object semantically.
 

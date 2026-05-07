@@ -1,8 +1,7 @@
 from __future__ import annotations
 
-from typing import Self
-
 from pydantic import Field
+from typing_extensions import Self
 
 from translator_tom.models.log_entry import LogEntry
 from translator_tom.models.message import Message

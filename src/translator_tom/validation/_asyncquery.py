@@ -19,7 +19,7 @@ from translator_tom.validation._util import (
 
 
 @semantic_validate.register(AsyncQuery)
-def _validate_async_query(  # pyright: ignore[reportUnusedFunction]
+def _validate_async_query(
     obj: AsyncQuery,
     location: Location | None = None,
     **_: Any,
@@ -31,7 +31,7 @@ def _validate_async_query(  # pyright: ignore[reportUnusedFunction]
 
 
 @semantic_validate.register(AsyncQueryStatusResponse)
-def _validate_async_query_status_response(  # pyright: ignore[reportUnusedFunction]
+def _validate_async_query_status_response(
     obj: AsyncQueryStatusResponse,
     location: Location | None = None,
     **_: Any,

@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 import itertools
-from typing import Annotated, override
+from typing import Annotated
 
 from pydantic import Field
+from typing_extensions import override
 
 from translator_tom.models.analysis import Analysis, PathfinderAnalysis
 from translator_tom.models.node_binding import NodeBinding
@@ -68,7 +69,7 @@ class Result(TOMBase):
         for analysis in other.analyses:
             existing = by_hash.get(analysis.hash())
             if existing is not None:
-                existing.update(analysis)  # pyright:ignore[reportArgumentType] Equality means they're the same type
+                existing.update(analysis)  # ty: ignore[invalid-argument-type] Equality means they're the same type
             else:
                 self.analyses.append(analysis)
 
@@ -111,6 +112,6 @@ class Result(TOMBase):
             if existing is None:
                 merged[key] = analysis
             else:
-                existing.update(analysis)  # pyright:ignore[reportArgumentType] key includes type, so they match
+                existing.update(analysis)  # ty: ignore[invalid-argument-type] key includes type, so they match
 
         self.analyses = list(merged.values())

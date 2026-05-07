@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 from enum import Enum
-from typing import Literal, override
+from typing import Literal
+
+from typing_extensions import override
 
 from translator_tom.models.shared import Infores
 from translator_tom.utils.hash import tomhash

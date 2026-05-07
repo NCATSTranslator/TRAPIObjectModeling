@@ -37,7 +37,7 @@ def _validate_base_query_graph(
 
 
 @semantic_validate.register(QueryGraph)
-def _validate_query_graph(  # pyright: ignore[reportUnusedFunction]
+def _validate_query_graph(
     obj: QueryGraph,
     location: Location | None = None,
     **_: Any,
@@ -53,7 +53,7 @@ def _validate_query_graph(  # pyright: ignore[reportUnusedFunction]
 
 
 @semantic_validate.register(PathfinderQueryGraph)
-def _validate_pathfinder_query_graph(  # pyright: ignore[reportUnusedFunction]
+def _validate_pathfinder_query_graph(
     obj: PathfinderQueryGraph,
     location: Location | None = None,
     **_: Any,
@@ -69,7 +69,7 @@ def _validate_pathfinder_query_graph(  # pyright: ignore[reportUnusedFunction]
 
 
 @semantic_validate.register(QNode)
-def _validate_qnode(  # pyright: ignore[reportUnusedFunction]
+def _validate_qnode(
     obj: QNode,
     location: Location | None = None,
     **_: Any,
@@ -89,7 +89,7 @@ def _validate_qnode(  # pyright: ignore[reportUnusedFunction]
 
 
 @semantic_validate.register(QEdge)
-def _validate_qedge(  # pyright: ignore[reportUnusedFunction]
+def _validate_qedge(
     obj: QEdge,
     location: Location | None = None,
     *,
@@ -149,7 +149,7 @@ def _validate_qedge(  # pyright: ignore[reportUnusedFunction]
 
 
 @semantic_validate.register(QPath)
-def _validate_qpath(  # pyright: ignore[reportUnusedFunction]
+def _validate_qpath(
     obj: QPath,
     location: Location | None = None,
     *,

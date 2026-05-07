@@ -2,9 +2,10 @@ from __future__ import annotations
 
 import re
 from enum import Enum
-from typing import Annotated, ClassVar, Literal, override
+from typing import Annotated, ClassVar, Literal
 
 from pydantic import ConfigDict, Field, WithJsonSchema
+from typing_extensions import override
 
 from translator_tom.models.meta_attribute import MetaAttribute
 from translator_tom.models.shared import CURIE, FastJsonValue

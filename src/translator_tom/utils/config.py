@@ -6,13 +6,14 @@ __all__ = [
 ]
 
 from enum import Enum
-from typing import ClassVar, override
+from typing import ClassVar
 
 from pydantic_settings import (
     BaseSettings,
     PydanticBaseSettingsSource,
     SettingsConfigDict,
 )
+from typing_extensions import override
 
 
 class HashRepEnum(int, Enum):

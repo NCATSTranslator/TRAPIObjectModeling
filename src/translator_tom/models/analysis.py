@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 import copy
-from typing import override
+
+from typing_extensions import override
 
 from translator_tom.models.attribute import Attribute
 from translator_tom.models.edge_binding import EdgeBinding

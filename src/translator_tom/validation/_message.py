@@ -20,7 +20,7 @@ from translator_tom.validation._util import (
 
 
 @semantic_validate.register(Message)
-def _validate_message(  # pyright: ignore[reportUnusedFunction]
+def _validate_message(
     obj: Message,
     location: Location | None = None,
     **_: Any,

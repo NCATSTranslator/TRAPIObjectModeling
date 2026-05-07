@@ -16,7 +16,7 @@ from translator_tom.validation._util import (
 
 
 @semantic_validate.register(AuxiliaryGraph)
-def _validate_auxiliary_graph(  # pyright: ignore[reportUnusedFunction]
+def _validate_auxiliary_graph(
     obj: AuxiliaryGraph,
     location: Location | None = None,
     *,

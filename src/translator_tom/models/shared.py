@@ -1,10 +1,11 @@
 from __future__ import annotations
 
 from enum import Enum
-from typing import Annotated, Any, Literal, final, override
+from typing import Annotated, Any, Literal, final
 
 from pydantic import JsonValue
 from pydantic_core import core_schema
+from typing_extensions import override
 
 __all__ = [
     "CURIE",

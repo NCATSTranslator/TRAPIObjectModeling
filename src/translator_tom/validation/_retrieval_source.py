@@ -16,7 +16,7 @@ from translator_tom.validation._util import (
 
 
 @semantic_validate.register(RetrievalSource)
-def _validate_retrieval_source(  # pyright: ignore[reportUnusedFunction]
+def _validate_retrieval_source(
     obj: RetrievalSource,
     location: Location | None = None,
     **_: Any,

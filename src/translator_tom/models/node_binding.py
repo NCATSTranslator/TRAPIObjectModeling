@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import override
+from typing_extensions import override
 
 from translator_tom.models.attribute import Attribute
 from translator_tom.models.shared import CURIE

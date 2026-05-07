@@ -56,7 +56,7 @@ from translator_tom.validation._util import (
 @semantic_validate.register(OperationOverlayFisherExactTest)
 @semantic_validate.register(OperationSortResultsEdgeAttribute)
 @semantic_validate.register(OperationSortResultsNodeAttribute)
-def _validate_op_with_params(  # pyright: ignore[reportUnusedFunction]  # noqa: PLR0913
+def _validate_op_with_params(  # noqa: PLR0913
     obj: Any,
     location: Location | None = None,
     *,
@@ -80,7 +80,7 @@ def _validate_op_with_params(  # pyright: ignore[reportUnusedFunction]  # noqa: 
 
 
 @semantic_validate.register(EnrichResultsParameters)
-def _validate_enrich_results_params(  # pyright: ignore[reportUnusedFunction]
+def _validate_enrich_results_params(
     obj: EnrichResultsParameters,
     location: Location | None = None,
     *,
@@ -101,7 +101,7 @@ def _validate_enrich_results_params(  # pyright: ignore[reportUnusedFunction]
 
 
 @semantic_validate.register(FillAllowListParameters)
-def _validate_fill_allow_list_params(  # pyright: ignore[reportUnusedFunction]
+def _validate_fill_allow_list_params(
     obj: FillAllowListParameters,
     location: Location | None = None,
     *,
@@ -122,7 +122,7 @@ def _validate_fill_allow_list_params(  # pyright: ignore[reportUnusedFunction]
 
 
 @semantic_validate.register(FillDenyListParameters)
-def _validate_fill_deny_list_params(  # pyright: ignore[reportUnusedFunction]
+def _validate_fill_deny_list_params(
     obj: FillDenyListParameters,
     location: Location | None = None,
     *,
@@ -143,7 +143,7 @@ def _validate_fill_deny_list_params(  # pyright: ignore[reportUnusedFunction]
 
 
 @semantic_validate.register(FilterKgraphParametersBase)
-def _validate_filter_kgraph_params(  # pyright: ignore[reportUnusedFunction]
+def _validate_filter_kgraph_params(
     obj: FilterKgraphParametersBase,
     location: Location | None = None,
     *,
@@ -177,7 +177,7 @@ def _validate_filter_kgraph_params(  # pyright: ignore[reportUnusedFunction]
 
 
 @semantic_validate.register(OverlayComputeJaccardParameters)
-def _validate_overlay_jaccard_params(  # pyright: ignore[reportUnusedFunction]
+def _validate_overlay_jaccard_params(
     obj: OverlayComputeJaccardParameters,
     location: Location | None = None,
     *,
@@ -222,7 +222,7 @@ def _validate_overlay_jaccard_params(  # pyright: ignore[reportUnusedFunction]
 
 
 @semantic_validate.register(OverlayComputeNgdParameters)
-def _validate_overlay_ngd_params(  # pyright: ignore[reportUnusedFunction]
+def _validate_overlay_ngd_params(
     obj: OverlayComputeNgdParameters,
     location: Location | None = None,
     *,
@@ -243,7 +243,7 @@ def _validate_overlay_ngd_params(  # pyright: ignore[reportUnusedFunction]
 
 
 @semantic_validate.register(OverlayFisherExactTestParameters)
-def _validate_overlay_fisher_params(  # pyright: ignore[reportUnusedFunction]
+def _validate_overlay_fisher_params(
     obj: OverlayFisherExactTestParameters,
     location: Location | None = None,
     *,
@@ -290,7 +290,7 @@ def _validate_overlay_fisher_params(  # pyright: ignore[reportUnusedFunction]
 
 
 @semantic_validate.register(SortResultsEdgeAttributeParameters)
-def _validate_sort_edge_attr_params(  # pyright: ignore[reportUnusedFunction]
+def _validate_sort_edge_attr_params(
     obj: SortResultsEdgeAttributeParameters,
     location: Location | None = None,
     *,
@@ -311,7 +311,7 @@ def _validate_sort_edge_attr_params(  # pyright: ignore[reportUnusedFunction]
 
 
 @semantic_validate.register(SortResultNodeAttributeParameters)
-def _validate_sort_node_attr_params(  # pyright: ignore[reportUnusedFunction]
+def _validate_sort_node_attr_params(
     obj: SortResultNodeAttributeParameters,
     location: Location | None = None,
     *,

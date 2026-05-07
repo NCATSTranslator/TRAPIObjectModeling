@@ -16,7 +16,7 @@ from translator_tom.validation._util import (
 
 
 @semantic_validate.register(PathBinding)
-def _validate_path_binding(  # pyright: ignore[reportUnusedFunction]
+def _validate_path_binding(
     obj: PathBinding,
     location: Location | None = None,
     *,

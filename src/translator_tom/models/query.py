@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Self
+from typing_extensions import Self
 
 from translator_tom.models.log_entry import LogLevel
 from translator_tom.models.message import Message

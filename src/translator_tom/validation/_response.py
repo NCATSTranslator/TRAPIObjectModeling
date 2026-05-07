@@ -17,7 +17,7 @@ from translator_tom.validation._util import (
 
 
 @semantic_validate.register(Response)
-def _validate_response(  # pyright: ignore[reportUnusedFunction]
+def _validate_response(
     obj: Response,
     location: Location | None = None,
     **_: Any,

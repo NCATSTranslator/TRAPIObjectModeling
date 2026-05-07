@@ -21,7 +21,7 @@ from translator_tom.validation._util import (
 
 
 @semantic_validate.register(Attribute)
-def _validate_attribute(  # pyright: ignore[reportUnusedFunction]
+def _validate_attribute(
     obj: Attribute,
     location: Location | None = None,
     **_: Any,
@@ -49,7 +49,7 @@ def _validate_attribute(  # pyright: ignore[reportUnusedFunction]
 
 
 @semantic_validate.register(AttributeConstraint)
-def _validate_attribute_constraint(  # pyright: ignore[reportUnusedFunction]
+def _validate_attribute_constraint(
     obj: AttributeConstraint,
     location: Location | None = None,
     **_: Any,

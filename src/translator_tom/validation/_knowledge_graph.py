@@ -22,7 +22,7 @@ from translator_tom.validation._util import (
 
 
 @semantic_validate.register(KnowledgeGraph)
-def _validate_knowledge_graph(  # pyright: ignore[reportUnusedFunction]
+def _validate_knowledge_graph(
     obj: KnowledgeGraph,
     location: Location | None = None,
     **_: Any,
@@ -41,7 +41,7 @@ def _validate_knowledge_graph(  # pyright: ignore[reportUnusedFunction]
 
 
 @semantic_validate.register(Node)
-def _validate_node(  # pyright: ignore[reportUnusedFunction]
+def _validate_node(
     obj: Node,
     location: Location | None = None,
     **_: Any,
@@ -61,7 +61,7 @@ def _validate_node(  # pyright: ignore[reportUnusedFunction]
 
 
 @semantic_validate.register(Edge)
-def _validate_edge(  # pyright: ignore[reportUnusedFunction]
+def _validate_edge(
     obj: Edge,
     location: Location | None = None,
     *,

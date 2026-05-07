@@ -12,11 +12,11 @@ dependencies = [
     "pydantic-core>=2.41.1",
     "pydantic-settings>=2.13.1",
     "stablehash>=0.3.0",
+    "typing-extensions>=4.15.0",
 ]
 
 [dependency-groups]
 dev = [
-    "basedpyright>=1.31.6",
     "bpython>=0.25",
     "deptry>=0.23.1",
     "pre-commit>=4.3.0",
@@ -26,6 +26,7 @@ dev = [
     "reasoner-pydantic>=6.0.0",
     "ruff>=0.13.3",
     "taskipy>=1.14.1",
+    "ty>=0.0.34",
 ]
 
 
@@ -41,7 +42,7 @@ lint = 'ruff check src'
 'lint:watch' = 'task lint --watch'
 'lint:fix' = 'task lint --fix'
 
-typecheck = 'basedpyright src'
+typecheck = 'ty check src'
 'typecheck:watch' = 'task typecheck --watch'
 
 format = 'ruff format --diff src'
@@ -124,14 +125,6 @@ allow-dict-calls-with-keyword-arguments = true
 
 [tool.ruff.format]
 docstring-code-format = true
-
-[tool.pyright]
-# Make any allowable. Builtins sometimes deal in Any and aren't worth the extra modeling
-reportAny = false
-reportExplicitAny = false
-reportUnusedCallResult = false # Just makes code look worse; Usually unused results are deliberately ignored
-reportMissingTypeStubs = false # Sometimes type stubs aren't available and auto-gen is incorrect
-
 
 [tool.deptry]
 extend_exclude = ["locustfile.py", "tests"]

@@ -2,10 +2,11 @@ from __future__ import annotations
 
 __all__ = ["TOMBase"]
 
-from typing import Any, ClassVar, Literal, Self, cast, overload, override
+from typing import Any, ClassVar, Literal, cast, overload
 
 import ormsgpack
 from pydantic import BaseModel, ConfigDict, JsonValue
+from typing_extensions import Self, override
 
 from translator_tom.utils.hash import tomhash, tomhash_to_int
 

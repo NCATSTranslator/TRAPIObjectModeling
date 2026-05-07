@@ -18,7 +18,7 @@ from translator_tom.validation._util import (
 
 
 @semantic_validate.register(EdgeBinding)
-def _validate_edge_binding(  # pyright: ignore[reportUnusedFunction]
+def _validate_edge_binding(
     obj: EdgeBinding,
     location: Location | None = None,
     *,

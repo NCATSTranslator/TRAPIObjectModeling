@@ -12,9 +12,9 @@ from translator_tom.validation._util import (
 
 
 @semantic_validate.register(LogEntry)
-def _validate_log_entry(  # pyright: ignore[reportUnusedFunction]
-    obj: LogEntry,  # pyright: ignore[reportUnusedParameter]
-    location: Location | None = None,  # pyright: ignore[reportUnusedParameter]
+def _validate_log_entry(
+    obj: LogEntry,
+    location: Location | None = None,
     **_: Any,
 ) -> SemanticValidationResult:
     return always_valid()

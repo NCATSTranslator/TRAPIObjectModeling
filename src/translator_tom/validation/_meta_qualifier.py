@@ -12,9 +12,9 @@ from translator_tom.validation._util import (
 
 
 @semantic_validate.register(MetaQualifier)
-def _validate_meta_qualifier(  # pyright: ignore[reportUnusedFunction]
-    obj: MetaQualifier,  # pyright: ignore[reportUnusedParameter]
-    location: Location | None = None,  # pyright: ignore[reportUnusedParameter]
+def _validate_meta_qualifier(
+    obj: MetaQualifier,
+    location: Location | None = None,
     **_: Any,
 ) -> SemanticValidationResult:
     return always_valid()

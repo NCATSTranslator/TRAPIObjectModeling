@@ -1,8 +1,9 @@
 from __future__ import annotations
 
-from typing import Annotated, override
+from typing import Annotated
 
 from pydantic import Field
+from typing_extensions import override
 
 from translator_tom.models.shared import CURIE
 from translator_tom.utils.hash import tomhash

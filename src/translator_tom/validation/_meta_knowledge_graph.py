@@ -27,7 +27,7 @@ from translator_tom.validation._util import (
 
 
 @semantic_validate.register(MetaKnowledgeGraph)
-def _validate_meta_knowledge_graph(  # pyright: ignore[reportUnusedFunction]
+def _validate_meta_knowledge_graph(
     obj: MetaKnowledgeGraph,
     location: Location | None = None,
     **_: Any,
@@ -50,7 +50,7 @@ def _validate_meta_knowledge_graph(  # pyright: ignore[reportUnusedFunction]
 
 
 @semantic_validate.register(MetaNode)
-def _validate_meta_node(  # pyright: ignore[reportUnusedFunction]
+def _validate_meta_node(
     obj: MetaNode,
     location: Location | None = None,
     **_: Any,
@@ -64,7 +64,7 @@ def _validate_meta_node(  # pyright: ignore[reportUnusedFunction]
 
 
 @semantic_validate.register(MetaEdge)
-def _validate_meta_edge(  # pyright: ignore[reportUnusedFunction]
+def _validate_meta_edge(
     obj: MetaEdge,
     location: Location | None = None,
     *,

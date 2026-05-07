@@ -21,7 +21,7 @@ from translator_tom.validation._util import (
 
 
 @semantic_validate.register(Result)
-def _validate_result(  # pyright: ignore[reportUnusedFunction]
+def _validate_result(
     obj: Result,
     location: Location | None = None,
     *,

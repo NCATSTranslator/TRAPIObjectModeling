@@ -55,4 +55,4 @@ def tomhash(obj: object) -> str:
 
 def tomhash_to_int(tom_hash: str) -> int:
     """Convert a tomhash to int."""
-    return int.from_bytes(_DECODE(tom_hash))
+    return int.from_bytes(_DECODE(tom_hash), byteorder="big")

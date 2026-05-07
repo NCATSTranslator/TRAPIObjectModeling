@@ -54,7 +54,7 @@ def _validate_base_analysis(
 
 
 @semantic_validate.register(Analysis)
-def _validate_analysis(  # pyright:ignore[reportUnusedFunction]
+def _validate_analysis(
     obj: Analysis,
     location: Location | None = None,
     *,
@@ -97,7 +97,7 @@ def _validate_analysis(  # pyright:ignore[reportUnusedFunction]
 
 
 @semantic_validate.register(PathfinderAnalysis)
-def _validate_pathfinder_analysis(  # pyright:ignore[reportUnusedFunction]
+def _validate_pathfinder_analysis(
     obj: PathfinderAnalysis,
     location: Location | None = None,
     *,

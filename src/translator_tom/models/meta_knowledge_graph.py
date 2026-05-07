@@ -1,8 +1,9 @@
 from __future__ import annotations
 
-from typing import Annotated, ClassVar, Self
+from typing import Annotated, ClassVar
 
 from pydantic import ConfigDict, Field
+from typing_extensions import Self
 
 from translator_tom.models.attribute import AttributeConstraint
 from translator_tom.models.meta_attribute import MetaAttribute
