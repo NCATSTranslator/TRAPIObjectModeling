@@ -1,6 +1,8 @@
 from __future__ import annotations
 
-from typing import override
+from typing import Annotated, override
+
+from pydantic import Field
 
 from translator_tom.models.shared import CURIE
 from translator_tom.utils.hash import tomhash
@@ -18,7 +20,7 @@ class MetaAttribute(TOMBase):
     attribute_source: str | None = None
     """Source of an attribute provided by this TRAPI web service."""
 
-    original_attribute_names: list[str] | None = None
+    original_attribute_names: Annotated[list[str] | None, Field(min_length=1)] = None
     """Names of an the attribute as provided by the source."""
 
     constraint_use: bool | None = False

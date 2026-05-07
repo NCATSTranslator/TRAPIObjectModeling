@@ -50,7 +50,7 @@ class TOMBase(BaseModel):
 
     def to_dict(self) -> dict[str, Any]:
         """Serialize an instance to python dictionary representation."""
-        return self.model_dump(mode="json")
+        return self.model_dump(mode="json", exclude_none=True)
 
     @classmethod
     def from_json(cls, json: str | bytes) -> Self:
@@ -73,7 +73,7 @@ class TOMBase(BaseModel):
         Uses pydantic's own json serialization because it appears faster in testing.
         """
         # __pydantic_serializer__.to_json returns bytes directly
-        json = self.__pydantic_serializer__.to_json(self)
+        json = self.__pydantic_serializer__.to_json(self, exclude_none=True)
         if as_str:
             return json.decode()
         return json

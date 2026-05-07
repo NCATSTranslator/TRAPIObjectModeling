@@ -4,7 +4,7 @@ import re
 from enum import Enum
 from typing import Annotated, ClassVar, Literal, override
 
-from pydantic import ConfigDict, Field
+from pydantic import ConfigDict, Field, WithJsonSchema
 
 from translator_tom.models.meta_attribute import MetaAttribute
 from translator_tom.models.shared import CURIE, FastJsonValue
@@ -111,7 +111,7 @@ class Attribute(TOMBase):
     party ontology term.
     """
 
-    value: FastJsonValue
+    value: Annotated[FastJsonValue, WithJsonSchema({"not": {"type": "null"}})]
     """Value of the attribute. May be any data type, including a list."""
 
     value_type_id: CURIE | None = None
@@ -225,7 +225,7 @@ class AttributeConstraint(TOMBase):
     describes an "is a" subclass relationship for the parent QNode.
     """
 
-    value: FastJsonValue
+    value: Annotated[FastJsonValue, WithJsonSchema({"not": {"type": "null"}})]
     """Value of the attribute.
 
     May be any data type, including a list.
