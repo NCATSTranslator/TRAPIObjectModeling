@@ -1,0 +1,19 @@
+---
+name: Set up workspace
+runs:
+  using: composite
+  steps:
+    - name: Checkout the repository
+      uses: actions/checkout@v4
+      with:
+        ref: ${{ github.event.pull_request.head.ref }}
+        repository: ${{ github.event.pull_request.head.repo.full_name }}
+    - name: Install the latest version of uv
+      uses: astral-sh/setup-uv@v6
+      with:
+        version: latest
+        activate-environment: true
+        enable-cache: true
+    - name: Install dependencies
+      run: uv sync
+      shell: bash

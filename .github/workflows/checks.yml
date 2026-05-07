@@ -1,0 +1,61 @@
+---
+name: Code Checks
+on:
+  pull_request:
+  push:
+    branches: [main]
+jobs:
+  lint-format:
+    name: Linting and Formatting
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout the repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+      - name: Set up workspace
+        uses: ./.github/actions/setup-workspace
+      - name: Lint
+        run: ruff check --output-format=github src
+        shell: bash
+      - name: Check formatting
+        run: ruff format --check --diff
+      - name: Check dependencies
+        run: deptry src
+  typing:
+    name: Static Typing
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout the repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+      - name: Set up workspace
+        uses: ./.github/actions/setup-workspace
+      - name: Check static typing
+        run: basedpyright src
+        shell: bash
+  tests:
+    name: Tests and coverage
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout the repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+      - name: Set up workspace
+        uses: ./.github/actions/setup-workspace
+      - name: Test with pytest
+        run: pytest --junitxml=junit/test-results.xml --cov=src --cov-config=pyproject.toml
+      - name: Test summary
+        uses: test-summary/action@v2
+        with:
+          paths: junit/test-results.xml
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          slug: NCATSTranslator/TRAPIObjectModeling
