@@ -37,4 +37,4 @@ def test_result_hashable():
 
     assert len(result_dict["raw_data"]) == 1
     assert isinstance(result_dict["raw_data"], list)
-    assert result_obj["raw_data"][0] == "test"
+    assert result_obj.extra_get("raw_data")[0] == "test"
