@@ -259,6 +259,61 @@ class TestKnowledgeGraphPrune:
         assert "e1" in kg.edges
         assert "unused" not in kg.edges
 
+    def test_analysis_support_graphs_keep_aux_edges(self):
+        # An Analysis lists an aux graph in its support_graphs field. Edges in
+        # that aux graph (and their endpoint nodes) should be kept, and any
+        # biolink:support_graphs attribute on those edges should be followed
+        # transitively.
+        e_bound = _edge(subject="A:1", object_="A:2")
+        e_supporting = _edge(
+            subject="A:3",
+            object_="A:4",
+            attributes=[
+                Attribute(
+                    attribute_type_id="biolink:support_graphs", value=["aux-2"]
+                )
+            ],
+        )
+        e_nested = _edge(subject="A:5", object_="A:6")
+        e_unused = _edge(subject="X:1", object_="X:2")
+        kg = KnowledgeGraph(
+            nodes={
+                "A:1": _node(),
+                "A:2": _node(),
+                "A:3": _node(),
+                "A:4": _node(),
+                "A:5": _node(),
+                "A:6": _node(),
+                "X:1": _node(),
+                "X:2": _node(),
+            },
+            edges={
+                "e_bound": e_bound,
+                "e_supporting": e_supporting,
+                "e_nested": e_nested,
+                "e_unused": e_unused,
+            },
+        )
+        aux = {
+            "aux-1": AuxiliaryGraph(edges=["e_supporting"], attributes=[]),
+            "aux-2": AuxiliaryGraph(edges=["e_nested"], attributes=[]),
+        }
+        result = Result(
+            node_bindings={"n0": [NodeBinding(id="A:1", attributes=[])]},
+            analyses=[
+                Analysis(
+                    resource_id="infores:test",
+                    edge_bindings={
+                        "e0": [EdgeBinding(id="e_bound", attributes=[])]
+                    },
+                    support_graphs=["aux-1"],
+                )
+            ],
+        )
+        kg.prune(aux, [result])
+        assert set(kg.edges) == {"e_bound", "e_supporting", "e_nested"}
+        assert set(kg.nodes) == {"A:1", "A:2", "A:3", "A:4", "A:5", "A:6"}
+
     def test_prune_with_empty_results_keeps_nothing(self):
         kg = KnowledgeGraph(
             nodes={"A:1": _node()}, edges={"e1": _edge()}

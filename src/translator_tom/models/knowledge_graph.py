@@ -98,14 +98,18 @@ class KnowledgeGraph(TOMBase):
 
         return mapping
 
-    def prune(self, aux_graphs: AuxiliaryGraphsDict, results: list[Result]) -> None:
-        """Remove any unused nodes or edges."""
+    def _walk_results(
+        self, aux_graphs: AuxiliaryGraphsDict, results: list[Result]
+    ) -> tuple[set[EdgeID], set[CURIE]]:
+        """Walk results to find immediately bound edges and nodes."""
         bound_edges = set[EdgeID]()
         bound_nodes = set[CURIE]()
         for result in results:
             for node_binding_set in result.node_bindings.values():
                 bound_nodes.update([binding.id for binding in node_binding_set])
             for analysis in result.analyses:
+                for aux_id in analysis.support_graphs_list:
+                    bound_edges.update(aux_graphs[aux_id].edges)
                 if isinstance(analysis, Analysis):
                     for edge_binding_set in analysis.edge_bindings.values():
                         bound_edges.update(binding.id for binding in edge_binding_set)
@@ -115,6 +119,11 @@ class KnowledgeGraph(TOMBase):
                     ):
                         if path_binding.id in aux_graphs:
                             bound_edges.update(aux_graphs[path_binding.id].edges)
+        return bound_edges, bound_nodes
+
+    def prune(self, aux_graphs: AuxiliaryGraphsDict, results: list[Result]) -> None:
+        """Remove any unused nodes or edges."""
+        bound_edges, bound_nodes = self._walk_results(aux_graphs, results)
 
         checked_edges = set[EdgeID]()
         edges_to_check = list(bound_edges)
