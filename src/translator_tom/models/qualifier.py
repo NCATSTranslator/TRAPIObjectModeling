@@ -2,9 +2,9 @@ from __future__ import annotations
 
 import itertools
 from collections.abc import Iterable
-from typing import Annotated, ClassVar
+from typing import ClassVar
 
-from pydantic import ConfigDict, Field
+from pydantic import ConfigDict
 from typing_extensions import Self
 
 from translator_tom.models.meta_qualifier import MetaQualifier
@@ -22,9 +22,7 @@ class Qualifier(TOMBase):
 
     model_config: ClassVar[ConfigDict] = ConfigDict(extra="forbid")
 
-    qualifier_type_id: Annotated[
-        Biolink.Qualifier, Field(pattern=r"^biolink:[a-z][a-z_]*$")
-    ]
+    qualifier_type_id: Biolink.Qualifier
     """CURIE for a Biolink 'qualifier' association slot, generally taken from Biolink association slots designated for this purpose (that is, association slots with names ending in 'qualifier') e.g. biolink:subject_aspect_qualifier,  biolink:subject_direction_qualifier, biolink:object_aspect_qualifier, etc. Such qualifiers are used to elaborate a second layer of meaning of a knowledge graph edge.
 
     Available qualifiers are edge properties in the Biolink Model (see

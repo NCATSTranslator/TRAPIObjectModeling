@@ -19,14 +19,6 @@ class TestQualifierBasics:
         assert q.qualifier_type_id == "biolink:subject_aspect_qualifier"
         assert q.qualifier_value == "activity"
 
-    def test_pattern_enforced(self):
-        # Pattern requires snake_case after biolink:
-        with pytest.raises(ValidationError):
-            Qualifier(
-                qualifier_type_id="biolink:NotSnakeCase",
-                qualifier_value="x",
-            )
-
     def test_extra_field_forbidden(self):
         with pytest.raises(ValidationError):
             Qualifier(
