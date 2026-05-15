@@ -4,6 +4,7 @@ __all__ = ["TOMBase"]
 
 from typing import Any, ClassVar, Literal, cast, overload
 
+import orjson
 import ormsgpack
 from pydantic import BaseModel, ConfigDict, JsonValue
 from typing_extensions import Self, override
@@ -56,8 +57,10 @@ class TOMBase(BaseModel):
     @classmethod
     def from_json(cls, json: str | bytes) -> Self:
         """Deserialize an instance from JSON."""
-        # NOTE: Outperforms orjson for larger objects due to single Rust pass
-        return cls.model_validate_json(json)
+        # orjson.loads + model_validate beats model_validate_json by 10-30% due to TOM
+        # complexities: extra="allow" everywhere, deep model recursion, Any fields, etc.
+        # Revisit as pydantic updates
+        return cls.model_validate(orjson.loads(json))
 
     @overload
     def to_json(self) -> str: ...
