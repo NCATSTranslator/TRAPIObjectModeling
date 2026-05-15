@@ -25,7 +25,7 @@ class TestLogLevelEnum:
 
 class TestLogEntryConstruction:
     def test_required_fields(self):
-        ts = datetime.datetime.now().astimezone()
+        ts = datetime.datetime.now().astimezone().isoformat()
         e = LogEntry(timestamp=ts, message="hi")
         assert e.timestamp == ts
         assert e.message == "hi"
@@ -33,13 +33,25 @@ class TestLogEntryConstruction:
         assert e.code is None
 
     def test_naive_timestamp_rejected(self):
-        # AwareDatetime rejects timezone-naive datetimes.
+        # Pattern requires a 'Z' or ±HH:MM timezone suffix; an offset-less ISO
+        # string is rejected.
         with pytest.raises(ValidationError):
-            LogEntry(timestamp=datetime.datetime.now(), message="hi")
+            LogEntry(timestamp=datetime.datetime.now().isoformat(), message="hi")
 
     def test_message_required(self):
         with pytest.raises(ValidationError):
-            LogEntry(timestamp=datetime.datetime.now().astimezone())  # type: ignore[call-arg]
+            LogEntry(timestamp=datetime.datetime.now().astimezone().isoformat())  # type: ignore[call-arg]
+
+    def test_timestamp_dt_round_trip(self):
+        ts = datetime.datetime.now().astimezone()
+        e = LogEntry(timestamp=ts.isoformat(), message="hi")
+        assert e.timestamp_dt == ts
+
+    def test_timestamp_dt_handles_z_suffix(self):
+        e = LogEntry(timestamp="2020-09-03T18:13:49Z", message="hi")
+        assert e.timestamp_dt == datetime.datetime(
+            2020, 9, 3, 18, 13, 49, tzinfo=datetime.timezone.utc
+        )
 
 
 class TestLogEntryNew:
@@ -51,7 +63,7 @@ class TestLogEntryNew:
         assert e.level is None
         assert e.code is None
         # The timestamp falls within [before, after].
-        assert before <= e.timestamp <= after
+        assert before <= e.timestamp_dt <= after
 
     def test_with_level_and_code(self):
         e = LogEntry.new("oops", level="ERROR", code="QueryNotTraversable")

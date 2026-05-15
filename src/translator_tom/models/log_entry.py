@@ -2,12 +2,18 @@ from __future__ import annotations
 
 import datetime
 from enum import Enum
-from typing import Literal
+from typing import Annotated, Literal
 
-from pydantic import AwareDatetime
+from pydantic import Field
 from typing_extensions import Self
 
 from translator_tom.utils.object_base import TOMBase
+
+# Matches the AwareDatetime-accepted subset of ISO 8601 / RFC 3339: date + 'T' +
+# time, optional fractional seconds, required 'Z' or ±HH(:)MM timezone.
+_ISO_8601_AWARE_PATTERN = (
+    r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:?\d{2})$"
+)
 
 __all__ = [
     "LogEntry",
@@ -47,7 +53,7 @@ class LogEntry(TOMBase):
     the component sending the message.
     """
 
-    timestamp: AwareDatetime
+    timestamp: Annotated[str, Field(pattern=_ISO_8601_AWARE_PATTERN)]
     """Timestamp in ISO 8601 format, providing the LogEntry time
 
     either in univeral coordinated time (UTC) using the 'Z' tag
@@ -64,13 +70,22 @@ class LogEntry(TOMBase):
     message: str
     """A human-readable log message."""
 
+    @property
+    def timestamp_dt(self) -> datetime.datetime:
+        """Return the timestamp parsed as a timezone-aware `datetime`."""
+        # datetime.fromisoformat() only accepts 'Z' as of Python 3.11; normalize for 3.10.
+        ts = self.timestamp
+        if ts.endswith("Z"):
+            ts = f"{ts[:-1]}+00:00"
+        return datetime.datetime.fromisoformat(ts)
+
     @classmethod
     def new(
         cls, message: str, level: LogLevel | None = None, code: str | None = None
     ) -> Self:
         """Return a new LogEntry with a timestamp from now."""
         return cls.model_construct(
-            timestamp=datetime.datetime.now().astimezone(),
+            timestamp=datetime.datetime.now().astimezone().isoformat(),
             level=level,
             code=code,
             message=message,
