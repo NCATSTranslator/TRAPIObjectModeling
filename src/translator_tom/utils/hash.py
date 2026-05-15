@@ -49,7 +49,12 @@ _DECODE = _DECODERS[TRAPI_CONFIG.hash_representation]
 
 
 def tomhash(obj: object) -> str:
-    """Hash an object via stablehash and encode per TRAPI_CONFIG.hash_representation."""
+    """Hash an object via stablehash and encode per TRAPI_CONFIG.hash_representation.
+
+    Significantly slower than built-in hash, especially if given arbitrary objects.
+    Use sparingly, only where a stable hash is actually needed, or where the hashing scope
+    can be minimized.
+    """
     return _ENCODE(stablehash(obj).digest()[:_HASH_BYTES])
 
 

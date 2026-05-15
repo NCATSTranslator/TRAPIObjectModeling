@@ -71,7 +71,12 @@ class KnowledgeGraph(TOMBase):
     ) -> dict[EdgeID, EdgeID]:
         """Update the kgraph in-place using the other.
 
-        Returns a mapping of old:new EdgeIDs if normalization was done.
+        Args:
+            other: The other kgraph.
+            pre_normalized: Option to call out pre-noramlized KGs to skip redundant normalization.
+
+        Returns:
+            A mapping of old:new EdgeIDs if normalization was done.
         """
         mapping = dict[EdgeID, EdgeID]()
         if pre_normalized in ("neither", "other"):
@@ -122,7 +127,15 @@ class KnowledgeGraph(TOMBase):
         return bound_edges, bound_nodes
 
     def prune(self, aux_graphs: AuxiliaryGraphsDict, results: list[Result]) -> None:
-        """Remove any unused nodes or edges."""
+        """Remove any unused nodes or edges.
+
+        Args:
+          aux_graphs: Auxiliary graphs using this KG.
+          results: Results list using this KG.
+
+        Raises:
+          KeyError: If nodes/edges are referenced that aren't present in the KG.
+        """
         bound_edges, bound_nodes = self._walk_results(aux_graphs, results)
 
         checked_edges = set[EdgeID]()
