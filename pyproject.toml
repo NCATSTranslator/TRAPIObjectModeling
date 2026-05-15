@@ -155,6 +155,9 @@ DEP002 = [
 norecursedirs = ["utils"]
 log_cli = true
 log_cli_level = "INFO"
+markers = [
+    "bench: heavy benchmarks; skipped unless the test file is named explicitly on the command line",
+]
 
 [tool.coverage.run]
 branch = true
