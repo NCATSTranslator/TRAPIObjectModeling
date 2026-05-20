@@ -97,6 +97,109 @@ class TestQualifierConstraintMetBy:
         c = QualifierConstraint(qualifier_set=[constraint])
         assert c.met_by([meta]) is True
 
+    def test_meta_qualifier_applicable_values_none_is_wildcard(self):
+        # MetaQualifier.applicable_values=None means "any value allowed".
+        constraint = QualifierConstraint(
+            qualifier_set=[
+                Qualifier(
+                    qualifier_type_id="biolink:object_aspect_qualifier",
+                    qualifier_value="secretion",
+                ),
+                Qualifier(
+                    qualifier_type_id="biolink:object_direction_qualifier",
+                    qualifier_value="increased",
+                ),
+            ]
+        )
+        op_qualifiers_wildcard = [
+            MetaQualifier(
+                qualifier_type_id="biolink:qualified_predicate",
+                applicable_values=None,
+            ),
+            MetaQualifier(
+                qualifier_type_id="biolink:object_aspect_qualifier",
+                applicable_values=None,
+            ),
+            MetaQualifier(
+                qualifier_type_id="biolink:object_direction_qualifier",
+                applicable_values=None,
+            ),
+            MetaQualifier(
+                qualifier_type_id="biolink:species_context_qualifier",
+                applicable_values=None,
+            ),
+            MetaQualifier(
+                qualifier_type_id="biolink:causal_mechanism_qualifier",
+                applicable_values=None,
+            ),
+            MetaQualifier(
+                qualifier_type_id="biolink:anatomical_context_qualifier",
+                applicable_values=None,
+            ),
+        ]
+        assert constraint.met_by(op_qualifiers_wildcard) is True
+
+    def test_meta_qualifier_applicable_values_empty_list_is_not_wildcard(self):
+        # Explicit empty list means "type advertised, no values supported".
+        # Must remain distinct from the None (wildcard) case.
+        constraint = QualifierConstraint(
+            qualifier_set=[
+                Qualifier(
+                    qualifier_type_id="biolink:object_aspect_qualifier",
+                    qualifier_value="secretion",
+                ),
+                Qualifier(
+                    qualifier_type_id="biolink:object_direction_qualifier",
+                    qualifier_value="increased",
+                ),
+            ]
+        )
+        op_qualifiers_empty = [
+            MetaQualifier(
+                qualifier_type_id="biolink:qualified_predicate",
+                applicable_values=[],
+            ),
+            MetaQualifier(
+                qualifier_type_id="biolink:object_aspect_qualifier",
+                applicable_values=[],
+            ),
+            MetaQualifier(
+                qualifier_type_id="biolink:object_direction_qualifier",
+                applicable_values=[],
+            ),
+            MetaQualifier(
+                qualifier_type_id="biolink:species_context_qualifier",
+                applicable_values=[],
+            ),
+            MetaQualifier(
+                qualifier_type_id="biolink:causal_mechanism_qualifier",
+                applicable_values=[],
+            ),
+            MetaQualifier(
+                qualifier_type_id="biolink:anatomical_context_qualifier",
+                applicable_values=[],
+            ),
+        ]
+        assert constraint.met_by(op_qualifiers_empty) is False
+
+    def test_meta_qualifier_missing_type_fails_even_with_wildcard_values(self):
+        # Wildcard applicable_values must not bypass the type-id check.
+        constraint = QualifierConstraint(
+            qualifier_set=[
+                Qualifier(
+                    qualifier_type_id="biolink:object_aspect_qualifier",
+                    qualifier_value="secretion",
+                ),
+            ]
+        )
+        op_qualifiers_wrong_type = [
+            MetaQualifier(
+                qualifier_type_id="biolink:species_context_qualifier",
+                applicable_values=None,
+            ),
+        ]
+        assert constraint.met_by(op_qualifiers_wrong_type) is False
+
 
 class TestQualifierConstraintGetInverse:
     def test_subject_to_object(self):

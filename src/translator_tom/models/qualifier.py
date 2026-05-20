@@ -61,32 +61,38 @@ class QualifierConstraint(TOMBase):
 
     def met_by(self, qualifiers: Iterable[Qualifier] | Iterable[MetaQualifier]) -> bool:
         """Check that the given qualifiers satisfy the constraint."""
-        qualifier_pairs: list[tuple[Biolink.Qualifier, set[str]]] = [
+        qualifier_pairs: list[tuple[Biolink.Qualifier, set[str] | None]] = [
             (
                 qualifier.qualifier_type_id,
                 {qualifier.qualifier_value}
                 if isinstance(qualifier, Qualifier)
-                else set(qualifier.applicable_values_list),
+                else (
+                    set(qualifier.applicable_values)
+                    if qualifier.applicable_values is not None
+                    else None
+                ),
             )
             for qualifier in qualifiers
         ]
 
         for constr in self.qualifier_set:
             applicable_types = set(Biolink.get_descendants(constr.qualifier_type_id))
-            applicable_values: set[str] | None = None
+            allowed_values: set[str] | None = None
             met = False
-            for qual_type, value_set in qualifier_pairs:
+            for qual_type, available_values in qualifier_pairs:
                 if qual_type not in applicable_types:
                     continue
-                if applicable_values is None:
+                if allowed_values is None:
                     # expand values once a type matches
-                    applicable_values = set(
+                    allowed_values = set(
                         itertools.chain.from_iterable(
                             Biolink.get_descendant_values(t, constr.qualifier_value)
                             for t in applicable_types
                         )
                     )
-                if applicable_values & value_set:
+                # If available_values is None, we're dealing with a MetaQualifier that
+                # set applicable_values to None, which means all are allowed.
+                if available_values is None or allowed_values & available_values:
                     met = True
                     break
             if not met:
