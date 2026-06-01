@@ -1,6 +1,6 @@
 [project]
 name = "translator_tom"
-version = "1.0.4"
+version = "1.1.0"
 description = "TRAPI Object Models: A performant python data model and centralized utilities for the Translator Reasoner API."
 readme = "README.md"
 requires-python = ">=3.10"
@@ -86,6 +86,8 @@ indent-width = 4
 
 [tool.ruff.lint.per-file-ignores]
 "tests/*" = ["D", "PLR2004", "ANN201"]
+# TypedDict mirrors of the models: intentionally docstring-free (docs live on the models).
+"src/translator_tom/model_dicts/*" = ["D101", "D106"]
 
 [tool.ruff.lint]
 select = [
