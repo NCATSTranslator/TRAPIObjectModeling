@@ -33,7 +33,7 @@ Issues = "https://github.com/NCATSTranslator/TRAPIObjectModeling/issues"
 
 [dependency-groups]
 dev = [
-    "bpython>=0.25",
+    "bpython>=0.26",
     "deptry>=0.23.1",
     "pre-commit>=4.3.0",
     "pyinstrument>=5.1.1",
