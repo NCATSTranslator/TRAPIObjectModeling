@@ -67,24 +67,33 @@ class Biolink(metaclass=_BiolinkMeta):
     @staticmethod
     def is_valid_predicate(predicate: Biolink.Predicate) -> bool:
         """Validate that a given predicate is a real biolink predicate, including mixins."""
-        return Biolink.toolkit.is_predicate(predicate) or any(
-            Biolink("related_to") in Biolink.get_ancestors(desc)
-            for desc in Biolink.get_descendants(predicate)
-        )
+        try:
+            return Biolink.toolkit.is_predicate(predicate) or any(
+                Biolink("related_to") in Biolink.get_ancestors(desc)
+                for desc in Biolink.get_descendants(predicate)
+            )
+        except Exception:
+            return False
 
     @staticmethod
     def is_valid_category(category: Biolink.Entity) -> bool:
         """Validate that a given category is a real biolink category, including mixins."""
-        return Biolink.toolkit.is_category(category) or any(
-            Biolink("NamedThing") in Biolink.get_ancestors(desc)
-            for desc in Biolink.get_descendants(category)
-        )
+        try:
+            return Biolink.toolkit.is_category(category) or any(
+                Biolink("NamedThing") in Biolink.get_ancestors(desc)
+                for desc in Biolink.get_descendants(category)
+            )
+        except Exception:
+            return False
 
     @staticmethod
     def is_valid_association(association: Biolink.Entity) -> bool:
         """Validate that a given association is a real biolink association."""
-        element = Biolink.get_element(association)
-        return element is not None and element.is_a == "association"
+        try:
+            element = Biolink.get_element(association)
+            return element is not None and element.is_a == "association"
+        except Exception:
+            return False
 
     @staticmethod
     def get_ancestors(element_str: str) -> list[str]:
