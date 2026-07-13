@@ -100,6 +100,19 @@ class QualifierConstraint(TOMBase):
 
         return True
 
+    @staticmethod
+    def set_met_by(
+        constraints: list[QualifierConstraint],
+        qualifiers: list[Qualifier] | list[MetaQualifier],
+    ) -> bool:
+        """Check if the given set of constraints are met by the given qualifiers."""
+        if len(constraints) == 0:
+            return True
+        elif len(qualifiers) == 0:
+            return False
+
+        return any(constraint.met_by(qualifiers) for constraint in constraints)
+
     def get_inverse(self) -> QualifierConstraint:
         """Return a (SPO) inverse of the constraint, for reversing edges."""
         new_qualifier_set = list[Qualifier]()

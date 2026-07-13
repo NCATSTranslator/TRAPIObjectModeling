@@ -355,14 +355,7 @@ class Edge(TOMBase):
         self, constraints: list[QualifierConstraint]
     ) -> bool:
         """Check if the edge satisfies the qualifier constraints."""
-        if len(constraints) == 0:
-            return True
-        elif len(self.qualifiers_list) == 0:
-            return False
-
-        return any(
-            constraint.met_by(self.qualifiers_list) for constraint in constraints
-        )
+        return QualifierConstraint.set_met_by(constraints, self.qualifiers_list)
 
     def append_aggregator(self, source: Infores) -> None:
         """Append an aggregator source to the present chain with appropriate upstreams."""
