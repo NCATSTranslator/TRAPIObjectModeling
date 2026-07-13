@@ -8,7 +8,7 @@ authors = [
     { name = "Willow Callaghan", email = "43009413+tokebe@users.noreply.github.com" },
 ]
 dependencies = [
-    "bmt>=1.4.6",
+    "bmt>=1.4.8",
     "orjson>=3.11.3",
     "ormsgpack>=1.11.0",
     "pydantic>=2.12.0",
