@@ -1,6 +1,6 @@
 [project]
 name = "translator_tom"
-version = "1.1.1"
+version = "1.2.0"
 description = "TRAPI Object Models: A performant python data model and centralized utilities for the Translator Reasoner API."
 readme = "README.md"
 requires-python = ">=3.10"
