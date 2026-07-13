@@ -17,12 +17,12 @@ def pytest_collection_modifyitems(
     invocation_args = config.invocation_params.args
 
     def explicitly_invoked(item: pytest.Item) -> bool:
-        # item.fspath is the absolute path to the test file
+        # item.path is the absolute path to the test file
         for arg in invocation_args:
             target = arg.split("::", 1)[0]
             if not target:
                 continue
-            if str(item.fspath).endswith(target) or target.endswith(item.fspath.basename):
+            if str(item.path).endswith(target) or target.endswith(item.path.name):
                 return True
         return False
 

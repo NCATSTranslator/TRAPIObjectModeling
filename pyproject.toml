@@ -37,12 +37,12 @@ dev = [
     "deptry>=0.23.1",
     "pre-commit>=4.3.0",
     "pyinstrument>=5.1.1",
-    "pytest>=8.4.2",
+    "pytest>=9.1.1",
     "pytest-cov>=7.0.0",
     "reasoner-pydantic>=6.0.0",
-    "ruff>=0.13.3",
+    "ruff>=0.15.21",
     "taskipy>=1.14.1",
-    "ty>=0.0.34",
+    "ty>=0.0.59",
 ]
 
 
