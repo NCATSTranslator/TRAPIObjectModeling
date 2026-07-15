@@ -401,3 +401,81 @@ class TestSetMetBy:
         c = _con("==", 1, type_id="biolink:nonexistent")
         attrs = [_attr(1, type_id="biolink:a")]
         assert AttributeConstraint.set_met_by([c], attrs) is False
+
+
+# ---- AttributeConstraint.get_inverse -----------------------------------------
+
+
+class TestAttributeConstraintGetInverse:
+    def test_subject_to_object(self):
+        c = AttributeConstraint(
+            id="biolink:original_subject",
+            name="original subject",
+            operator="==",
+            value="X",
+        )
+        inv = c.get_inverse()
+        assert inv.id == "biolink:original_object"
+        assert inv.name == "original object"
+
+    def test_object_to_subject(self):
+        c = AttributeConstraint(
+            id="biolink:original_object",
+            name="original object",
+            operator="==",
+            value="X",
+        )
+        inv = c.get_inverse()
+        assert inv.id == "biolink:original_subject"
+        assert inv.name == "original subject"
+
+    def test_direction_independent_passes_through(self):
+        c = AttributeConstraint(
+            id="biolink:primary_knowledge_source",
+            name="primary knowledge source",
+            operator="==",
+            value="infores:foo",
+        )
+        inv = c.get_inverse()
+        assert inv.id == "biolink:primary_knowledge_source"
+        assert inv.name == "primary knowledge source"
+
+    def test_preserves_other_fields(self):
+        c = AttributeConstraint(
+            id="biolink:original_subject",
+            name="original subject",
+            operator=">",
+            value=5,
+            negated=True,
+            unit_id="UO:0000221",
+            unit_name="dalton",
+        )
+        inv = c.get_inverse()
+        assert inv.operator == ">"
+        assert inv.value == 5
+        assert inv.negated is True
+        assert inv.unit_id == "UO:0000221"
+        assert inv.unit_name == "dalton"
+
+    def test_does_not_mutate_original(self):
+        c = AttributeConstraint(
+            id="biolink:original_subject",
+            name="original subject",
+            operator="==",
+            value="X",
+        )
+        c.get_inverse()
+        assert c.id == "biolink:original_subject"
+        assert c.name == "original subject"
+
+    def test_no_false_substring_match(self):
+        # "object"/"subject" as part of a larger word must not be swapped.
+        c = AttributeConstraint(
+            id="biolink:objective_score",
+            name="objective score",
+            operator="==",
+            value=1,
+        )
+        inv = c.get_inverse()
+        assert inv.id == "biolink:objective_score"
+        assert inv.name == "objective score"

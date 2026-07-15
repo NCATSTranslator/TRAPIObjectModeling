@@ -168,7 +168,22 @@ class TestQEdgeGetInverse:
         with pytest.raises(ValueError, match="Cannot invert"):
             e.get_inverse()
 
-    def test_raises_when_attribute_constraints_present(self):
+    def test_inverts_direction_scoped_attribute_constraints(self):
+        e = _qedge(
+            attribute_constraints=[
+                AttributeConstraint(
+                    id="biolink:original_subject",
+                    name="original subject",
+                    operator="==",
+                    value="X",
+                )
+            ]
+        )
+        inv = e.get_inverse()
+        assert inv.attribute_constraints is not None
+        assert inv.attribute_constraints[0].id == "biolink:original_object"
+
+    def test_direction_independent_attribute_constraints_pass_through(self):
         e = _qedge(
             attribute_constraints=[
                 AttributeConstraint(
@@ -176,8 +191,9 @@ class TestQEdgeGetInverse:
                 )
             ]
         )
-        with pytest.raises(NotImplementedError):
-            e.get_inverse()
+        inv = e.get_inverse()
+        assert inv.attribute_constraints is not None
+        assert inv.attribute_constraints[0].id == "biolink:foo"
 
     def test_inverts_qualifier_constraints(self):
         q = Qualifier(

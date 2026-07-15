@@ -244,18 +244,14 @@ class QEdge(TOMBase):
         if len(failed_predicates) > 0:
             raise ValueError(f"Cannot invert predicates {failed_predicates}.")
 
-        # TODO: attribute constraint inversion with respect to the edge direction
-        if len(self.attribute_constraints_list):
-            raise NotImplementedError(
-                "Attribute constraint inversion not yet implemented."
-            )
-
         return QEdge(
             knowledge_type=self.knowledge_type,
             predicates=inverse_predicates or None,
             subject=self.object,
             object=self.subject,
-            attribute_constraints=self.attribute_constraints,
+            attribute_constraints=(
+                [ac.get_inverse() for ac in self.attribute_constraints_list] or None
+            ),
             qualifier_constraints=(
                 [qconstr.get_inverse() for qconstr in self.qualifier_constraints_list]
                 or None
