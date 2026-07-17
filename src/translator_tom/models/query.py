@@ -53,6 +53,16 @@ class Query(TOMBase):
     downstream sources (e.g., ARS -> ARAs -> KPs).
     """
 
+    timeout: int | None = None
+    """Custom time in seconds that the client is willing to wait for a response.
+    After this time has elapsed, the service MAY consider the query
+    failed and respond with logs indicating as such.
+    If the service knows it cannot respond in the given time, it MAY
+    respond with an HTTP 409 and a response explaining its time capabilities.
+    Negative values SHOULD be interpreted as disabling any default
+    timeout the server implements.
+    """
+
     @property
     def workflow_list(self) -> list[Operation]:
         """Get the workflow operations as a guaranteed list, even if they are represented as None."""
