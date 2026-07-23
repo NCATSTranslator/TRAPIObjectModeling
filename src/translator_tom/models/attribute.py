@@ -172,6 +172,12 @@ class Attribute(TOMBase):
         old.extend(attrs.values())
 
 
+# Match "subject"/"object" only as whole words, so a free-form `id` such as
+# "biolink:objective_*" is not mangled into "subjective_*" when reversing.
+_SUBJECT_RE = re.compile(r"(?<![a-zA-Z])subject(?![a-zA-Z])")
+_OBJECT_RE = re.compile(r"(?<![a-zA-Z])object(?![a-zA-Z])")
+
+
 class AttributeConstraint(TOMBase):
     """Generic query constraint for a query node or query edge."""
 
@@ -330,3 +336,17 @@ class AttributeConstraint(TOMBase):
             any(c.met_by(attr) for attr in attrs_by_type.get(c.id, []))
             for c in constraints
         )
+
+    def get_inverse(self) -> AttributeConstraint:
+        """Return a (SPO) inverse of the constraint, for reversing edges.
+
+        Flips subject/object for the few directional attribute types.
+        """
+        new = self.model_copy()
+        if _OBJECT_RE.search(self.id):
+            new.id = _OBJECT_RE.sub("subject", self.id)
+            new.name = _OBJECT_RE.sub("subject", self.name)
+        elif _SUBJECT_RE.search(self.id):
+            new.id = _SUBJECT_RE.sub("object", self.id)
+            new.name = _SUBJECT_RE.sub("object", self.name)
+        return new
