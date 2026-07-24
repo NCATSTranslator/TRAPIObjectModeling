@@ -2,26 +2,97 @@ from __future__ import annotations
 
 __all__ = ["Biolink"]
 
+import threading
 from functools import lru_cache
-from typing import ClassVar, TypeVar, cast, final
+from importlib.resources import files
+from typing import TYPE_CHECKING, TypeVar, cast, final
 
-import bmt
-from bmt import utils
 from typing_extensions import override
 
 from translator_tom.models.shared import CURIE, Curie
 from translator_tom.utils.config import TRAPI_CONFIG
 
+if TYPE_CHECKING:
+    import bmt
+    from linkml_runtime.linkml_model.meta import Element
+
 _T = TypeVar("_T", bound=str)
 
 
+def _build_toolkit(version: str) -> bmt.Toolkit:
+    """Build a bmt Toolkit for a given biolink version.
+
+    Prefers schema files vendored under `translator_tom/data/biolink/<version>/`,
+    which avoids http GitHub fetches and time cost. Falls back to fetching from GitHub
+    when the configured version is not vendored.
+
+    Imports of `bmt`/`linkml_runtime` are deferred into this function so that
+    `import translator_tom` doesn't spend import + parse time until the
+    toolkit is first used. See the lazy `Biolink.toolkit` property and
+    `Biolink.eager_init()`.
+
+    To vendor a new version, run `task vendor:biolink` after bumping
+    `biolink_version` in the config (preferably, keep only the latest).
+    """
+    import bmt  # noqa: PLC0415  (deferred: keeps bmt out of `import translator_tom`)
+    import yaml  # noqa: PLC0415
+    from linkml_runtime.utils.schemaview import SchemaView  # noqa: PLC0415
+
+    data_root = files("translator_tom") / "data" / "biolink" / version
+    schema_res = data_root / "biolink-model.yaml"
+    pmap_res = data_root / "predicate_mapping.yaml"
+
+    if schema_res.is_file() and pmap_res.is_file():
+        # bmt.Toolkit.__init__ only sets `.view` and `.pmap`, and reaches the
+        # network for both. Build those two attributes here from local files.
+        toolkit = bmt.Toolkit.__new__(bmt.Toolkit)
+        # SchemaView resolves the model's relative `imports`, so vendored dir must have
+        # all relevant files.
+        toolkit.view = SchemaView(str(schema_res))
+        toolkit.pmap = yaml.safe_load(pmap_res.read_text())
+        return toolkit
+
+    base = (
+        f"https://raw.githubusercontent.com/biolink/biolink-model/refs/tags/v{version}"
+    )
+    return bmt.Toolkit(
+        schema=f"{base}/biolink-model.yaml",
+        predicate_map=f"{base}/predicate_mapping.yaml",
+    )
+
+
+_TOOLKIT_CACHE: dict[str, bmt.Toolkit] = {}
+_TOOLKIT_LOCK = threading.Lock()
+
+
+def _get_toolkit() -> bmt.Toolkit:
+    """Return the toolkit for the configured biolink version, building it once."""
+    version = TRAPI_CONFIG.biolink_version
+    toolkit = _TOOLKIT_CACHE.get(version)
+    if toolkit is None:
+        with _TOOLKIT_LOCK:  # Ensure no concurrent first-access duplicate builds
+            toolkit = _TOOLKIT_CACHE.get(version)
+            if toolkit is None:
+                toolkit = _TOOLKIT_CACHE[version] = _build_toolkit(version)
+    return toolkit
+
+
 class _BiolinkMeta(type):
-    """Metaclass that allows Biolink to be called for prefix construction."""
+    """Metaclass: enables `Biolink(ref)` prefixing and lazy toolkit access."""
 
     @override
     def __call__(cls, ref: str) -> str:
         """Return a properly-formed biolink element."""
         return f"biolink:{ref.removeprefix('biolink:')}"
+
+    @property
+    def toolkit(cls) -> bmt.Toolkit:
+        """The bmt Toolkit, built lazily on first access.
+
+        Lazy build improves import time noticeably for use cases where that matters.
+        Use `Biolink.eager_init` to force a build (e.g. in FastAPI lifespan).
+        """
+        return _get_toolkit()
 
 
 @final
@@ -49,15 +120,26 @@ class Biolink(metaclass=_BiolinkMeta):
     Qualifier = CURIE
     """CURIE for a Biolink 'qualifier' type id such as subject_aspect_qualifier."""
 
-    toolkit: ClassVar[bmt.Toolkit] = bmt.Toolkit(
-        schema=f"https://raw.githubusercontent.com/biolink/biolink-model/refs/tags/v{TRAPI_CONFIG.biolink_version}/biolink-model.yaml",
-        predicate_map=f"https://raw.githubusercontent.com/biolink/biolink-model/refs/tags/v{TRAPI_CONFIG.biolink_version}/predicate_mapping.yaml",
-    )
+    @staticmethod
+    def eager_init() -> None:
+        """Eagerly build the toolkit so parse time happens now, instead of on first use."""
+        _get_toolkit()
 
     # Direct passthroughs to the toolkit, exposed for convenience.
-    is_qualifier = staticmethod(toolkit.is_qualifier)
-    is_symmetric = staticmethod(toolkit.is_symmetric)
-    get_element = staticmethod(toolkit.get_element)
+    @staticmethod
+    def is_qualifier(name: str) -> bool:
+        """Whether the given element name is a qualifier (bmt passthrough)."""
+        return Biolink.toolkit.is_qualifier(name)
+
+    @staticmethod
+    def is_symmetric(name: str) -> bool:
+        """Whether the given predicate is symmetric (bmt passthrough)."""
+        return Biolink.toolkit.is_symmetric(name)
+
+    @staticmethod
+    def get_element(name: str) -> Element | None:
+        """Return the biolink element for a name, or None (bmt passthrough)."""
+        return Biolink.toolkit.get_element(name)
 
     @staticmethod
     def rmprefix(element: str) -> str:
@@ -108,6 +190,8 @@ class Biolink(metaclass=_BiolinkMeta):
         """
         element = Biolink.toolkit.get_element(element_str)
         if element is not None:
+            from bmt import utils  # noqa: PLC0415
+
             return utils.format_element(element)
 
     @staticmethod
