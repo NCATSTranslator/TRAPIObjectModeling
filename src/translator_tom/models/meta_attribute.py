@@ -24,7 +24,7 @@ class MetaAttribute(TOMBase):
     original_attribute_names: Annotated[list[str] | None, Field(min_length=1)] = None
     """Names of an the attribute as provided by the source."""
 
-    constraint_use: bool | None = False
+    constraint_use: bool = False
     """Indicates whether this attribute can be used as a query constraint."""
 
     constraint_name: str | None = None

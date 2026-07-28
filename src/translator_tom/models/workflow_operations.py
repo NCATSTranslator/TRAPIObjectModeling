@@ -221,7 +221,7 @@ class EnrichResultsParameters(OperationParameters):
     """Parameters for the EnrichResults operation."""
 
     pvalue_threshold: Annotated[
-        int | float | None, Field(examples=[1e-7], ge=0, le=1)
+        int | float, Field(examples=[1e-7], ge=0, le=1)
     ] = 1e-6
     """The cutoff p-value for enrichment."""
 
@@ -323,7 +323,7 @@ class FilterKgraphParametersBase(OperationParameters):
     """
 
     qnode_keys: Annotated[
-        list[QNodeID] | None, Field(examples=["[n01]"], default_factory=list)
+        list[QNodeID], Field(examples=["[n01]"], default_factory=list)
     ]
     """This indicates if you only want nodes corresponding to a specific list of qnode_keys to be removed.
 
@@ -420,7 +420,7 @@ class FilterKgraphPercentileParameters(FilterKgraphParametersBase):
     edge_attribute: Annotated[str, Field(examples=["normalized_google_distance"])]
     """The name of the edge attribute to filter on."""
 
-    threshold: Annotated[float | None, Field(gt=0, le=100, examples=[96.8])] = 95
+    threshold: Annotated[float, Field(gt=0, le=100, examples=[96.8])] = 95
     """The percentile to threshold on."""
 
     remove_above_or_below: AboveOrBelow = "below"
@@ -450,13 +450,13 @@ class FilterKgraphStdDevParameters(FilterKgraphParametersBase):
     edge_attribute: Annotated[str, Field(examples=["normalized_google_distance"])]
     """The name of the edge attribute to filter on."""
 
-    num_sigma: Annotated[float | None, Field(gt=0, examples=[1.2])] = 1
+    num_sigma: Annotated[float, Field(gt=0, examples=[1.2])] = 1
     """The number of standard deviations to threshold on."""
 
-    remove_above_or_below: AboveOrBelow | None = "below"
+    remove_above_or_below: AboveOrBelow = "below"
     """Indictes whether to remove above or below the given threshold."""
 
-    plus_or_minus_std_dev: PlusOrMinus | None = "plus"
+    plus_or_minus_std_dev: PlusOrMinus = "plus"
     """Indicate whether or not the threshold should be found using plus or minus the standard deviation.
 
     E.g. when plus_or_minus_std_dev is set to plus will set the cutoff for filtering as
@@ -488,10 +488,10 @@ class FilterKgraphTopNParameters(FilterKgraphParametersBase):
     edge_attribute: Annotated[str, Field(examples=["normalized_google_distance"])]
     """The name of the edge attribute to filter on."""
 
-    max_edges: Annotated[int | None, Field(gt=0, examples=[10])] = 50
+    max_edges: Annotated[int, Field(gt=0, examples=[10])] = 50
     """The number of edges to keep."""
 
-    keep_top_or_bottom: TopOrBottom | None = "top"
+    keep_top_or_bottom: TopOrBottom = "top"
     """Indicate whether or not the the top or bottom n values should be kept."""
 
 

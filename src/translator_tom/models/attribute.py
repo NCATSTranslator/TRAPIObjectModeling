@@ -204,7 +204,7 @@ class AttributeConstraint(TOMBase):
     readability.
     """
 
-    negated: Annotated[bool | None, Field(alias="not")] = False
+    negated: Annotated[bool, Field(alias="not")] = False
     """Negate the operator."""
 
     operator: Operator

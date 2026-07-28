@@ -355,11 +355,11 @@ class TestMetByMetaAttribute:
         m = MetaAttribute(attribute_type_id="biolink:foo", constraint_use=True)
         assert c.met_by(m) is True
 
-    def test_id_match_with_constraint_use_none(self):
-        # `None is not False` -> True.
-        c = _con("==", 1)
-        m = MetaAttribute(attribute_type_id="biolink:foo", constraint_use=None)
-        assert c.met_by(m) is True
+    def test_constraint_use_rejects_none(self):
+        # constraint_use is non-nullable (schema: boolean with a default), so None
+        # is not a valid value.
+        with pytest.raises(ValidationError):
+            MetaAttribute(attribute_type_id="biolink:foo", constraint_use=None)
 
     def test_id_match_with_constraint_use_false(self):
         c = _con("==", 1)

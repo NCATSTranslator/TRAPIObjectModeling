@@ -177,13 +177,16 @@ class TestFilterKgraphParametersBase:
         qedge_keys: list[str] | None = None,
         qnode_keys: list[str] | None = None,
     ) -> FilterKgraphContinuousKedgeAttributeParameters:
-        return FilterKgraphContinuousKedgeAttributeParameters(
-            edge_attribute="normalized_google_distance",
-            threshold=1.0,
-            remove_above_or_below="above",
-            qedge_keys=qedge_keys,
-            qnode_keys=qnode_keys,  # type: ignore[arg-type]
-        )
+        # qnode_keys is non-nullable (defaults to []); only pass it when provided.
+        kwargs: dict[str, object] = {
+            "edge_attribute": "normalized_google_distance",
+            "threshold": 1.0,
+            "remove_above_or_below": "above",
+            "qedge_keys": qedge_keys,
+        }
+        if qnode_keys is not None:
+            kwargs["qnode_keys"] = qnode_keys
+        return FilterKgraphContinuousKedgeAttributeParameters(**kwargs)
 
     def test_qedge_keys_list_when_none(self):
         assert self._make().qedge_keys_list == []
@@ -191,7 +194,7 @@ class TestFilterKgraphParametersBase:
     def test_qedge_keys_list_when_set(self):
         assert self._make(qedge_keys=["e0"]).qedge_keys_list == ["e0"]
 
-    def test_qnode_keys_list_when_none(self):
+    def test_qnode_keys_list_when_omitted_defaults_empty(self):
         assert self._make().qnode_keys_list == []
 
     def test_qnode_keys_list_when_set(self):
