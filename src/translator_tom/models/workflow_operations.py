@@ -220,9 +220,7 @@ class OperationCompleteResults(BaseOperation):
 class EnrichResultsParameters(OperationParameters):
     """Parameters for the EnrichResults operation."""
 
-    pvalue_threshold: Annotated[
-        int | float, Field(examples=[1e-7], ge=0, le=1)
-    ] = 1e-6
+    pvalue_threshold: Annotated[int | float, Field(examples=[1e-7], ge=0, le=1)] = 1e-6
     """The cutoff p-value for enrichment."""
 
     qnode_keys: Annotated[list[QNodeID] | None, Field(examples=["n01"])] = None
