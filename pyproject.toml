@@ -33,6 +33,10 @@ Homepage = "https://github.com/NCATSTranslator/TRAPIObjectModeling"
 Repository = "https://github.com/NCATSTranslator/TRAPIObjectModeling"
 Issues = "https://github.com/NCATSTranslator/TRAPIObjectModeling/issues"
 
+[project.scripts]
+tom-parse = "translator_tom.scripts.parse:main"
+tom-validate = "translator_tom.scripts.validate:main"
+
 [dependency-groups]
 dev = [
     "bpython>=0.26",
