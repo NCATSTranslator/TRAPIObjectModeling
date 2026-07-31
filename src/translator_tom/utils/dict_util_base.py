@@ -96,12 +96,7 @@ def _tag_literals(annotation: Any) -> tuple[Any, ...]:
 
 
 def _container_kind(annotation: Any) -> Literal["scalar", "list", "dict"]:
-    """Classify a field's outermost container (after stripping `Annotated`/`Optional`).
-
-    Distinguishes a single nested model (`scalar`, e.g. `Message.query_graph`) from a
-    `list`/`dict` of them, since all three serialize to `dict`/`list` and can't be told
-    apart from the runtime value alone.
-    """
+    """Classify a field's outermost container (after stripping `Annotated`/`Optional`)."""
     node = annotation
     while getattr(node, "__metadata__", None) is not None:
         node = node.__origin__
@@ -153,7 +148,7 @@ class DictUtil(Generic[_TD]):
 
     @overload
     @classmethod
-    def to_json(cls, obj: _TD) -> str: ...
+    def to_json(cls, obj: _TD) -> bytes: ...
 
     @overload
     @classmethod
@@ -167,8 +162,7 @@ class DictUtil(Generic[_TD]):
     def to_json(cls, obj: _TD, as_str: bool = False) -> str | bytes:
         """Serialize a dict to JSON.
 
-        Dicts are expected to already be in canonical (None-omitted) form, so keys
-        are serialized as-is rather than filtered.
+        Dicts are expected to already be in canonical form.
         """
         json = orjson.dumps(obj)
         if as_str:
@@ -266,22 +260,23 @@ class DictUtil(Generic[_TD]):
 
     @classmethod
     def _field_defaults(cls) -> dict[str, Any]:
-        """Map each model field to its default (used for keys omitted from a dict).
-
-        `to_dict` uses `exclude_defaults`, so a default-valued field is absent from
-        the serialized dict; hashing restores the default to match the model, whose
-        `hash()` reads live field values. Required fields (no default) map to None,
-        but they are always present in a valid serialization so the fallback is unused.
-        """
+        """Map each model field to its default (for keys omitted from a dict)."""
         cached = cls.__dict__.get("_field_defaults_cache")
         if cached is not None:
             return cached
+        # to_dict omits default-valued fields; restoring the default lets a dict hash
+        # like the model, whose hash reads live (always-present) field values.
         defaults: dict[str, Any] = {}
         for name, field in cls._model.model_fields.items():
             default = field.get_default(call_default_factory=True)
             defaults[name] = None if default is PydanticUndefined else default
         cls._field_defaults_cache = defaults
         return defaults
+
+    @classmethod
+    def _default(cls, field_name: str) -> Any:
+        """Return the mirrored model's default for `field_name` (its model attribute name)."""
+        return cls._field_defaults()[field_name]
 
     @classmethod
     def hash(cls, obj: _TD) -> str:
