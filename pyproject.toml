@@ -163,12 +163,10 @@ DEP002 = [
 ]
 
 [tool.pytest.ini_options]
-norecursedirs = ["utils"]
+# bench uses standalone benchmark scripts
+norecursedirs = ["bench"]
 log_cli = true
 log_cli_level = "INFO"
-markers = [
-    "bench: heavy benchmarks; skipped unless the test file is named explicitly on the command line",
-]
 
 [tool.coverage.run]
 branch = true
