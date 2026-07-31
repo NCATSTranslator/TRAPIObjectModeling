@@ -418,7 +418,7 @@ class FilterKgraphPercentileParameters(FilterKgraphParametersBase):
     edge_attribute: Annotated[str, Field(examples=["normalized_google_distance"])]
     """The name of the edge attribute to filter on."""
 
-    threshold: Annotated[float, Field(gt=0, le=100, examples=[96.8])] = 95
+    threshold: Annotated[float, Field(gt=0, le=100, examples=[96.8])] = 95.0
     """The percentile to threshold on."""
 
     remove_above_or_below: AboveOrBelow = "below"
@@ -448,7 +448,7 @@ class FilterKgraphStdDevParameters(FilterKgraphParametersBase):
     edge_attribute: Annotated[str, Field(examples=["normalized_google_distance"])]
     """The name of the edge attribute to filter on."""
 
-    num_sigma: Annotated[float, Field(gt=0, examples=[1.2])] = 1
+    num_sigma: Annotated[float, Field(gt=0, examples=[1.2])] = 1.0
     """The number of standard deviations to threshold on."""
 
     remove_above_or_below: AboveOrBelow = "below"

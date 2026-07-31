@@ -202,3 +202,6 @@ class MetaEdge(TOMBase):
         return any(
             constraint.met_by(self.qualifiers_list) for constraint in constraints
         )
+
+
+MetaKnowledgeGraph.model_rebuild()  # Don't defer model build

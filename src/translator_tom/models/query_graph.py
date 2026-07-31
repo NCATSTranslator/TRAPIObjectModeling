@@ -299,3 +299,9 @@ class QPath(TOMBase):
     def constraints_list(self) -> list[PathConstraint]:
         """Get the constraints as a guaranteed list, even if they are represented as None."""
         return self.constraints if self.constraints is not None else []
+
+
+# Don't defer model builds
+BaseQueryGraph.model_rebuild()
+QueryGraph.model_rebuild()
+PathfinderQueryGraph.model_rebuild()

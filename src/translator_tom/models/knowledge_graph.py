@@ -369,3 +369,6 @@ class Edge(TOMBase):
                 upstream_resource_ids=[last_downstream.resource_id],
             )
         )
+
+
+KnowledgeGraph.model_rebuild()  # Don't defer model build
