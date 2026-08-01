@@ -4,13 +4,17 @@ The `model_dicts` twin of `bench/test_sd_tom.py`: same corpus walk and output,
 but driving the `*DictUtil` serdes (raw orjson/ormsgpack over the TypedDict form,
 no model construction) instead of the `Response` model. Run both to see the cost
 the model layer adds over operating on plain dicts.
+
+The `+val` rows re-run the `from` path with `validate=True`, adding a pydantic
+`TypeAdapter` pass over the parsed data; their `from` timing minus the plain
+row's is the cost of opting into validation.
 """
 
 import time
 
 from utils import CORPUS_ROOT, discover_files, read_corpus_file
 
-LABEL_WIDTH = 10
+LABEL_WIDTH = 12
 VALUE_FMT = "{:>8.4f}s"
 
 
@@ -72,6 +76,12 @@ for response_path in TEST_FILES:
     t_to_json = time.perf_counter() - t0
     pair_row("json", t_from_json, t_to_json, file_results)
 
+    # `to` is unaffected by validation; reuse its timing for the +val rows.
+    t0 = time.perf_counter()
+    _ = ResponseDictUtil.from_json(response_json, validate=True)
+    t_from_json_val = time.perf_counter() - t0
+    pair_row("json+val", t_from_json_val, t_to_json, file_results)
+
     t0 = time.perf_counter()
     response_msgpack = ResponseDictUtil.to_msgpack(response)
     t_to_mp = time.perf_counter() - t0
@@ -79,6 +89,11 @@ for response_path in TEST_FILES:
     _ = ResponseDictUtil.from_msgpack(response_msgpack)
     t_from_mp = time.perf_counter() - t0
     pair_row("msgpack", t_from_mp, t_to_mp, file_results)
+
+    t0 = time.perf_counter()
+    _ = ResponseDictUtil.from_msgpack(response_msgpack, validate=True)
+    t_from_mp_val = time.perf_counter() - t0
+    pair_row("msgpack+val", t_from_mp_val, t_to_mp, file_results)
 
 
 # --- Summary ---
