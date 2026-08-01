@@ -3,7 +3,6 @@ from __future__ import annotations
 import re
 from typing import cast
 
-from pydantic import JsonValue
 from typing_extensions import NotRequired, TypedDict
 
 from translator_tom.model_dicts.meta_attribute import (
@@ -17,7 +16,7 @@ from translator_tom.models.attribute import (
     AttributeConstraint,
     Operator,
 )
-from translator_tom.models.shared import CURIE
+from translator_tom.models.shared import CURIE, FastJsonValue
 from translator_tom.utils.dict_util_base import DictUtil
 from translator_tom.utils.hash import tomhash
 
@@ -32,7 +31,7 @@ __all__ = [
 class AttributeDict(TypedDict):
     attribute_type_id: CURIE
     original_attribute_name: NotRequired[str | None]
-    value: JsonValue
+    value: FastJsonValue
     value_type_id: NotRequired[CURIE | None]
     attribute_source: NotRequired[str | None]
     value_url: NotRequired[str | None]
@@ -88,7 +87,7 @@ AttributeConstraintDict = TypedDict(
         "name": str,
         "not": NotRequired[bool],
         "operator": Operator,
-        "value": JsonValue,
+        "value": FastJsonValue,
         "unit_id": NotRequired[CURIE | None],
         "unit_name": NotRequired[str | None],
     },

@@ -1,12 +1,12 @@
 from __future__ import annotations
 
 from collections.abc import Mapping
-from typing import ClassVar, Literal
+from typing import Annotated, ClassVar, Literal
 
-from pydantic import JsonValue
+from pydantic import Field
 from typing_extensions import NotRequired, TypedDict
 
-from translator_tom.models.shared import Infores, QEdgeID, QNodeID
+from translator_tom.models.shared import FastJsonValue, Infores, QEdgeID, QNodeID
 from translator_tom.models.workflow_operations import (
     AboveOrBelow,
     AllowList,
@@ -222,7 +222,7 @@ class BaseOperationDictUtil(DictUtil[BaseOperationDict]):
 
 class OperationAnnotateDict(BaseOperationDict):
     id: Literal["annotate"]
-    parameters: NotRequired[dict[str, JsonValue] | None]
+    parameters: NotRequired[dict[str, FastJsonValue] | None]
 
 
 class OperationAnnotateDictUtil(BaseOperationDictUtil):
@@ -290,7 +290,7 @@ class OperationAnnotateNodesDictUtil(BaseOperationDictUtil):
 
 class OperationBindDict(BaseOperationDict):
     id: Literal["bind"]
-    parameters: NotRequired[dict[str, JsonValue] | None]
+    parameters: NotRequired[dict[str, FastJsonValue] | None]
 
 
 class OperationBindDictUtil(BaseOperationDictUtil):
@@ -301,7 +301,7 @@ class OperationBindDictUtil(BaseOperationDictUtil):
 
 class OperationCompleteResultsDict(BaseOperationDict):
     id: Literal["complete_results"]
-    parameters: NotRequired[dict[str, JsonValue] | None]
+    parameters: NotRequired[dict[str, FastJsonValue] | None]
 
 
 class OperationCompleteResultsDictUtil(BaseOperationDictUtil):
@@ -387,7 +387,7 @@ class OperationFillDictUtil(BaseOperationDictUtil):
 
 class OperationFilterKgraphDict(BaseOperationDict):
     id: Literal["filter_kgraph"]
-    parameters: NotRequired[dict[str, JsonValue] | None]
+    parameters: NotRequired[dict[str, FastJsonValue] | None]
 
 
 class OperationFilterKgraphDictUtil(BaseOperationDictUtil):
@@ -448,7 +448,7 @@ class OperationFilterKgraphContinuousKedgeAttributeDictUtil(BaseOperationDictUti
 
 class FilterKgraphDiscreteKedgeAttributeParametersDict(FilterKgraphParametersBaseDict):
     edge_attribute: str
-    remove_value: JsonValue
+    remove_value: FastJsonValue
 
 
 class FilterKgraphDiscreteKedgeAttributeParametersDictUtil(
@@ -472,7 +472,7 @@ class OperationFilterKgraphDiscreteKedgeAttributeDictUtil(BaseOperationDictUtil)
 
 class FilterKgraphDiscreteKnodeAttributeParametersDict(FilterKgraphParametersBaseDict):
     node_attribute: str
-    remove_value: JsonValue
+    remove_value: FastJsonValue
 
 
 class FilterKgraphDiscreteKnodeAttributeParametersDictUtil(
@@ -496,7 +496,7 @@ class OperationFilterKgraphDiscreteKnodeAttributeDictUtil(BaseOperationDictUtil)
 
 class OperationFilterKgraphOrphansDict(BaseOperationDict):
     id: Literal["filter_kgraph_orphans"]
-    parameters: NotRequired[dict[str, JsonValue] | None]
+    parameters: NotRequired[dict[str, FastJsonValue] | None]
 
 
 class OperationFilterKgraphOrphansDictUtil(BaseOperationDictUtil):
@@ -577,7 +577,7 @@ class OperationFilterKgraphTopNDictUtil(BaseOperationDictUtil):
 
 class OperationFilterResultsDict(BaseOperationDict):
     id: Literal["filter_results"]
-    parameters: NotRequired[dict[str, JsonValue] | None]
+    parameters: NotRequired[dict[str, FastJsonValue] | None]
 
 
 class OperationFilterResultsDictUtil(BaseOperationDictUtil):
@@ -609,7 +609,7 @@ class OperationFilterResultsTopNDictUtil(BaseOperationDictUtil):
 
 class OperationLookupDict(BaseOperationDict):
     id: Literal["lookup"]
-    parameters: NotRequired[dict[str, JsonValue] | None]
+    parameters: NotRequired[dict[str, FastJsonValue] | None]
 
 
 class OperationLookupDictUtil(BaseOperationDictUtil):
@@ -621,7 +621,7 @@ class OperationLookupDictUtil(BaseOperationDictUtil):
 
 class OperationLookupAndScoreDict(BaseOperationDict):
     id: Literal["lookup_and_score"]
-    parameters: NotRequired[dict[str, JsonValue] | None]
+    parameters: NotRequired[dict[str, FastJsonValue] | None]
 
 
 class OperationLookupAndScoreDictUtil(BaseOperationDictUtil):
@@ -633,7 +633,7 @@ class OperationLookupAndScoreDictUtil(BaseOperationDictUtil):
 
 class OperationOverlayDict(BaseOperationDict):
     id: Literal["overlay"]
-    parameters: NotRequired[dict[str, JsonValue] | None]
+    parameters: NotRequired[dict[str, FastJsonValue] | None]
 
 
 class OperationOverlayDictUtil(BaseOperationDictUtil):
@@ -691,7 +691,7 @@ class OperationOverlayComputeNgdDictUtil(BaseOperationDictUtil):
 
 class OperationOverlayConnectKnodesDict(BaseOperationDict):
     id: Literal["overlay_connect_knodes"]
-    parameters: NotRequired[dict[str, JsonValue] | None]
+    parameters: NotRequired[dict[str, FastJsonValue] | None]
 
 
 class OperationOverlayConnectKnodesDictUtil(BaseOperationDictUtil):
@@ -728,7 +728,7 @@ class OperationOverlayFisherExactTestDictUtil(BaseOperationDictUtil):
 
 class OperationRestateDict(BaseOperationDict):
     id: Literal["restate"]
-    parameters: NotRequired[dict[str, JsonValue] | None]
+    parameters: NotRequired[dict[str, FastJsonValue] | None]
 
 
 class OperationRestateDictUtil(BaseOperationDictUtil):
@@ -740,7 +740,7 @@ class OperationRestateDictUtil(BaseOperationDictUtil):
 
 class OperationScoreDict(BaseOperationDict):
     id: Literal["score"]
-    parameters: NotRequired[dict[str, JsonValue] | None]
+    parameters: NotRequired[dict[str, FastJsonValue] | None]
 
 
 class OperationScoreDictUtil(BaseOperationDictUtil):
@@ -752,7 +752,7 @@ class OperationScoreDictUtil(BaseOperationDictUtil):
 
 class OperationSortResultsDict(BaseOperationDict):
     id: Literal["sort_results"]
-    parameters: NotRequired[dict[str, JsonValue] | None]
+    parameters: NotRequired[dict[str, FastJsonValue] | None]
 
 
 class OperationSortResultsDictUtil(BaseOperationDictUtil):
@@ -840,38 +840,41 @@ class OperationSortResultsScoreDictUtil(BaseOperationDictUtil):
     _model = OperationSortResultsScore
 
 
-OperationDict = (
-    OperationAnnotateDict
-    | OperationAnnotateEdgesDict
-    | OperationAnnotateNodesDict
-    | OperationBindDict
-    | OperationCompleteResultsDict
-    | OperationEnrichResultsDict
-    | OperationFillDict
-    | OperationFilterKgraphDict
-    | OperationFilterKgraphContinuousKedgeAttributeDict
-    | OperationFilterKgraphDiscreteKedgeAttributeDict
-    | OperationFilterKgraphDiscreteKnodeAttributeDict
-    | OperationFilterKgraphOrphansDict
-    | OperationFilterKgraphPercentileDict
-    | OperationFilterKgraphStdDevDict
-    | OperationFilterKgraphTopNDict
-    | OperationFilterResultsDict
-    | OperationFilterResultsTopNDict
-    | OperationLookupDict
-    | OperationLookupAndScoreDict
-    | OperationOverlayDict
-    | OperationOverlayComputeJaccardDict
-    | OperationOverlayComputeNgdDict
-    | OperationOverlayConnectKnodesDict
-    | OperationOverlayFisherExactTestDict
-    | OperationRestateDict
-    | OperationScoreDict
-    | OperationSortResultsDict
-    | OperationSortResultsEdgeAttributeDict
-    | OperationSortResultsNodeAttributeDict
-    | OperationSortResultsScoreDict
-)
+OperationDict = Annotated[
+    (
+        OperationAnnotateDict
+        | OperationAnnotateEdgesDict
+        | OperationAnnotateNodesDict
+        | OperationBindDict
+        | OperationCompleteResultsDict
+        | OperationEnrichResultsDict
+        | OperationFillDict
+        | OperationFilterKgraphDict
+        | OperationFilterKgraphContinuousKedgeAttributeDict
+        | OperationFilterKgraphDiscreteKedgeAttributeDict
+        | OperationFilterKgraphDiscreteKnodeAttributeDict
+        | OperationFilterKgraphOrphansDict
+        | OperationFilterKgraphPercentileDict
+        | OperationFilterKgraphStdDevDict
+        | OperationFilterKgraphTopNDict
+        | OperationFilterResultsDict
+        | OperationFilterResultsTopNDict
+        | OperationLookupDict
+        | OperationLookupAndScoreDict
+        | OperationOverlayDict
+        | OperationOverlayComputeJaccardDict
+        | OperationOverlayComputeNgdDict
+        | OperationOverlayConnectKnodesDict
+        | OperationOverlayFisherExactTestDict
+        | OperationRestateDict
+        | OperationScoreDict
+        | OperationSortResultsDict
+        | OperationSortResultsEdgeAttributeDict
+        | OperationSortResultsNodeAttributeDict
+        | OperationSortResultsScoreDict
+    ),
+    Field(discriminator="id"),
+]
 
 
 def _discriminate_runner_parameters(
