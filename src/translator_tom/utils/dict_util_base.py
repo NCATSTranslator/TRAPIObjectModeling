@@ -25,6 +25,7 @@ from typing import (
 
 import orjson
 import ormsgpack
+from pydantic import TypeAdapter
 from pydantic.fields import FieldInfo
 from pydantic_core import PydanticUndefined
 
@@ -131,6 +132,8 @@ class DictUtil(Generic[_TD]):
     _nested_fields_cache: ClassVar[dict[str, _NestedField] | None] = None
     # Per-subclass cache for `_field_defaults()`.
     _field_defaults_cache: ClassVar[dict[str, Any] | None] = None
+    # Per-subclass cache for `_adapter()` (built lazily on first validating parse).
+    _adapter_cache: ClassVar[TypeAdapter[Any] | None] = None
 
     def __init_subclass__(cls, **kwargs: Any) -> None:
         """Register each concrete `*DictUtil` under the model it mirrors."""
@@ -142,9 +145,39 @@ class DictUtil(Generic[_TD]):
     ##### I/O methods #####
 
     @classmethod
-    def from_json(cls, json: str | bytes) -> _TD:
-        """Deserialize a dict from JSON."""
-        return cast("_TD", orjson.loads(json))
+    def _adapter(cls) -> TypeAdapter[Any]:
+        """Return the cached `TypeAdapter` over this util's `TypedDict`, building it lazily."""
+        cached = cls.__dict__.get("_adapter_cache")
+        if cached is not None:
+            return cached
+        typed_dict = next(
+            (
+                arg
+                for base in getattr(cls, "__orig_bases__", ())
+                for arg in get_args(base)
+            ),
+            None,
+        )
+        if typed_dict is None:
+            raise TypeError(
+                f"{cls.__name__}: cannot resolve the TypedDict type parameter for validation."
+            )
+        adapter: TypeAdapter[Any] = TypeAdapter(typed_dict)
+        cls._adapter_cache = adapter
+        return adapter
+
+    @classmethod
+    def from_json(cls, json: str | bytes, validate: bool = False) -> _TD:
+        """Deserialize a dict from JSON.
+
+        With `validate=True`, data is validated using pydantic TypeAdapter and raises
+        `pydantic.ValidationError` if it failes validation. The returned dict is not
+        modified by the validation (extra keys preserved, etc).
+        """
+        data = orjson.loads(json)
+        if validate:
+            cls._adapter().validate_python(data)
+        return cast("_TD", data)
 
     @overload
     @classmethod
@@ -170,9 +203,17 @@ class DictUtil(Generic[_TD]):
         return json
 
     @classmethod
-    def from_msgpack(cls, msgpack: bytes) -> _TD:
-        """Deserialize a dict from MessagePack."""
-        return cast("_TD", ormsgpack.unpackb(msgpack))
+    def from_msgpack(cls, msgpack: bytes, validate: bool = False) -> _TD:
+        """Deserialize a dict from MessagePack.
+
+        With `validate=True`, data is validated using pydantic TypeAdapter and raises
+        `pydantic.ValidationError` if it failes validation. The returned dict is not
+        modified by the validation (extra keys preserved, etc).
+        """
+        data = ormsgpack.unpackb(msgpack)
+        if validate:
+            cls._adapter().validate_python(data)
+        return cast("_TD", data)
 
     @classmethod
     def to_msgpack(cls, obj: _TD) -> bytes:
