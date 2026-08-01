@@ -4,16 +4,15 @@ Streams per-file timings in an aligned format as they complete, then prints a
 summary table across files at the end.
 """
 
-import gzip
 import time
-from pathlib import Path
 
 import orjson
 from pydantic import TypeAdapter
 
+from utils import CORPUS_ROOT, read_corpus_file
+
 LABEL_WIDTH = 23
 VALUE_FMT = "{:>8.4f}s"
-CORPUS_ROOT = Path("data/example_trapi")
 
 
 def pair_row(
@@ -61,7 +60,7 @@ print(f"  {'reasoner-pydantic':<{LABEL_WIDTH}} {VALUE_FMT.format(t_rp)}")
 
 
 # One representative file per size bucket. To benchmark every file, see
-# `perf/test_sd_tom.py`.
+# `bench/test_sd_tom.py`.
 TEST_FILES = [
     CORPUS_ROOT / "10mb/pathfinder.json",
     CORPUS_ROOT / "50mb/lookup.json",
@@ -79,12 +78,7 @@ for response_path in TEST_FILES:
 
     # --- Read ---
     t0 = time.perf_counter()
-    if response_path.suffix == ".gz":
-        with gzip.open(response_path, "rt", encoding="utf-8") as f:
-            response_json = f.read()
-    else:
-        with response_path.open() as f:
-            response_json = f.read()
+    response_json = read_corpus_file(response_path)
     t_read = time.perf_counter() - t0
     size_mb = len(response_json.encode("utf-8")) / 1024 / 1024
 

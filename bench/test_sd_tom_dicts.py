@@ -1,20 +1,21 @@
-"""TOM-only serdes benchmark across every example response.
+"""Dict-util-only serdes benchmark across every example response.
 
-Walks `data/example_trapi/**` and runs the core (de)serialization paths for
-each file. Streams per-file timings in an aligned format as they complete,
-then prints a summary table across files at the end.
+The `model_dicts` twin of `bench/test_sd_tom.py`: same corpus walk and output,
+but driving the `*DictUtil` serdes (raw orjson/ormsgpack over the TypedDict form,
+no model construction) instead of the `Response` model. Run both to see the cost
+the model layer adds over operating on plain dicts.
 
-For a quicker comparison run that also benches reasoner-pydantic on one file
-per size bucket, see `perf/test_sd.py`.
+The `+val` rows re-run the `from` path with `validate=True`, adding a pydantic
+`TypeAdapter` pass over the parsed data; their `from` timing minus the plain
+row's is the cost of opting into validation.
 """
 
-import gzip
 import time
-from pathlib import Path
 
-LABEL_WIDTH = 10
+from utils import CORPUS_ROOT, discover_files, read_corpus_file
+
+LABEL_WIDTH = 12
 VALUE_FMT = "{:>8.4f}s"
-CORPUS_ROOT = Path("data/example_trapi")
 
 
 def pair_row(
@@ -38,31 +39,15 @@ def section(title: str) -> None:
     print(f"\n{bar}\n {title}\n{bar}")
 
 
-def discover_files(root: Path) -> list[Path]:
-    """Return every `.json` and `.json.gz` under `root`, sorted by bucket size.
-
-    Buckets are the immediate-parent directory name (`<N>mb`); we sort by N
-    rather than by on-disk size since gzipped files compress smaller than
-    their uncompressed JSON.
-    """
-
-    def bucket_size(p: Path) -> int:
-        name = p.parent.name.removesuffix("mb")
-        return int(name) if name.isdigit() else 0
-
-    paths = [p for p in root.rglob("*") if p.is_file() and p.suffix in (".json", ".gz")]
-    return sorted(paths, key=lambda p: (bucket_size(p), p.name))
-
-
 # --- Import ---
 
 t0 = time.perf_counter()
-from translator_tom import Response  # noqa: E402
+from translator_tom.model_dicts import ResponseDictUtil  # noqa: E402
 
 t_tom = time.perf_counter() - t0
 
 section("Imports")
-print(f"  translator_tom Response  {VALUE_FMT.format(t_tom)}")
+print(f"  model_dicts ResponseDictUtil  {VALUE_FMT.format(t_tom)}")
 
 
 TEST_FILES = discover_files(CORPUS_ROOT)
@@ -77,32 +62,38 @@ for response_path in TEST_FILES:
     results[label] = file_results
 
     t0 = time.perf_counter()
-    if response_path.suffix == ".gz":
-        with gzip.open(response_path, "rt", encoding="utf-8") as f:
-            response_json = f.read()
-    else:
-        with response_path.open() as f:
-            response_json = f.read()
+    response_json = read_corpus_file(response_path)
     t_read = time.perf_counter() - t0
     size_mb = len(response_json.encode("utf-8")) / 1024 / 1024
 
     section(f"{label}  ({size_mb:.2f} MB JSON, {t_read:.4f}s)")
 
     t0 = time.perf_counter()
-    response = Response.from_json(response_json)
+    response = ResponseDictUtil.from_json(response_json)
     t_from_json = time.perf_counter() - t0
     t0 = time.perf_counter()
-    _ = response.to_json()
+    _ = ResponseDictUtil.to_json(response)
     t_to_json = time.perf_counter() - t0
     pair_row("json", t_from_json, t_to_json, file_results)
 
+    # `to` is unaffected by validation; reuse its timing for the +val rows.
     t0 = time.perf_counter()
-    response_msgpack = response.to_msgpack()
+    _ = ResponseDictUtil.from_json(response_json, validate=True)
+    t_from_json_val = time.perf_counter() - t0
+    pair_row("json+val", t_from_json_val, t_to_json, file_results)
+
+    t0 = time.perf_counter()
+    response_msgpack = ResponseDictUtil.to_msgpack(response)
     t_to_mp = time.perf_counter() - t0
     t0 = time.perf_counter()
-    _ = Response.from_msgpack(response_msgpack)
+    _ = ResponseDictUtil.from_msgpack(response_msgpack)
     t_from_mp = time.perf_counter() - t0
     pair_row("msgpack", t_from_mp, t_to_mp, file_results)
+
+    t0 = time.perf_counter()
+    _ = ResponseDictUtil.from_msgpack(response_msgpack, validate=True)
+    t_from_mp_val = time.perf_counter() - t0
+    pair_row("msgpack+val", t_from_mp_val, t_to_mp, file_results)
 
 
 # --- Summary ---

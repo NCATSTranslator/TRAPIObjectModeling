@@ -1,6 +1,6 @@
 [project]
 name = "translator_tom"
-version = "1.4.1"
+version = "1.5.0"
 description = "TRAPI Object Models: A performant python data model and centralized utilities for the Translator Reasoner API."
 readme = "README.md"
 requires-python = ">=3.10"
@@ -32,6 +32,10 @@ classifiers = [
 Homepage = "https://github.com/NCATSTranslator/TRAPIObjectModeling"
 Repository = "https://github.com/NCATSTranslator/TRAPIObjectModeling"
 Issues = "https://github.com/NCATSTranslator/TRAPIObjectModeling/issues"
+
+[project.scripts]
+tom-parse = "translator_tom.scripts.parse:main"
+tom-validate = "translator_tom.scripts.validate:main"
 
 [dependency-groups]
 dev = [
@@ -163,12 +167,10 @@ DEP002 = [
 ]
 
 [tool.pytest.ini_options]
-norecursedirs = ["utils"]
+# bench uses standalone benchmark scripts
+norecursedirs = ["bench"]
 log_cli = true
 log_cli_level = "INFO"
-markers = [
-    "bench: heavy benchmarks; skipped unless the test file is named explicitly on the command line",
-]
 
 [tool.coverage.run]
 branch = true

@@ -6,7 +6,7 @@ Models based on Pydantic provide deserialize with basic validation, serialize, a
 
 Allows for easy FastAPI standup.
 
-## Usage
+## Model Usage
 
 The main ways you interact with a Model are as follows:
 
@@ -45,7 +45,11 @@ query_json = """
 """
 
 query = Query.from_json(query_json)
-assert len(query.message.query_graph.nodes) == 2  # True
+
+# Access is now statically typed and editor provides hints + completions
+query_graph = query.message.query_graph
+assert query_graph is not None
+assert len(query_graph.nodes) == 2  # True
 ```
 
 Similarly, you can validate from JSON with a FastAPI endpoint:
@@ -88,10 +92,8 @@ query_dict = {
 }
 
 query = Query.from_dict(query_dict)
-assert len(query.message.query_graph.nodes) == 2  # True
 
 query = Query(**query_dict)  # Also works (less clear, not recommended)
-assert len(query.message.query_graph.nodes) == 2  # True
 ```
 
 ### Construction
@@ -122,7 +124,6 @@ query = Query(
         }
     },
 )
-assert len(query.message.query_graph.nodes) == 2  # True
 ```
 
 Another way is to use `Model.model_construct()`.
@@ -135,7 +136,7 @@ from translator_tom import Biolink, Curie, Message, QEdge, QNode, Query, QueryGr
 
 # Using each type provides hints and type checking, making internal TRAPI construction
 # safer.
-query = Query(
+query = Query.model_construct(
     submitter="TOM tester",
     message=Message(
         query_graph=QueryGraph(
@@ -155,7 +156,6 @@ query = Query(
         )
     ),
 )
-assert len(query.message.query_graph.nodes) == 2  # True
 ```
 
 ### Convenience Methods
@@ -177,7 +177,159 @@ There are many more, it's recommended to look at the models themselves as they a
 
 More in-depth utility methods include `.normalize()` for Message/KnowledgeGraph/Result/AuxiliaryGraph, `.prune()` for KnowledgeGraph, etc.
 
-### Semantic Validation (WIP)
+## TypedDict Usage
+
+This library also provides `TypedDict` models, which can be used for internal static typing without class instantiation overhead, at the cost of some code verbosity.
+
+- `*DictUtil.from_json()` and `*DictUtil.to_json()`
+- `*DictUtil.from_msgpack()` and `*DictUtil.to_msgpack()`
+- Direct construction: `*Dict()`
+
+### JSON Reading
+
+Unlike with models, the model_dicts don't validate by default.
+
+```python
+from translator_tom.model_dicts import QueryDictUtil, QNodeDictUtil
+
+
+query_json = """
+{
+  "submitter": "TOM tester",
+  "message": {
+    "query_graph": {
+      "nodes": {
+        "n0": { "ids": [ "PUBCHEM.COMPOUND:726218" ] },
+        "n1": { "ids": [ "NCBIGene:3778" ] }
+      },
+      "edges": {
+        "e0": {
+          "subject": "n0",
+          "object": "n1",
+          "predicates": [ "biolink:related_to" ]
+        }
+      }
+    }
+  }
+}
+"""
+
+query = QueryDictUtil.from_json(query_json)  # returns type QueryDict
+
+# These key accessors now have hints+completions in type-aware editors
+query_graph = query["message"]["query_graph"]
+assert query_graph is not None  # Type narrowing
+assert len(query_graph["nodes"]) == 2  # True
+n0_ids = query_graph["nodes"]["n0"].get("ids") or []  # `ids` is optional
+assert n0_ids == ["PUBCHEM.COMPOUND:726218"]  # True
+
+# DictUtils also provide safe accessors:
+n0 = query_graph["nodes"]["n0"]
+assert QNodeDictUtil.ids_list(n0) == ["PUBCHEM.COMPOUND:726218"]  # True
+
+
+# A 'lite' version of validation may be optionally used
+# This doesn't mutate the parsed dict, but throws ValidationError if it fails.
+# Significantly faster than model validation; but not as thorough
+query = QueryDictUtil.from_json(query_json, validate=True)
+```
+
+
+### Casting and direct instantiation
+
+Oftentimes you'll just want to cast a model_dict:
+
+```python
+from typing import cast
+
+from translator_tom.model_dicts import QueryDict
+
+query_plain = {
+    "submitter": "TOM tester",
+    "message": {
+        "query_graph": {
+            "nodes": {
+                "n0": {"ids": ["PUBCHEM.COMPOUND:726218"]},
+                "n1": {"ids": ["NCBIGene:3778"]},
+            },
+            "edges": {
+                "e0": {
+                    "subject": "n0",
+                    "object": "n1",
+                    "predicates": ["biolink:related_to"],
+                }
+            },
+        }
+    },
+}
+
+# cast is free at runtime; it only tells the type checker to treat query_plain as a QueryDict.
+query = cast("QueryDict", query_plain)
+```
+
+You can also just pass an already-existing dict to the dict constructor, although it produces a shallow copy:
+
+```python
+from translator_tom.model_dicts import QueryDict
+
+# An existing dict you've annotated as a QueryDict (checked against it here).
+query_plain = {
+    "submitter": "TOM tester",
+    "message": {
+        "query_graph": {
+            "nodes": {
+                "n0": {"ids": ["PUBCHEM.COMPOUND:726218"]},
+                "n1": {"ids": ["NCBIGene:3778"]},
+            },
+            "edges": {
+                "e0": {
+                    "subject": "n0",
+                    "object": "n1",
+                    "predicates": ["biolink:related_to"],
+                }
+            },
+        }
+    },
+}
+
+query = QueryDict(**query_plain)
+```
+
+### Direct construction
+
+You can also use the model_dicts directly as construction guides:
+
+```python
+from translator_tom.model_dicts import (
+    MessageDict,
+    QEdgeDict,
+    QNodeDict,
+    QueryDict,
+    QueryGraphDict,
+)
+
+# Each constructor provides key hints and type checking
+query = QueryDict(
+    submitter="TOM tester",
+    message=MessageDict(
+        query_graph=QueryGraphDict(
+            nodes={
+                "n0": QNodeDict(ids=["PUBCHEM.COMPOUND:726218"]),
+                "n1": QNodeDict(ids=["NCBIGene:3778"]),
+            },
+            edges={
+                "e0": QEdgeDict(
+                    subject="n0",
+                    object="n1",
+                    predicates=["biolink:related_to"],
+                )
+            },
+        )
+    ),
+)
+```
+
+## Semantic Validation (WIP)
 
 A very WIP item is Semantic Validation:
 
