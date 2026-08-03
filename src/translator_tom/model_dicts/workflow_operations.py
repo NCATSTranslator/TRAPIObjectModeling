@@ -149,6 +149,7 @@ __all__ = [
     "OperationOverlayDictUtil",
     "OperationOverlayFisherExactTestDict",
     "OperationOverlayFisherExactTestDictUtil",
+    "OperationParametersDict",
     "OperationRestateDict",
     "OperationRestateDictUtil",
     "OperationScoreDict",

@@ -16,6 +16,7 @@ __all__ = [
     "Attribute",
     "AttributeConstraint",
     "Operator",
+    "OperatorEnum",
 ]
 
 

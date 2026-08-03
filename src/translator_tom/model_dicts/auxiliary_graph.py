@@ -8,7 +8,7 @@ from translator_tom.models.shared import AuxGraphID, EdgeID
 from translator_tom.utils.dict_util_base import DictUtil
 from translator_tom.utils.hash import tomhash
 
-__all__ = ["AuxiliaryGraphDict", "AuxiliaryGraphDictUtil"]
+__all__ = ["AuxiliaryGraphDict", "AuxiliaryGraphDictUtil", "AuxiliaryGraphsDict"]
 
 
 class AuxiliaryGraphDict(TypedDict):

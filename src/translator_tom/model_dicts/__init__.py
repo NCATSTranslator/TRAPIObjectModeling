@@ -12,6 +12,7 @@ __all__ = [
     "AttributeDictUtil",
     "AuxiliaryGraphDict",
     "AuxiliaryGraphDictUtil",
+    "AuxiliaryGraphsDict",
     "BaseAnalysisDict",
     "BaseAnalysisDictUtil",
     "BaseQueryGraphDict",
@@ -94,6 +95,7 @@ from translator_tom.model_dicts.attribute import (
 from translator_tom.model_dicts.auxiliary_graph import (
     AuxiliaryGraphDict,
     AuxiliaryGraphDictUtil,
+    AuxiliaryGraphsDict,
 )
 from translator_tom.model_dicts.edge_binding import (
     EdgeBindingDict,

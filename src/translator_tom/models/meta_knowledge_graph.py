@@ -19,6 +19,7 @@ from translator_tom.utils.object_base import TOMBase
 __all__ = [
     "MetaEdge",
     "MetaKnowledgeGraph",
+    "MetaNode",
 ]
 
 
