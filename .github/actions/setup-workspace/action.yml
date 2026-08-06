@@ -1,5 +1,11 @@
 ---
 name: Set up workspace
+description: Install uv, pin the Python version, and sync project dependencies
+inputs:
+  python-version:
+    description: Python version for uv to install and pin the environment to
+    required: false
+    default: "3.10"
 runs:
   using: composite
   steps:
@@ -12,6 +18,7 @@ runs:
       uses: astral-sh/setup-uv@v6
       with:
         version: latest
+        python-version: ${{ inputs.python-version }}
         activate-environment: true
         enable-cache: true
     - name: Install dependencies
