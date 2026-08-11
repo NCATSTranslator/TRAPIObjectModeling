@@ -97,7 +97,11 @@ def main(argv: Sequence[str] | None = None) -> int:
     print(f"✓ Parsed {args.file} as {args.model}")
     if args.out is not None:
         out = Path(args.out)
-        out.write_bytes(instance.to_json())
+        try:
+            out.write_bytes(instance.to_json())
+        except OSError as exc:
+            print(f"error: could not write {out}: {exc}", file=sys.stderr)
+            return 2
         print(f"  wrote normalized JSON to {out}")
     return 0
 

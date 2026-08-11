@@ -5,7 +5,6 @@ __all__ = ["diff"]
 from typing import Any, TypeVar, cast
 
 from translator_tom import TOMBase
-from translator_tom.utils.hash import tomhash
 
 T = TypeVar("T", bound=TOMBase)
 
@@ -21,6 +20,11 @@ def diff(a: T, b: T, *, strict: bool = True) -> list[tuple[str | int, ...]]:
             short-circuit equal subtrees, which may ignore fields that the
             object's hashing semantics exclude (e.g. ``Edge.hash()`` ignores
             ``attributes``).
+
+    Note:
+        Extra (non-declared) fields present on either side are always reported
+        as differing; their arbitrary-JSON values are never descended into or
+        compared.
     """
     if type(a) is not type(b):
         raise ValueError("Cannot compare different object types.")
@@ -35,17 +39,13 @@ def diff(a: T, b: T, *, strict: bool = True) -> list[tuple[str | int, ...]]:
             differing.append(path)
             continue
 
-        if isinstance(value_a, TOMBase):
-            if not strict:
-                hash_a = value_a.hash()
-                hash_b = cast("TOMBase", value_b).hash()
-                if hash_a == hash_b:
-                    continue
-        else:
-            hash_a = tomhash(value_a)
-            hash_b = tomhash(value_b)
-            if hash_a == hash_b:
-                continue
+        # short-circuit equal model subtrees via .hash() when not strict
+        if (
+            isinstance(value_a, TOMBase)
+            and not strict
+            and value_a.hash() == cast("TOMBase", value_b).hash()
+        ):
+            continue
 
         if isinstance(value_a, TOMBase):
             stack.extend(
@@ -56,6 +56,11 @@ def diff(a: T, b: T, *, strict: bool = True) -> list[tuple[str | int, ...]]:
                 )
                 for field in value_a.__pydantic_fields__
             )
+            # extra values are arbitrary JSON; mark keys differing without comparing
+            extra_keys = set(value_a.extra_dict) | set(
+                cast("TOMBase", value_b).extra_dict
+            )
+            differing.extend((*path, key) for key in extra_keys)
         elif isinstance(value_a, dict):
             dict_a = cast("dict[Any, Any]", value_a)
             dict_b = cast("dict[Any, Any]", value_b)
@@ -72,7 +77,8 @@ def diff(a: T, b: T, *, strict: bool = True) -> list[tuple[str | int, ...]]:
             common = min(len_a, len_b)
             stack.extend(((*path, i), list_a[i], list_b[i]) for i in range(common))
             differing.extend((*path, i) for i in range(common, max(len_a, len_b)))
-        else:
+        # scalar leaf: compare directly
+        elif value_a != value_b:
             differing.append(path)
 
     return differing

@@ -5,6 +5,7 @@ from __future__ import annotations
 from translator_tom.model_dicts.workflow_operations import (
     AnnotateEdgesParametersDict,
     AnnotateEdgesParametersDictUtil,
+    AnnotateNodesParametersDictUtil,
     EnrichResultsParametersDict,
     EnrichResultsParametersDictUtil,
     FillAllowListParametersDict,
@@ -12,38 +13,45 @@ from translator_tom.model_dicts.workflow_operations import (
     FilterKgraphPercentileParametersDict,
     FilterKgraphPercentileParametersDictUtil,
     FilterKgraphStdDevParametersDictUtil,
+    OperationAnnotateNodesDictUtil,
     OperationBindDictUtil,
     OperationFillDictUtil,
     OperationFilterKgraphPercentileDictUtil,
     OperationFilterKgraphStdDevDictUtil,
+    OperationOverlayFisherExactTestDictUtil,
     OperationScoreDictUtil,
+    OverlayFisherExactTestParametersDictUtil,
     SortResultNodeAttributeParametersDict,
     SortResultNodeAttributeParametersDictUtil,
 )
 from translator_tom.models.workflow_operations import (
     AllowList,
+    AnnotateNodesParameters,
     DenyList,
     FillAllowListParameters,
     FillDenyListParameters,
     FilterKgraphPercentileParameters,
     FilterKgraphStdDevParameters,
+    OperationAnnotateNodes,
     OperationBind,
     OperationFill,
     OperationFilterKgraphPercentile,
     OperationFilterKgraphStdDev,
+    OperationOverlayFisherExactTest,
     OperationScore,
+    OverlayFisherExactTestParameters,
 )
 
 
 class TestUnique:
     def test_matches_model(self):
-        assert OperationBindDictUtil.unique() == OperationBind(id="bind").unique
-        assert OperationScoreDictUtil.unique() == OperationScore(id="score").unique
-        assert OperationFillDictUtil.unique() == OperationFill(id="fill").unique
+        assert OperationBindDictUtil.unique == OperationBind(id="bind").unique
+        assert OperationScoreDictUtil.unique == OperationScore(id="score").unique
+        assert OperationFillDictUtil.unique == OperationFill(id="fill").unique
 
     def test_values(self):
-        assert OperationBindDictUtil.unique() is False
-        assert OperationScoreDictUtil.unique() is True
+        assert OperationBindDictUtil.unique is False
+        assert OperationScoreDictUtil.unique is True
 
 
 class TestParameterListAccessors:
@@ -155,3 +163,33 @@ class TestFilterKgraphParamHashParity:
             ),
         )
         assert OperationFilterKgraphStdDevDictUtil.hash(std.to_dict()) == std.hash()
+
+
+class TestOptionalParamOmittedParity:
+    """Optional params (NotRequired on the dict) must hash-parity when omitted."""
+
+    def test_annotate_nodes_attributes_omitted(self):
+        # omitted `attributes` defaults to None on the model; dict key is NotRequired.
+        p = AnnotateNodesParameters()
+        assert p.attributes is None
+        assert AnnotateNodesParametersDictUtil.hash(p.to_dict()) == p.hash()
+        assert AnnotateNodesParametersDictUtil.attributes_list(p.to_dict()) == []
+        op = OperationAnnotateNodes(id="annotate_nodes", parameters=p)
+        assert OperationAnnotateNodesDictUtil.hash(op.to_dict()) == op.hash()
+
+    def test_overlay_fisher_exact_test_rel_edge_key_omitted(self):
+        p = OverlayFisherExactTestParameters(
+            subject_qnode_key="n1", object_qnode_key="n2", virtual_relation_label="f1"
+        )
+        assert p.rel_edge_key is None
+        assert OverlayFisherExactTestParametersDictUtil.hash(p.to_dict()) == p.hash()
+        op = OperationOverlayFisherExactTest(
+            id="overlay_fisher_exact_test", parameters=p
+        )
+        assert OperationOverlayFisherExactTestDictUtil.hash(op.to_dict()) == op.hash()
+
+    def test_filter_kgraph_percentile_qedge_keys_omitted(self):
+        p = FilterKgraphPercentileParameters(edge_attribute="ngd")
+        assert p.qedge_keys is None
+        assert FilterKgraphPercentileParametersDictUtil.qedge_keys_list(p.to_dict()) == []
+        assert FilterKgraphPercentileParametersDictUtil.hash(p.to_dict()) == p.hash()

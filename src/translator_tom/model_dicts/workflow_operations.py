@@ -213,12 +213,8 @@ class BaseOperationDictUtil(DictUtil[BaseOperationDict]):
     """Utility methods for `BaseOperationDict`, mirroring those on the `BaseOperation` model."""
 
     _model = BaseOperation
-    _unique: ClassVar[bool] = False
-
-    @classmethod
-    def unique(cls) -> bool:
-        """Whether the operation may produce different results depending on the agent."""
-        return cls._unique
+    unique: ClassVar[bool] = False
+    """Whether the operation may produce different results depending on the agent."""
 
 
 class OperationAnnotateDict(BaseOperationDict):
@@ -230,7 +226,7 @@ class OperationAnnotateDictUtil(BaseOperationDictUtil):
     """Utility methods for `OperationAnnotateDict`, mirroring the `OperationAnnotate` model."""
 
     _model = OperationAnnotate
-    _unique = True
+    unique = True
 
 
 class AnnotateEdgesParametersDict(OperationParametersDict):
@@ -258,11 +254,11 @@ class OperationAnnotateEdgesDictUtil(BaseOperationDictUtil):
     """Utility methods for `OperationAnnotateEdgesDict`, mirroring the model."""
 
     _model = OperationAnnotateEdges
-    _unique = True
+    unique = True
 
 
 class AnnotateNodesParametersDict(OperationParametersDict):
-    attributes: list[str] | None
+    attributes: NotRequired[list[str] | None]
 
 
 class AnnotateNodesParametersDictUtil(DictUtil[AnnotateNodesParametersDict]):
@@ -286,7 +282,7 @@ class OperationAnnotateNodesDictUtil(BaseOperationDictUtil):
     """Utility methods for `OperationAnnotateNodesDict`, mirroring the model."""
 
     _model = OperationAnnotateNodes
-    _unique = True
+    unique = True
 
 
 class OperationBindDict(BaseOperationDict):
@@ -337,7 +333,7 @@ class OperationEnrichResultsDictUtil(BaseOperationDictUtil):
     """Utility methods for `OperationEnrichResultsDict`, mirroring the model."""
 
     _model = OperationEnrichResults
-    _unique = True
+    unique = True
 
 
 class FillAllowListParametersDict(AllowListDict):
@@ -383,7 +379,7 @@ class OperationFillDictUtil(BaseOperationDictUtil):
     """Utility methods for `OperationFillDict`, mirroring the `OperationFill` model."""
 
     _model = OperationFill
-    _unique = True
+    unique = True
 
 
 class OperationFilterKgraphDict(BaseOperationDict):
@@ -398,7 +394,7 @@ class OperationFilterKgraphDictUtil(BaseOperationDictUtil):
 
 
 class FilterKgraphParametersBaseDict(OperationParametersDict):
-    qedge_keys: list[QEdgeID] | None
+    qedge_keys: NotRequired[list[QEdgeID] | None]
     qnode_keys: NotRequired[list[QNodeID]]
 
 
@@ -617,7 +613,7 @@ class OperationLookupDictUtil(BaseOperationDictUtil):
     """Utility methods for `OperationLookupDict`, mirroring the `OperationLookup` model."""
 
     _model = OperationLookup
-    _unique = True
+    unique = True
 
 
 class OperationLookupAndScoreDict(BaseOperationDict):
@@ -629,7 +625,7 @@ class OperationLookupAndScoreDictUtil(BaseOperationDictUtil):
     """Utility methods for `OperationLookupAndScoreDict`, mirroring the model."""
 
     _model = OperationLookupAndScore
-    _unique = True
+    unique = True
 
 
 class OperationOverlayDict(BaseOperationDict):
@@ -705,7 +701,7 @@ class OverlayFisherExactTestParametersDict(OperationParametersDict):
     subject_qnode_key: QNodeID
     object_qnode_key: QNodeID
     virtual_relation_label: str
-    rel_edge_key: QEdgeID | None
+    rel_edge_key: NotRequired[QEdgeID | None]
 
 
 class OverlayFisherExactTestParametersDictUtil(
@@ -736,7 +732,7 @@ class OperationRestateDictUtil(BaseOperationDictUtil):
     """Utility methods for `OperationRestateDict`, mirroring the `OperationRestate` model."""
 
     _model = OperationRestate
-    _unique = True
+    unique = True
 
 
 class OperationScoreDict(BaseOperationDict):
@@ -748,7 +744,7 @@ class OperationScoreDictUtil(BaseOperationDictUtil):
     """Utility methods for `OperationScoreDict`, mirroring the `OperationScore` model."""
 
     _model = OperationScore
-    _unique = True
+    unique = True
 
 
 class OperationSortResultsDict(BaseOperationDict):

@@ -93,6 +93,10 @@ class AnalysisDictUtil(DictUtil[AnalysisDict]):
 
     _model = Analysis
 
+    # AnalysisDict is a BaseAnalysisDict, so mirror BaseAnalysis's inherited accessors.
+    support_graphs_list = staticmethod(BaseAnalysisDictUtil.support_graphs_list)
+    attributes_list = staticmethod(BaseAnalysisDictUtil.attributes_list)
+
     @classmethod
     def hash(cls, obj: AnalysisDict) -> str:
         """Hash matching `Analysis.hash` (base analysis plus edge bindings)."""
@@ -131,6 +135,10 @@ class PathfinderAnalysisDictUtil(DictUtil[PathfinderAnalysisDict]):
     """Utility methods for `PathfinderAnalysisDict`, mirroring the `PathfinderAnalysis` model."""
 
     _model = PathfinderAnalysis
+
+    # PathfinderAnalysisDict is a BaseAnalysisDict, so mirror BaseAnalysis's accessors.
+    support_graphs_list = staticmethod(BaseAnalysisDictUtil.support_graphs_list)
+    attributes_list = staticmethod(BaseAnalysisDictUtil.attributes_list)
 
     @classmethod
     def hash(cls, obj: PathfinderAnalysisDict) -> str:

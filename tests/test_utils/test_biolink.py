@@ -89,6 +89,13 @@ class TestExpand:
         result = Biolink.expand("biolink:NamedThing")
         assert "biolink:NamedThing" in result
 
+    def test_unprefixed_input_output_always_prefixed(self):
+        # Bare input is normalized; output never leaks the unprefixed form.
+        result = Biolink.expand("treats")
+        assert "biolink:treats" in result
+        assert "treats" not in result
+        assert all(v.startswith("biolink:") for v in result)
+
 
 class TestGetAllQualifiers:
     def test_returns_non_empty_set_of_strings(self):

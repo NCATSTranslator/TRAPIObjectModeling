@@ -201,7 +201,7 @@ class Biolink(metaclass=_BiolinkMeta):
         Accepts either with or without biolink prefix, but always outputs with biolink prefix.
         """
         initial = {items} if isinstance(items, str) else items
-        expanded = set(initial)
+        expanded = {Biolink(item) for item in initial}  # ensure single biolink prefix
         for item in initial:
             expanded.update(Biolink.toolkit.get_descendants(item, formatted=True))
         return expanded

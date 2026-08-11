@@ -117,7 +117,7 @@ class TOMBase(BaseModel):
         """Set an extra field to the given value, if extra is allowed."""
         if self.__pydantic_extra__ is None:
             raise ValueError(f"{type(self)} does not allow extra values.")
-        return self.__pydantic_extra__.get(key, value)
+        self.__pydantic_extra__[key] = value
 
     def hash(self) -> str:
         """Hash the object into a hex string."""

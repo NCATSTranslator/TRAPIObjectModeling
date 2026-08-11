@@ -146,8 +146,6 @@ class OperationAnnotate(BaseOperation):
 class AnnotateEdgesParameters(OperationParameters):
     """Parameters for the AnnotateEdges operation."""
 
-    """A list of attributes to annotate the edges with."""
-
     attributes: Annotated[list[str] | None, Field(examples=["pmids"])] = None
     """A list of attributes to annotate the edges with.
 
@@ -176,9 +174,7 @@ class OperationAnnotateEdges(BaseOperation):
 class AnnotateNodesParameters(OperationParameters):
     """Parameters for the AnnotateNodes operation."""
 
-    """A list of attributes to annotate the nodes with."""
-
-    attributes: Annotated[list[str] | None, Field(examples=["pmids"])]
+    attributes: Annotated[list[str] | None, Field(examples=["pmids"])] = None
     """A list of attributes to annotate the nodes with.
 
     If not included then all available data will be annotated.
@@ -314,7 +310,7 @@ AboveOrBelow = Literal["above", "below"]
 class FilterKgraphParametersBase(OperationParameters):
     """A base class for filtering the kgraph with appropriate validation."""
 
-    qedge_keys: Annotated[list[QEdgeID] | None, Field(examples=["[e01]"])]
+    qedge_keys: Annotated[list[QEdgeID] | None, Field(examples=["[e01]"])] = None
     """This indicates if you only want to remove edges with specific edge_keys.
 
     If not provided or empty, all edges will be filtered on.
@@ -639,7 +635,7 @@ class OverlayFisherExactTestParameters(OperationParameters):
     virtual_relation_label: Annotated[str, Field(examples=["f1"])]
     """An label to help identify the virtual edge."""
 
-    rel_edge_key: Annotated[QEdgeID | None, Field(examples=["e01"])]
+    rel_edge_key: Annotated[QEdgeID | None, Field(examples=["e01"])] = None
     """A specific Qedge id connected to both subject nodes and object nodes in message KG (optional, otherwise all edges connected to both subject nodes and object nodes in message KG are considered)."""
 
 

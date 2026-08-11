@@ -6,13 +6,14 @@ on parameter classes, the simple enums, and AllowList/DenyList min_length.
 """
 
 import pytest
-from pydantic import ValidationError
+from pydantic import TypeAdapter, ValidationError
 
 from translator_tom.models.workflow_operations import (
     AboveOrBelowEnum,
     AllowList,
     AnnotateEdgesParameters,
     AnnotateNodesParameters,
+    Operation,
     AscendingOrDescendingEnum,
     DenyList,
     EnrichResultsParameters,
@@ -217,3 +218,42 @@ class TestSortResultNodeAttributeParameters:
             qnode_keys=["n0"],
         )
         assert p.qnode_keys_list == ["n0"]
+
+
+# ============================================================================
+# Optional parameters default to None when omitted (regression)
+# ============================================================================
+
+
+class TestOptionalParametersDefaultNone:
+    """These previously-required optional fields must now default to None."""
+
+    _op = TypeAdapter(Operation)
+
+    def test_annotate_nodes_attributes_omitted(self):
+        # from_dict on the param model, and via the discriminated Operation union.
+        assert AnnotateNodesParameters.from_dict({}).attributes is None
+        op = self._op.validate_python({"id": "annotate_nodes", "parameters": {}})
+        assert op.parameters.attributes is None
+        assert self._op.validate_python(op.to_dict()).parameters.attributes is None
+
+    def test_filter_kgraph_percentile_qedge_keys_omitted(self):
+        op = self._op.validate_python(
+            {"id": "filter_kgraph_percentile", "parameters": {"edge_attribute": "ngd"}}
+        )
+        assert op.parameters.qedge_keys is None
+        assert self._op.validate_python(op.to_dict()).parameters.qedge_keys is None
+
+    def test_overlay_fisher_exact_test_rel_edge_key_omitted(self):
+        op = self._op.validate_python(
+            {
+                "id": "overlay_fisher_exact_test",
+                "parameters": {
+                    "subject_qnode_key": "n1",
+                    "object_qnode_key": "n2",
+                    "virtual_relation_label": "f1",
+                },
+            }
+        )
+        assert op.parameters.rel_edge_key is None
+        assert self._op.validate_python(op.to_dict()).parameters.rel_edge_key is None

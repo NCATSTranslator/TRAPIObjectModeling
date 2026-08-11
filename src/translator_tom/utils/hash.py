@@ -26,11 +26,13 @@ _ENCODERS: dict[HashRepEnum, Callable[[bytes], str]] = {
 
 
 def _b64d(s: str) -> bytes:
-    return base64.urlsafe_b64decode(s)
+    # re-pad (base64 groups of 4) since _b64e strips it
+    return base64.urlsafe_b64decode(s + "=" * (-len(s) % 4))
 
 
 def _b32d(s: str) -> bytes:
-    return base64.b32hexdecode(s)
+    # re-pad (base32 groups of 8) since _b32e strips it
+    return base64.b32hexdecode(s + "=" * (-len(s) % 8))
 
 
 def _b16d(s: str) -> bytes:

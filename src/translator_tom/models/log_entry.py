@@ -63,6 +63,7 @@ class LogEntry(TOMBase):
     """
 
     level: LogLevel | None = None
+    """The importance level of the log."""
 
     code: str | None = None
     """One of a standardized set of short codes e.g. QueryNotTraversable, KPNotAvailable, KPResponseMalformed."""

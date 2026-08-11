@@ -132,10 +132,17 @@ def extend_location(
 
 
 def validation_pipeline(
-    result: SemanticValidationResult, *results: SemanticValidationResult
+    *results: SemanticValidationResult,
 ) -> SemanticValidationResult:
-    """Validate multiple steps and combine their outputs."""
-    warnings, errors = result
+    """Validate multiple steps and combine their outputs.
+
+    Accepts zero results (e.g. an empty generator of sub-validations), returning a
+    passing result rather than raising.
+    """
+    warnings, errors = (
+        SemanticValidationWarningList(),
+        SemanticValidationErrorList(),
+    )
 
     for new_warn, new_err in results:
         warnings.extend(new_warn)
@@ -294,7 +301,7 @@ def validate_node_exists(
 
     node = self.subject if end == "subject" else self.object
 
-    if self.subject not in graph.nodes:
+    if node not in graph.nodes:
         errors.append(
             SemanticValidationError(
                 f"{end.capitalize()} `{node}` is not present in {graph_name}.",

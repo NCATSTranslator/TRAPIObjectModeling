@@ -255,6 +255,11 @@ class Edge(TOMBase):
     """A set of Qualifiers that act together to add nuance or detail to the statement expressed in an Edge."""
 
     sources: Annotated[list[RetrievalSource], Field(min_length=1)]
+    """A list of RetrievalSource objects that provide information
+    about how a particular Information Resource served
+    as a source from which the knowledge expressed in an Edge,
+    or data used to generate this knowledge, was retrieved.
+    """
 
     @property
     def attributes_list(self) -> list[Attribute]:

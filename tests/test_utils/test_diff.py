@@ -5,6 +5,7 @@ from translator_tom import (
     Edge,
     KnowledgeGraph,
     Node,
+    QNode,
     RetrievalSource,
 )
 from translator_tom.utils.diff import diff
@@ -172,3 +173,50 @@ def test_descends_when_hash_differs():
     edge_b = _edge(subject="A:9")
     assert edge_a.hash() != edge_b.hash()
     assert diff(edge_a, edge_b) == [("subject",)]
+
+
+def test_extra_field_differing_values_reported():
+    """Extra keys with differing values are reported."""
+    a = QNode(categories=["biolink:Gene"], foo=1)
+    b = QNode(categories=["biolink:Gene"], foo=2)
+    assert diff(a, b) == [("foo",)]
+
+
+def test_extra_field_identical_values_still_reported():
+    """Extra keys are reported even when both sides hold the same value."""
+    a = QNode(categories=["biolink:Gene"], foo=1)
+    b = QNode(categories=["biolink:Gene"], foo=1)
+    assert diff(a, b) == [("foo",)]
+
+
+def test_forbid_extra_models_unaffected():
+    """Extra-forbidding models carry no extras, so no spurious diffs arise."""
+    assert diff(_edge(), _edge()) == []
+
+
+def test_scalar_list_elements_equal_not_reported():
+    """Equal scalar list elements are compared directly and not reported."""
+    a = Node(categories=["biolink:Gene", "biolink:NamedThing"], attributes=[])
+    b = Node(categories=["biolink:Gene", "biolink:NamedThing"], attributes=[])
+    assert diff(a, b) == []
+
+
+def test_scalar_list_element_unequal_reported():
+    """A differing scalar list element is reported at its index."""
+    a = Node(categories=["biolink:Gene", "biolink:NamedThing"], attributes=[])
+    b = Node(categories=["biolink:Gene", "biolink:Protein"], attributes=[])
+    assert diff(a, b) == [("categories", 1)]
+
+
+def test_nested_container_multiple_diffs():
+    """Differences across nested node/edge containers are all reported."""
+    kg_a = KnowledgeGraph(
+        nodes={"A:1": _node(name="Alice"), "A:2": _node(name="Bob")},
+        edges={"e1": _edge(subject="A:1"), "e2": _edge(object_="B:2")},
+    )
+    kg_b = KnowledgeGraph(
+        nodes={"A:1": _node(name="Alice"), "A:2": _node(name="Carol")},
+        edges={"e1": _edge(subject="A:9"), "e2": _edge(object_="B:2")},
+    )
+    paths = set(diff(kg_a, kg_b))
+    assert paths == {("nodes", "A:2", "name"), ("edges", "e1", "subject")}
