@@ -89,9 +89,9 @@ class TestKnowledgeGraphUpdate:
         edge_b = _edge(subject="A:9")
         kg_a = KnowledgeGraph(nodes={}, edges={"old_a": edge_a})
         kg_b = KnowledgeGraph(nodes={}, edges={"old_b": edge_b})
-        mapping = kg_a.update(kg_b)
-        assert "old_a" in mapping
-        assert "old_b" in mapping
+        self_mapping, other_mapping = kg_a.update(kg_b)
+        assert "old_a" in self_mapping
+        assert "old_b" in other_mapping
         # kg_a should now have both edges keyed by hash
         assert edge_a.hash() in kg_a.edges
         assert edge_b.hash() in kg_a.edges
@@ -101,8 +101,9 @@ class TestKnowledgeGraphUpdate:
         edge_b = _edge(subject="A:9")
         kg_a = KnowledgeGraph(nodes={}, edges={"keep_a": edge_a})
         kg_b = KnowledgeGraph(nodes={}, edges={"keep_b": edge_b})
-        mapping = kg_a.update(kg_b, pre_normalized="both")
-        assert mapping == {}
+        self_mapping, other_mapping = kg_a.update(kg_b, pre_normalized="both")
+        assert self_mapping == {}
+        assert other_mapping == {}
         assert "keep_a" in kg_a.edges
         assert "keep_b" in kg_a.edges
 
@@ -111,9 +112,9 @@ class TestKnowledgeGraphUpdate:
         edge_b = _edge(subject="A:9")
         kg_a = KnowledgeGraph(nodes={}, edges={"keep_a": edge_a})
         kg_b = KnowledgeGraph(nodes={}, edges={"old_b": edge_b})
-        mapping = kg_a.update(kg_b, pre_normalized="self")
-        assert "old_b" in mapping
-        assert "keep_a" not in mapping
+        self_mapping, other_mapping = kg_a.update(kg_b, pre_normalized="self")
+        assert self_mapping == {}
+        assert "old_b" in other_mapping
         assert "keep_a" in kg_a.edges
         assert edge_b.hash() in kg_a.edges
 
@@ -122,11 +123,25 @@ class TestKnowledgeGraphUpdate:
         edge_b = _edge(subject="A:9")
         kg_a = KnowledgeGraph(nodes={}, edges={"old_a": edge_a})
         kg_b = KnowledgeGraph(nodes={}, edges={"keep_b": edge_b})
-        mapping = kg_a.update(kg_b, pre_normalized="other")
-        assert "old_a" in mapping
-        assert "keep_b" not in mapping
+        self_mapping, other_mapping = kg_a.update(kg_b, pre_normalized="other")
+        assert "old_a" in self_mapping
+        assert other_mapping == {}
         assert edge_a.hash() in kg_a.edges
         assert "keep_b" in kg_a.edges
+
+    def test_colliding_old_ids_are_not_conflated(self):
+        # self and other reuse the same old id for DIFFERENT edges; the two remaps
+        # must stay separate rather than clobber each other in one flat mapping.
+        edge_a = _edge()
+        edge_b = _edge(subject="A:9")
+        kg_a = KnowledgeGraph(nodes={}, edges={"e0": edge_a})
+        kg_b = KnowledgeGraph(nodes={}, edges={"e0": edge_b})
+        self_mapping, other_mapping = kg_a.update(kg_b)
+        assert self_mapping["e0"] == edge_a.hash()
+        assert other_mapping["e0"] == edge_b.hash()
+        # both edges are present under their distinct hashes
+        assert edge_a.hash() in kg_a.edges
+        assert edge_b.hash() in kg_a.edges
 
     def test_does_not_mutate_other_kg(self):
         edge_b = _edge(subject="A:9")

@@ -121,7 +121,9 @@ class AnalysisDictUtil(DictUtil[AnalysisDict]):
                     EdgeBindingDictUtil.hash(b): b for b in analysis["edge_bindings"][k]
                 }
                 for b in other["edge_bindings"][k]:
-                    merged.setdefault(EdgeBindingDictUtil.hash(b), copy.deepcopy(b))
+                    h = EdgeBindingDictUtil.hash(b)
+                    if h not in merged:  # copy only genuinely-new bindings
+                        merged[h] = copy.deepcopy(b)
                 analysis["edge_bindings"][k] = list(merged.values())
             else:
                 analysis["edge_bindings"][k] = copy.deepcopy(other["edge_bindings"][k])
@@ -164,7 +166,9 @@ class PathfinderAnalysisDictUtil(DictUtil[PathfinderAnalysisDict]):
                     PathBindingDictUtil.hash(b): b for b in analysis["path_bindings"][k]
                 }
                 for b in other["path_bindings"][k]:
-                    merged.setdefault(PathBindingDictUtil.hash(b), copy.deepcopy(b))
+                    h = PathBindingDictUtil.hash(b)
+                    if h not in merged:  # copy only genuinely-new bindings
+                        merged[h] = copy.deepcopy(b)
                 analysis["path_bindings"][k] = list(merged.values())
             else:
                 analysis["path_bindings"][k] = copy.deepcopy(other["path_bindings"][k])

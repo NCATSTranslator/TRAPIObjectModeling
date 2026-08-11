@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import copy
 from typing import ClassVar, Literal
 
 from pydantic import ConfigDict
@@ -13,6 +12,36 @@ from translator_tom.models.shared import EdgeID
 from translator_tom.utils.object_base import TOMBase
 
 __all__ = ["Message"]
+
+
+def _mergeable_copy(other: Message) -> Message:
+    """Return a copy of `other` safe to merge from / normalize without touching the original.
+
+    Results/aux (rewritten in place by normalize, aliased in by the merge) are
+    deep-copied; the KG is kept shallow, its Node/Edge objects copied on merge.
+    """
+    okg = other.knowledge_graph
+    return Message.model_construct(
+        query_graph=other.query_graph,
+        knowledge_graph=(
+            KnowledgeGraph.model_construct(nodes=dict(okg.nodes), edges=dict(okg.edges))
+            if okg is not None
+            else None
+        ),
+        results=(
+            [result.model_copy(deep=True) for result in other.results]
+            if other.results is not None
+            else None
+        ),
+        auxiliary_graphs=(
+            {
+                aux_id: graph.model_copy(deep=True)
+                for aux_id, graph in other.auxiliary_graphs.items()
+            }
+            if other.auxiliary_graphs is not None
+            else None
+        ),
+    )
 
 
 class Message(TOMBase):
@@ -65,26 +94,44 @@ class Message(TOMBase):
         self,
         other: Message,
         pre_normalized: Literal["neither", "both", "self", "other"] = "neither",
-    ) -> dict[EdgeID, EdgeID]:
+        copy: bool = True,
+    ) -> tuple[dict[EdgeID, EdgeID], dict[EdgeID, EdgeID]]:
         """Update one message in-place using the other.
 
-        Returns a mapping of old:new EdgeIDs if normalization was done.
+        Args:
+            other: The message to merge in.
+            pre_normalized: Which of self/other already have normalized (hash-keyed)
+                edge IDs, to skip redundant normalization.
+            copy: When True (default), `other` is copied to avoid mutation. Set to False for a mild performance improvement, when safe.
+
+        Returns:
+            `(self_mapping, other_mapping)` of old:new EdgeIDs, one per side that was
+            normalized (empty otherwise). Kept separate because self/other may reuse an
+            old edge ID for different edges.
         """
         if self.query_graph != other.query_graph:
             raise NotImplementedError("Query graph merging not yet supported.")
 
-        mapping = dict[EdgeID, EdgeID]()
+        self_mapping = dict[EdgeID, EdgeID]()
+        other_mapping = dict[EdgeID, EdgeID]()
         if pre_normalized in ("neither", "other"):
-            mapping.update(self.normalize())
+            self_mapping = self.normalize()
+        if copy:
+            other = _mergeable_copy(other)
         if pre_normalized in ("neither", "self"):
-            # Normalize a deep copy of the other dict so as not to modify the original
-            other = copy.deepcopy(other)
-            mapping.update(other.normalize())
+            other_mapping = other.normalize()
 
         if (not self.knowledge_graph) and other.knowledge_graph:
-            self.knowledge_graph = other.knowledge_graph
+            self.knowledge_graph = (
+                other.knowledge_graph.model_copy(deep=True)
+                if copy
+                else other.knowledge_graph
+            )
         elif self.knowledge_graph and other.knowledge_graph:
-            self.knowledge_graph.update(other.knowledge_graph)
+            # Both KGs already normalized above; skip re-normalizing.
+            self.knowledge_graph.update(
+                other.knowledge_graph, pre_normalized="both", copy=copy
+            )
 
         if (not self.results) and other.results:
             self.results = other.results
@@ -98,7 +145,7 @@ class Message(TOMBase):
                 self.auxiliary_graphs, other.auxiliary_graphs
             )
 
-        return mapping
+        return self_mapping, other_mapping
 
     def normalize(self) -> dict[EdgeID, EdgeID]:
         """Normalize the knowledge_graph and update the results and auxiliary_graphs accordingly."""

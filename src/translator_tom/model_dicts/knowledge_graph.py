@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import itertools
+from copy import deepcopy
 from typing import Literal, cast
 
 from typing_extensions import NotRequired, TypedDict
@@ -68,14 +69,17 @@ class NodeDictUtil(DictUtil[NodeDict]):
 
     @staticmethod
     def update(node: NodeDict, other: NodeDict) -> None:
-        """Update the node in-place with another node."""
+        """Update the node in-place with another node.
+
+        Does not mutate `other`.
+        """
         node["name"] = other.get("name") or node.get("name")
         node["categories"] = list(set(node["categories"]) | set(other["categories"]))
 
         if other["attributes"]:
             attrs = {AttributeDictUtil.hash(attr): attr for attr in node["attributes"]}
             for attr in other["attributes"]:
-                attrs[AttributeDictUtil.hash(attr)] = attr
+                attrs[AttributeDictUtil.hash(attr)] = deepcopy(attr)
             node["attributes"] = list(attrs.values())
 
 
@@ -166,11 +170,14 @@ class EdgeDictUtil(DictUtil[EdgeDict]):
 
     @staticmethod
     def update(edge: EdgeDict, other: EdgeDict) -> None:
-        """Update the edge in-place with another edge."""
+        """Update the edge in-place with another edge.
+
+        Does not mutate `other`.
+        """
         edge_attrs = edge.get("attributes")
         other_attrs = other.get("attributes")
         if (not edge_attrs) and other_attrs:
-            edge["attributes"] = other_attrs
+            edge["attributes"] = [deepcopy(attr) for attr in other_attrs]
         elif edge_attrs and other_attrs:
             attrs = {AttributeDictUtil.hash(attr): attr for attr in edge_attrs}
             kl_at = (Biolink("knowledge_level"), Biolink("agent_type"))
@@ -178,28 +185,24 @@ class EdgeDictUtil(DictUtil[EdgeDict]):
                 # Avoid multiple KL/AT
                 if attr["attribute_type_id"] in kl_at:
                     continue
-                attrs[AttributeDictUtil.hash(attr)] = attr
+                attrs[AttributeDictUtil.hash(attr)] = deepcopy(attr)
             edge["attributes"] = list(attrs.values())
 
         if (not edge["sources"]) and other["sources"]:
-            edge["sources"] = other["sources"]
+            edge["sources"] = [deepcopy(source) for source in other["sources"]]
         elif edge["sources"] and other["sources"]:
             sources = {
                 RetrievalSourceDictUtil.hash(source): source
                 for source in edge["sources"]
             }
-            new_sources = {
-                RetrievalSourceDictUtil.hash(source): source
-                for source in other["sources"]
-            }
+            for other_source in other["sources"]:
+                source_hash = RetrievalSourceDictUtil.hash(other_source)
+                # update existing or take copy of other
+                if existing := sources.get(source_hash):
+                    RetrievalSourceDictUtil.update(existing, other_source)
+                else:
+                    sources[source_hash] = deepcopy(other_source)
 
-            # Roll in upstream_resource_ids from overlapping sources; merge into
-            # new_source since it replaces the old one below.
-            for source_hash, source in sources.items():
-                new_source = new_sources.get(source_hash)
-                if new_source is not None:
-                    RetrievalSourceDictUtil.update(new_source, source)
-            sources.update(new_sources)
             edge["sources"] = list(sources.values())
 
     @staticmethod
@@ -252,14 +255,23 @@ class KnowledgeGraphDictUtil(DictUtil[KnowledgeGraphDict]):
 
     @staticmethod
     def normalize(knowledge_graph: KnowledgeGraphDict) -> dict[EdgeID, EdgeID]:
-        """Normalize the kgraph edge IDs and return a mapping of old:new."""
+        """Normalize the kgraph edge IDs and return a mapping of old:new.
+
+        Mutates the kgraph; references to specific edges may become stale.
+        """
         mapping = dict[EdgeID, EdgeID]()
 
         for edge_id in list(knowledge_graph["edges"].keys()):
             edge = knowledge_graph["edges"].pop(edge_id)
             new_id = EdgeDictUtil.hash(edge)
             mapping[edge_id] = new_id
-            knowledge_graph["edges"][new_id] = edge
+            if existing := knowledge_graph["edges"].get(new_id):
+                # Copy on collision so .update()'s normalization doesn't mutate its `other`
+                merged = deepcopy(existing)
+                EdgeDictUtil.update(merged, edge)
+                knowledge_graph["edges"][new_id] = merged
+            else:
+                knowledge_graph["edges"][new_id] = edge
 
         return mapping
 
@@ -268,38 +280,44 @@ class KnowledgeGraphDictUtil(DictUtil[KnowledgeGraphDict]):
         knowledge_graph: KnowledgeGraphDict,
         other: KnowledgeGraphDict,
         pre_normalized: Literal["neither", "both", "self", "other"] = "neither",
-    ) -> dict[EdgeID, EdgeID]:
+        copy: bool = True,
+    ) -> tuple[dict[EdgeID, EdgeID], dict[EdgeID, EdgeID]]:
         """Update the kgraph in-place using the other.
 
         Args:
             knowledge_graph: The kgraph to update.
             other: The other kgraph.
-            pre_normalized: Option to call out pre-normalized KGs to skip redundant normalization.
+            pre_normalized: Which of knowledge_graph/other already have normalized
+                (hash-keyed) edge IDs, to skip redundant normalization.
+            copy: When True (default), `other` is copied to avoid mutation. Set to False for a mild performance improvement, when safe.
 
         Returns:
-            A mapping of old:new EdgeIDs if normalization was done.
+            `(knowledge_graph_mapping, other_mapping)` of old:new EdgeIDs, one per side
+            that was normalized (empty otherwise). Kept separate because the two may
+            reuse an old edge ID for different edges.
         """
-        mapping = dict[EdgeID, EdgeID]()
+        self_mapping = dict[EdgeID, EdgeID]()
+        other_mapping = dict[EdgeID, EdgeID]()
         if pre_normalized in ("neither", "other"):
-            mapping.update(KnowledgeGraphDictUtil.normalize(knowledge_graph))
+            self_mapping = KnowledgeGraphDictUtil.normalize(knowledge_graph)
         if pre_normalized in ("neither", "self"):
             # Normalize a shallow copy of the other dict so as not to modify the original.
             other = {"nodes": dict(other["nodes"]), "edges": dict(other["edges"])}
-            mapping.update(KnowledgeGraphDictUtil.normalize(other))
+            other_mapping = KnowledgeGraphDictUtil.normalize(other)
 
         for node_id, node in other["nodes"].items():
             if node_id in knowledge_graph["nodes"]:
                 NodeDictUtil.update(knowledge_graph["nodes"][node_id], node)
                 continue
-            knowledge_graph["nodes"][node_id] = node
+            knowledge_graph["nodes"][node_id] = deepcopy(node) if copy else node
 
         for edge_id, edge in other["edges"].items():
             if edge_id in knowledge_graph["edges"]:
                 EdgeDictUtil.update(knowledge_graph["edges"][edge_id], edge)
                 continue
-            knowledge_graph["edges"][edge_id] = edge
+            knowledge_graph["edges"][edge_id] = deepcopy(edge) if copy else edge
 
-        return mapping
+        return self_mapping, other_mapping
 
     @staticmethod
     def _walk_results(

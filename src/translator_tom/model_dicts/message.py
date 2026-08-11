@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-import copy
+from copy import deepcopy
 from typing import Literal, cast
 
 from typing_extensions import NotRequired, TypedDict
@@ -48,6 +48,29 @@ def _query_graph_hash(
     return QueryGraphDictUtil.hash(query_graph)
 
 
+def _mergeable_copy(other: MessageDict) -> MessageDict:
+    """Return a copy of `other` safe to merge from / normalize without touching the caller's dict.
+
+    Results/aux (rewritten in place by normalize, aliased in by the merge) are
+    deep-copied; the KG is kept shallow, its node/edge dicts copied on merge.
+    """
+    copied: MessageDict = {}
+    if "query_graph" in other:
+        copied["query_graph"] = other["query_graph"]
+    if other_kg := other.get("knowledge_graph"):
+        copied["knowledge_graph"] = {
+            "nodes": dict(other_kg["nodes"]),
+            "edges": dict(other_kg["edges"]),
+        }
+    results = other.get("results")
+    if results is not None:
+        copied["results"] = deepcopy(results)
+    aux = other.get("auxiliary_graphs")
+    if aux is not None:
+        copied["auxiliary_graphs"] = deepcopy(aux)
+    return copied
+
+
 class MessageDictUtil(DictUtil[MessageDict]):
     """Utility methods for `MessageDict`, mirroring those on the `Message` model."""
 
@@ -86,10 +109,21 @@ class MessageDictUtil(DictUtil[MessageDict]):
         message: MessageDict,
         other: MessageDict,
         pre_normalized: Literal["neither", "both", "self", "other"] = "neither",
-    ) -> dict[EdgeID, EdgeID]:
+        copy: bool = True,
+    ) -> tuple[dict[EdgeID, EdgeID], dict[EdgeID, EdgeID]]:
         """Update one message in-place using the other.
 
-        Returns a mapping of old:new EdgeIDs if normalization was done.
+        Args:
+            message: The message to update.
+            other: The message to merge in.
+            pre_normalized: Which of message/other already have normalized (hash-keyed)
+                edge IDs, to skip redundant normalization.
+            copy: When True (default), `other` is copied to avoid mutation. Set to False for a mild performance improvement, when safe.
+
+        Returns:
+            `(message_mapping, other_mapping)` of old:new EdgeIDs, one per side that was
+            normalized (empty otherwise). Kept separate because the two may reuse an old
+            edge ID for different edges.
         """
         # Compare by hash (like the model's `==`) so extra/non-schema keys are ignored.
         if _query_graph_hash(message.get("query_graph")) != _query_graph_hash(
@@ -97,20 +131,24 @@ class MessageDictUtil(DictUtil[MessageDict]):
         ):
             raise NotImplementedError("Query graph merging not yet supported.")
 
-        mapping = dict[EdgeID, EdgeID]()
+        self_mapping = dict[EdgeID, EdgeID]()
+        other_mapping = dict[EdgeID, EdgeID]()
         if pre_normalized in ("neither", "other"):
-            mapping.update(MessageDictUtil.normalize(message))
+            self_mapping = MessageDictUtil.normalize(message)
+        if copy:
+            other = _mergeable_copy(other)
         if pre_normalized in ("neither", "self"):
-            # Normalize a deep copy of the other dict so as not to modify the original.
-            other = copy.deepcopy(other)
-            mapping.update(MessageDictUtil.normalize(other))
+            other_mapping = MessageDictUtil.normalize(other)
 
         msg_kg = message.get("knowledge_graph")
         other_kg = other.get("knowledge_graph")
         if (not msg_kg) and other_kg:
-            message["knowledge_graph"] = other_kg
+            message["knowledge_graph"] = deepcopy(other_kg) if copy else other_kg
         elif msg_kg and other_kg:
-            KnowledgeGraphDictUtil.update(msg_kg, other_kg)
+            # Both KGs already normalized above; skip re-normalizing.
+            KnowledgeGraphDictUtil.update(
+                msg_kg, other_kg, pre_normalized="both", copy=copy
+            )
 
         msg_results = message.get("results")
         other_results = other.get("results")
@@ -126,7 +164,7 @@ class MessageDictUtil(DictUtil[MessageDict]):
         elif msg_aux and other_aux:
             AuxiliaryGraphDictUtil.merge_dictionaries(msg_aux, other_aux)
 
-        return mapping
+        return self_mapping, other_mapping
 
     @staticmethod
     def prune_kg(message: MessageDict) -> None:

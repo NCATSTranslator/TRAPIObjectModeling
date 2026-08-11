@@ -54,14 +54,24 @@ class KnowledgeGraph(TOMBase):
         return cls.model_construct(nodes={}, edges={})
 
     def normalize(self) -> dict[EdgeID, EdgeID]:
-        """Normalize the kgraph edge IDs and return a mapping of old:new."""
+        """Normalize the kgraph edge IDs and return a mapping of old:new.
+
+        Mutates the kgraph; references to specific edges may become stale.
+        """
         mapping = dict[EdgeID, EdgeID]()
 
         for edge_id in list(self.edges.keys()):
             edge = self.edges.pop(edge_id)
             new_id = edge.hash()
             mapping[edge_id] = new_id
-            self.edges[new_id] = edge
+            existing = self.edges.get(new_id)
+            if existing is not None:
+                # Copy on collision so .update()'s normalization doesn't mutate its `other`
+                merged = existing.model_copy(deep=True)
+                merged.update(edge)
+                self.edges[new_id] = merged
+            else:
+                self.edges[new_id] = edge
 
         return mapping
 
@@ -69,40 +79,46 @@ class KnowledgeGraph(TOMBase):
         self,
         other: KnowledgeGraph,
         pre_normalized: Literal["neither", "both", "self", "other"] = "neither",
-    ) -> dict[EdgeID, EdgeID]:
+        copy: bool = True,
+    ) -> tuple[dict[EdgeID, EdgeID], dict[EdgeID, EdgeID]]:
         """Update the kgraph in-place using the other.
 
         Args:
             other: The other kgraph.
-            pre_normalized: Option to call out pre-noramlized KGs to skip redundant normalization.
+            pre_normalized: Which of self/other already have normalized (hash-keyed)
+                edge IDs, to skip redundant normalization.
+            copy: When True (default), `other` is copied to avoid mutation. Set to False for a mild performance improvement, when safe.
 
         Returns:
-            A mapping of old:new EdgeIDs if normalization was done.
+            `(self_mapping, other_mapping)` of old:new EdgeIDs, one per side that was
+            normalized (empty otherwise). Kept separate because self/other may reuse an
+            old edge ID for different edges.
         """
-        mapping = dict[EdgeID, EdgeID]()
+        self_mapping = dict[EdgeID, EdgeID]()
+        other_mapping = dict[EdgeID, EdgeID]()
         if pre_normalized in ("neither", "other"):
-            mapping.update(self.normalize())
+            self_mapping = self.normalize()
         if pre_normalized in ("neither", "self"):
             # Normalize a shallow copy of the other dict so as not to modify the original
             # (model_construct skips validation)
             other = KnowledgeGraph.model_construct(
                 nodes=dict(other.nodes), edges=dict(other.edges)
             )
-            mapping.update(other.normalize())
+            other_mapping = other.normalize()
 
         for node_id, node in other.nodes.items():
             if node_id in self.nodes:
                 self.nodes[node_id].update(node)
                 continue
-            self.nodes[node_id] = node
+            self.nodes[node_id] = node.model_copy(deep=True) if copy else node
 
         for edge_id, edge in other.edges.items():
             if edge_id in self.edges:
                 self.edges[edge_id].update(edge)
                 continue
-            self.edges[edge_id] = edge
+            self.edges[edge_id] = edge.model_copy(deep=True) if copy else edge
 
-        return mapping
+        return self_mapping, other_mapping
 
     def _walk_results(
         self, aux_graphs: AuxiliaryGraphsDict, results: list[Result]
@@ -218,14 +234,17 @@ class Node(TOMBase):
         return AttributeConstraint.set_met_by(constraints, self.attributes)
 
     def update(self, other: Node) -> None:
-        """Update the node in-place with another node."""
+        """Update the node in-place with another node.
+
+        Does not mutate `other`.
+        """
         self.name = other.name or self.name
         self.categories = list(set(self.categories) | set(other.categories))
 
         if other.attributes:
             attrs = {attr.hash(): attr for attr in self.attributes}
             for attr in other.attributes:
-                attrs[attr.hash()] = attr
+                attrs[attr.hash()] = attr.model_copy(deep=True)
             self.attributes = list(attrs.values())
 
 
@@ -324,9 +343,12 @@ class Edge(TOMBase):
         )
 
     def update(self, other: Edge) -> None:
-        """Update the edge in-place with another edge."""
+        """Update the edge in-place with another edge.
+
+        Does not mutate `other`.
+        """
         if (not self.attributes) and other.attributes:
-            self.attributes = other.attributes
+            self.attributes = [attr.model_copy(deep=True) for attr in other.attributes]
         elif self.attributes and other.attributes:
             attrs = {attr.hash(): attr for attr in self.attributes}
             kl_at = (Biolink("knowledge_level"), Biolink("agent_type"))
@@ -334,21 +356,20 @@ class Edge(TOMBase):
                 # Avoid multiple KL/AT
                 if attr.attribute_type_id in kl_at:
                     continue
-                attrs[attr.hash()] = attr
+                attrs[attr.hash()] = attr.model_copy(deep=True)
             self.attributes = list(attrs.values())
 
         if (not self.sources) and other.sources:
-            self.sources = other.sources
+            self.sources = [source.model_copy(deep=True) for source in other.sources]
         elif self.sources and other.sources:
             sources = {source.hash(): source for source in self.sources}
-            new_sources = {source.hash(): source for source in other.sources}
-
-            # Roll in upstream_resource_ids from new sources that overlap
-            for source_hash, source in sources.items():
-                if new_source := new_sources.get(source_hash):
-                    # Update new source so it overwrites the old source
-                    new_source.update(source)
-            sources.update(new_sources)
+            for other_source in other.sources:
+                source_hash = other_source.hash()
+                # update existing or take copy of other
+                if existing := sources.get(source_hash):
+                    existing.update(other_source)
+                else:
+                    sources[source_hash] = other_source.model_copy(deep=True)
             self.sources = list(sources.values())
 
     def meets_attribute_constraints(

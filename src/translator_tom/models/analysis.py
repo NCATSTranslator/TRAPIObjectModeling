@@ -111,11 +111,13 @@ class Analysis(BaseAnalysis):
         self._update_base(other)
         for k in other.edge_bindings:
             if k in self.edge_bindings:
-                # deepcopy to avoid modifying other
-                self.edge_bindings[k] = list(
-                    set(self.edge_bindings[k])
-                    | set(copy.deepcopy(other.edge_bindings[k]))
-                )
+                # Dedupe by hash; existing bindings win, copy only new ones
+                merged = {b.hash(): b for b in self.edge_bindings[k]}
+                for b in other.edge_bindings[k]:
+                    h = b.hash()
+                    if h not in merged:
+                        merged[h] = b.model_copy(deep=True)
+                self.edge_bindings[k] = list(merged.values())
             else:
                 self.edge_bindings[k] = copy.deepcopy(other.edge_bindings[k])
 
@@ -143,10 +145,12 @@ class PathfinderAnalysis(BaseAnalysis):
         self._update_base(other)
         for k in other.path_bindings:
             if k in self.path_bindings:
-                # deepcopy to avoid modifying other
-                self.path_bindings[k] = list(
-                    set(self.path_bindings[k])
-                    | set(copy.deepcopy(other.path_bindings[k]))
-                )
+                # Dedupe by hash; existing bindings win, copy only new ones
+                merged = {b.hash(): b for b in self.path_bindings[k]}
+                for b in other.path_bindings[k]:
+                    h = b.hash()
+                    if h not in merged:
+                        merged[h] = b.model_copy(deep=True)
+                self.path_bindings[k] = list(merged.values())
             else:
                 self.path_bindings[k] = copy.deepcopy(other.path_bindings[k])

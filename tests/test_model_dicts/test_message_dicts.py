@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import copy
+
 import pytest
 
 from translator_tom.model_dicts.message import MessageDict, MessageDictUtil
@@ -125,6 +127,129 @@ class TestUpdate:
         other: MessageDict = {"query_graph": {"nodes": {"n1": {}}, "edges": {}}}
         with pytest.raises(NotImplementedError):
             MessageDictUtil.update(m, other)
+
+    def test_update_isolates_denormalized_other(self):
+        """A denormalized `other` (edges colliding on hash) is not mutated by the merge."""
+        dup = Message.from_dict(
+            {
+                "knowledge_graph": {
+                    "nodes": {},
+                    "edges": {
+                        "k1": {
+                            "subject": "n0",
+                            "object": "n1",
+                            "predicate": "biolink:related_to",
+                            "sources": [
+                                {
+                                    "resource_id": "ks",
+                                    "resource_role": "primary_knowledge_source",
+                                }
+                            ],
+                            "attributes": [{"attribute_type_id": "biolink:a", "value": 1}],
+                        },
+                        "k2": {
+                            "subject": "n0",
+                            "object": "n1",
+                            "predicate": "biolink:related_to",
+                            "sources": [
+                                {
+                                    "resource_id": "ks",
+                                    "resource_role": "primary_knowledge_source",
+                                }
+                            ],
+                            "attributes": [{"attribute_type_id": "biolink:b", "value": 2}],
+                        },
+                    },
+                },
+                "results": [],
+            }
+        ).to_dict()
+        dup_before = copy.deepcopy(dup)
+        MessageDictUtil.update({}, dup)
+        assert dup == dup_before
+
+    def test_update_does_not_mutate_or_alias_other(self):
+        """MessageDictUtil.update must fully isolate `other` (parity with the model)."""
+
+        def message_dict(tag: str, val: int) -> MessageDict:
+            return Message.from_dict(
+                {
+                    "knowledge_graph": {
+                        "nodes": {
+                            "n0": {
+                                "name": tag,
+                                "categories": ["biolink:NamedThing"],
+                                "attributes": [
+                                    {"attribute_type_id": "biolink:x", "value": val}
+                                ],
+                            }
+                        },
+                        "edges": {
+                            "shared": {
+                                "subject": "n0",
+                                "object": "n0",
+                                "predicate": "biolink:related_to",
+                                "sources": [
+                                    {
+                                        "resource_id": "ks",
+                                        "resource_role": "primary_knowledge_source",
+                                    }
+                                ],
+                                "attributes": [
+                                    {"attribute_type_id": "biolink:y", "value": val}
+                                ],
+                            },
+                            f"e{tag}": {
+                                "subject": "n0",
+                                "object": "n0",
+                                "predicate": "biolink:related_to",
+                                "sources": [
+                                    {
+                                        "resource_id": f"ks{tag}",
+                                        "resource_role": "primary_knowledge_source",
+                                    }
+                                ],
+                            },
+                        },
+                    },
+                    "results": [
+                        {
+                            "node_bindings": {"n0": [{"id": "n0", "attributes": []}]},
+                            "analyses": [
+                                {
+                                    "resource_id": f"ara{tag}",
+                                    "edge_bindings": {
+                                        "e0": [{"id": "shared", "attributes": []}]
+                                    },
+                                }
+                            ],
+                        }
+                    ],
+                    "auxiliary_graphs": {
+                        f"aux{tag}": {"edges": ["shared"], "attributes": []}
+                    },
+                }
+            ).to_dict()
+
+        a = message_dict("A", 1)
+        b = message_dict("B", 2)
+
+        b_before = copy.deepcopy(b)
+        MessageDictUtil.update(a, b)
+        assert b == b_before  # other unmutated
+
+        # Mutating everything reachable in `a` must not leak into `b`.
+        b_snapshot = copy.deepcopy(b)
+        for edge in a["knowledge_graph"]["edges"].values():
+            edge["attributes"] = [{"attribute_type_id": "biolink:MUT", "value": 0}]
+            edge["sources"][0]["resource_id"] = "MUT"
+        for node in a["knowledge_graph"]["nodes"].values():
+            node["name"] = "MUT"
+        for result in a["results"]:
+            result["analyses"] = []
+        for graph in a["auxiliary_graphs"].values():
+            graph["edges"] = ["MUT"]
+        assert b == b_snapshot
 
     def test_merges_kg_and_auxiliary_graphs(self):
         # `other` carries a kg + aux (not just results) to exercise the

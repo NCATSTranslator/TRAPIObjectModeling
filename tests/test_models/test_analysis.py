@@ -8,6 +8,10 @@ from translator_tom import (
     PathBinding,
     PathfinderAnalysis,
 )
+from translator_tom.model_dicts.analysis import (
+    AnalysisDictUtil,
+    PathfinderAnalysisDictUtil,
+)
 
 
 def _attr(value: int = 1, type_id: str = "biolink:foo") -> Attribute:
@@ -193,6 +197,74 @@ class TestAnalysisUpdate:
         a.edge_bindings["e1"].append(_eb("k99"))
         assert len(b.edge_bindings["e1"]) == 1
 
+    def test_dedupes_by_hash_no_duplicate_bindings(self):
+        # Overlapping bindings collapse to one entry per unique hash.
+        a = Analysis(
+            resource_id="infores:foo",
+            edge_bindings={"e1": [_eb("k1"), _eb("k2"), _eb("k3")]},
+        )
+        b = Analysis(
+            resource_id="infores:foo",
+            edge_bindings={"e1": [_eb("k2"), _eb("k3"), _eb("k4")]},
+        )
+        a.update(b)
+        merged = a.edge_bindings["e1"]
+        assert {eb.id for eb in merged} == {"k1", "k2", "k3", "k4"}
+        assert len({eb.hash() for eb in merged}) == len(merged)
+
+    def test_preserves_order_existing_then_new(self):
+        # Existing bindings retain order; genuinely-new ones append after.
+        a = Analysis(
+            resource_id="infores:foo",
+            edge_bindings={"e1": [_eb("k1"), _eb("k2")]},
+        )
+        b = Analysis(
+            resource_id="infores:foo",
+            edge_bindings={"e1": [_eb("k2"), _eb("k3")]},
+        )
+        a.update(b)
+        assert [eb.id for eb in a.edge_bindings["e1"]] == ["k1", "k2", "k3"]
+
+    def test_existing_binding_wins_over_other(self):
+        # On hash collision the `self` binding is kept (not other's copy).
+        a = Analysis(resource_id="infores:foo", edge_bindings={"e1": [_eb("k1")]})
+        kept = a.edge_bindings["e1"][0]
+        b = Analysis(resource_id="infores:foo", edge_bindings={"e1": [_eb("k1")]})
+        a.update(b)
+        assert a.edge_bindings["e1"][0] is kept
+
+    def test_other_bindings_unchanged_after_update(self):
+        # `other`'s binding lists/contents are untouched by the merge.
+        a = Analysis(
+            resource_id="infores:foo", edge_bindings={"e1": [_eb("k1")]}
+        )
+        b = Analysis(
+            resource_id="infores:foo",
+            edge_bindings={"e1": [_eb("k2")], "e2": [_eb("k3")]},
+        )
+        b_hash_before = b.hash()
+        a.update(b)
+        assert b.hash() == b_hash_before
+        assert {eb.id for eb in b.edge_bindings["e1"]} == {"k2"}
+        assert {eb.id for eb in b.edge_bindings["e2"]} == {"k3"}
+
+    def test_update_hash_parity_with_dict_util(self):
+        # Model.update and AnalysisDictUtil.update yield hash-equal results.
+        a = Analysis(
+            resource_id="infores:foo",
+            support_graphs=["g0"],
+            edge_bindings={"e1": [_eb("k1"), _eb("k2")], "e2": [_eb("k5")]},
+        )
+        b = Analysis(
+            resource_id="infores:foo",
+            support_graphs=["g1"],
+            edge_bindings={"e1": [_eb("k2"), _eb("k3")], "e3": [_eb("k7")]},
+        )
+        a_dict = a.to_dict()
+        a.update(b)
+        AnalysisDictUtil.update(a_dict, b.to_dict())
+        assert AnalysisDictUtil.hash(a_dict) == a.hash()
+
 
 class TestPathfinderAnalysisHash:
     def test_deterministic(self):
@@ -252,3 +324,45 @@ class TestPathfinderAnalysisUpdate:
         a.update(b)
         a.path_bindings["p1"].append(PathBinding(id="aux99"))
         assert len(b.path_bindings["p1"]) == 1
+
+    def test_dedupes_by_hash_no_duplicate_bindings(self):
+        a = PathfinderAnalysis(
+            resource_id="infores:foo",
+            path_bindings={"p1": [PathBinding(id="aux1"), PathBinding(id="aux2")]},
+        )
+        b = PathfinderAnalysis(
+            resource_id="infores:foo",
+            path_bindings={"p1": [PathBinding(id="aux2"), PathBinding(id="aux3")]},
+        )
+        a.update(b)
+        merged = a.path_bindings["p1"]
+        assert {pb.id for pb in merged} == {"aux1", "aux2", "aux3"}
+        assert len({pb.hash() for pb in merged}) == len(merged)
+
+    def test_other_bindings_unchanged_after_update(self):
+        a = PathfinderAnalysis(
+            resource_id="infores:foo",
+            path_bindings={"p1": [PathBinding(id="aux1")]},
+        )
+        b = PathfinderAnalysis(
+            resource_id="infores:foo",
+            path_bindings={"p1": [PathBinding(id="aux2")]},
+        )
+        b_hash_before = b.hash()
+        a.update(b)
+        assert b.hash() == b_hash_before
+        assert {pb.id for pb in b.path_bindings["p1"]} == {"aux2"}
+
+    def test_update_hash_parity_with_dict_util(self):
+        a = PathfinderAnalysis(
+            resource_id="infores:foo",
+            path_bindings={"p1": [PathBinding(id="aux1")], "p2": [PathBinding(id="aux5")]},
+        )
+        b = PathfinderAnalysis(
+            resource_id="infores:foo",
+            path_bindings={"p1": [PathBinding(id="aux2")], "p3": [PathBinding(id="aux7")]},
+        )
+        a_dict = a.to_dict()
+        a.update(b)
+        PathfinderAnalysisDictUtil.update(a_dict, b.to_dict())
+        assert PathfinderAnalysisDictUtil.hash(a_dict) == a.hash()
