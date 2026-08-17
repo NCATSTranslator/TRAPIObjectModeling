@@ -4,7 +4,6 @@ from typing_extensions import override
 
 from translator_tom.models.attribute import Attribute
 from translator_tom.models.shared import CURIE
-from translator_tom.utils.hash import tomhash
 from translator_tom.utils.object_base import TOMBase
 
 __all__ = ["NodeBinding"]
@@ -42,7 +41,5 @@ class NodeBinding(TOMBase):
     """
 
     @override
-    def hash(self) -> str:
-        return tomhash(
-            (self.id, self.query_id, frozenset(a.hash() for a in self.attributes))
-        )
+    def _hash_repr(self) -> object:
+        return (self.id, self.query_id, frozenset(a.hash() for a in self.attributes))

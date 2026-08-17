@@ -9,7 +9,6 @@ from typing_extensions import override
 
 from translator_tom.models.meta_attribute import MetaAttribute
 from translator_tom.models.shared import CURIE, FastJsonValue
-from translator_tom.utils.hash import tomhash
 from translator_tom.utils.object_base import TOMBase
 
 __all__ = [
@@ -146,20 +145,18 @@ class Attribute(TOMBase):
         return self.attributes if self.attributes is not None else []
 
     @override
-    def hash(self) -> str:
+    def _hash_repr(self) -> object:
         # Skip more expensive default hash traversal
         # (No TOMBaseObject in FastJsonValue)
-        return tomhash(
-            (
-                self.attribute_type_id,
-                self.original_attribute_name,
-                self.value,
-                self.value_type_id,
-                self.attribute_source,
-                self.value_url,
-                self.description,
-                frozenset(a.hash() for a in self.attributes_list),
-            )
+        return (
+            self.attribute_type_id,
+            self.original_attribute_name,
+            self.value,
+            self.value_type_id,
+            self.attribute_source,
+            self.value_url,
+            self.description,
+            frozenset(a.hash() for a in self.attributes_list),
         )
 
     @staticmethod
@@ -263,19 +260,17 @@ class AttributeConstraint(TOMBase):
     """
 
     @override
-    def hash(self) -> str:
+    def _hash_repr(self) -> object:
         # Skip more expensive default hash traversal
         # (No TOMBaseObject in FastJsonValue)
-        return tomhash(
-            (
-                self.id,
-                self.name,
-                self.negated,
-                self.operator,
-                self.value,
-                self.unit_id,
-                self.unit_name,
-            )
+        return (
+            self.id,
+            self.name,
+            self.negated,
+            self.operator,
+            self.value,
+            self.unit_id,
+            self.unit_name,
         )
 
     def met_by(self, attribute: Attribute | MetaAttribute) -> bool:

@@ -6,7 +6,6 @@ from pydantic import Field
 from typing_extensions import override
 
 from translator_tom.models.shared import CURIE
-from translator_tom.utils.hash import tomhash
 from translator_tom.utils.object_base import TOMBase
 
 __all__ = ["MetaAttribute"]
@@ -40,10 +39,8 @@ class MetaAttribute(TOMBase):
         )
 
     @override
-    def hash(self) -> str:
-        return tomhash(
-            (self.attribute_type_id, self.attribute_source, self.constraint_use)
-        )
+    def _hash_repr(self) -> object:
+        return (self.attribute_type_id, self.attribute_source, self.constraint_use)
 
     @staticmethod
     def merge_attribute_lists(

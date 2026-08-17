@@ -22,7 +22,6 @@ from translator_tom.models.shared import (
     Infores,
 )
 from translator_tom.utils.biolink import Biolink
-from translator_tom.utils.hash import tomhash
 from translator_tom.utils.object_base import TOMBase
 
 __all__ = [
@@ -223,11 +222,11 @@ class Node(TOMBase):
     """
 
     @override
-    def hash(self) -> str:
+    def _hash_repr(self) -> object:
         # Categories and attributes shouldn't matter; what makes a node unique is its ID
         # name and is_set sort of naturally follow.
         # Either way, we don't merge nodes by hash, rather we do by index.
-        return tomhash((self.name, self.is_set))
+        return (self.name, self.is_set)
 
     def meets_constraints(self, constraints: list[AttributeConstraint]) -> bool:
         """Check if all constraints are satisfied by the node's attributes."""
@@ -331,15 +330,13 @@ class Edge(TOMBase):
         return support_graphs
 
     @override
-    def hash(self) -> str:
-        return tomhash(
-            (
-                self.subject,
-                self.object,
-                self.predicate,
-                frozenset(q.hash() for q in self.qualifiers_list),
-                self.primary_knowledge_source.resource_id,
-            )
+    def _hash_repr(self) -> object:
+        return (
+            self.subject,
+            self.object,
+            self.predicate,
+            frozenset(q.hash() for q in self.qualifiers_list),
+            self.primary_knowledge_source.resource_id,
         )
 
     def update(self, other: Edge) -> None:

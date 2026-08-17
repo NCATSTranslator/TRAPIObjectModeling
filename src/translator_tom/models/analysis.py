@@ -60,14 +60,12 @@ class BaseAnalysis(TOMBase):
         return self.attributes if self.attributes is not None else []
 
     @override
-    def hash(self) -> str:
-        return tomhash(
-            (
-                self.resource_id,
-                self.score,
-                frozenset(self.support_graphs_list),
-                self.scoring_method,
-            )
+    def _hash_repr(self) -> object:
+        return (
+            self.resource_id,
+            self.score,
+            frozenset(self.support_graphs_list),
+            self.scoring_method,
         )
 
     def _update_base(self, other: BaseAnalysis) -> None:
@@ -95,15 +93,14 @@ class Analysis(BaseAnalysis):
     """
 
     @override
-    def hash(self) -> str:
-        return tomhash(
-            (
-                super().hash(),
-                {
-                    qedge_id: frozenset(b.hash() for b in bindings)
-                    for qedge_id, bindings in self.edge_bindings.items()
-                },
-            )
+    def _hash_repr(self) -> object:
+        # tomhash(super()._hash_repr()) reproduces the old super().hash() string
+        return (
+            tomhash(super()._hash_repr()),
+            {
+                qedge_id: frozenset(b.hash() for b in bindings)
+                for qedge_id, bindings in self.edge_bindings.items()
+            },
         )
 
     def update(self, other: Analysis) -> None:
@@ -129,15 +126,14 @@ class PathfinderAnalysis(BaseAnalysis):
     """The dictionary of input Query Graph paths to Analysis paths, specifically only for pathfinder queries."""
 
     @override
-    def hash(self) -> str:
-        return tomhash(
-            (
-                super().hash(),
-                {
-                    qpath_id: frozenset(b.hash() for b in bindings)
-                    for qpath_id, bindings in self.path_bindings.items()
-                },
-            )
+    def _hash_repr(self) -> object:
+        # tomhash(super()._hash_repr()) reproduces the old super().hash() string
+        return (
+            tomhash(super()._hash_repr()),
+            {
+                qpath_id: frozenset(b.hash() for b in bindings)
+                for qpath_id, bindings in self.path_bindings.items()
+            },
         )
 
     def update(self, other: PathfinderAnalysis) -> None:

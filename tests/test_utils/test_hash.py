@@ -4,7 +4,7 @@ import pytest
 
 from translator_tom.utils import hash as hash_module
 from translator_tom.utils.config import TRAPI_CONFIG, HashRepEnum
-from translator_tom.utils.hash import tomhash, tomhash_to_int
+from translator_tom.utils.hash import tomhash, tomhash_int, tomhash_to_int
 
 
 class TestTomhash:
@@ -41,6 +41,61 @@ class TestTomhashToInt:
 
     def test_distinct_hashes_distinct_ints(self):
         assert tomhash_to_int(tomhash("x")) != tomhash_to_int(tomhash("y"))
+
+
+class TestTomhashInt:
+    """tomhash_int must equal the base64 round-trip, without the detour."""
+
+    def test_matches_roundtrip(self):
+        obj = ("a", 1, ("nested", [1, 2, 3]))
+        assert tomhash_int(obj) == tomhash_to_int(tomhash(obj))
+
+    def test_deterministic(self):
+        assert tomhash_int(("x", 1)) == tomhash_int(("x", 1))
+
+    def test_distinct_inputs_distinct(self):
+        assert tomhash_int(("x", 1)) != tomhash_int(("x", 2))
+
+    def test_matches_roundtrip_across_config(self, restore_config):
+        # representation-independent (works on the raw digest) and tracks hash_bytes
+        obj = ("payload", 7)
+        for rep in HashRepEnum:
+            TRAPI_CONFIG.hash_representation = rep
+            for nbytes in (8, 15, 20):
+                TRAPI_CONFIG.hash_bytes = nbytes
+                assert tomhash_int(obj) == tomhash_to_int(tomhash(obj))
+
+
+@pytest.fixture
+def restore_config():
+    """Restore TRAPI_CONFIG hash settings after mutating them (global singleton)."""
+    orig_bytes = TRAPI_CONFIG.hash_bytes
+    orig_rep = TRAPI_CONFIG.hash_representation
+    try:
+        yield
+    finally:
+        TRAPI_CONFIG.hash_bytes = orig_bytes
+        TRAPI_CONFIG.hash_representation = orig_rep
+
+
+class TestRuntimeConfigMutation:
+    """tomhash must reflect runtime changes to TRAPI_CONFIG (read dynamically)."""
+
+    def test_hash_bytes_changes_length(self, restore_config):
+        TRAPI_CONFIG.hash_representation = HashRepEnum.HEX
+        TRAPI_CONFIG.hash_bytes = 15
+        assert len(tomhash("x")) == 30
+        TRAPI_CONFIG.hash_bytes = 20
+        assert len(tomhash("x")) == 40
+
+    def test_hash_representation_changes_encoding(self, restore_config):
+        TRAPI_CONFIG.hash_bytes = 15
+        TRAPI_CONFIG.hash_representation = HashRepEnum.B64
+        assert len(tomhash("x")) == 20
+        TRAPI_CONFIG.hash_representation = HashRepEnum.B32
+        assert len(tomhash("x")) == 24
+        TRAPI_CONFIG.hash_representation = HashRepEnum.HEX
+        assert len(tomhash("x")) == 30
 
 
 class TestEncoderDecoderRoundTrip:

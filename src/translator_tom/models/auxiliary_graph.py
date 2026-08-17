@@ -7,7 +7,6 @@ from typing_extensions import override
 
 from translator_tom.models.attribute import Attribute
 from translator_tom.models.shared import AuxGraphID, EdgeID
-from translator_tom.utils.hash import tomhash
 from translator_tom.utils.object_base import TOMBase
 
 __all__ = [
@@ -40,10 +39,8 @@ class AuxiliaryGraph(TOMBase):
     """Attributes of the Auxiliary Graph."""
 
     @override
-    def hash(self) -> str:
-        return tomhash(
-            (frozenset(self.edges), frozenset(a.hash() for a in self.attributes))
-        )
+    def _hash_repr(self) -> object:
+        return (frozenset(self.edges), frozenset(a.hash() for a in self.attributes))
 
     def normalize(self, mapping: dict[EdgeID, EdgeID]) -> None:
         """Normalize the auxiliary graph given a mapping of old:new EdgeIDs."""

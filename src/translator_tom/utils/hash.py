@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-__all__ = ["tomhash", "tomhash_to_int"]
+__all__ = ["tomhash", "tomhash_int", "tomhash_to_int"]
 
 import base64
 from collections.abc import Callable
@@ -45,10 +45,6 @@ _DECODERS: dict[HashRepEnum, Callable[[str], bytes]] = {
     HashRepEnum.B64: _b64d,
 }
 
-_HASH_BYTES = TRAPI_CONFIG.hash_bytes
-_ENCODE = _ENCODERS[TRAPI_CONFIG.hash_representation]
-_DECODE = _DECODERS[TRAPI_CONFIG.hash_representation]
-
 
 def tomhash(obj: object) -> str:
     """Hash an object via stablehash and encode per TRAPI_CONFIG.hash_representation.
@@ -57,9 +53,25 @@ def tomhash(obj: object) -> str:
     Use sparingly, only where a stable hash is actually needed, or where the hashing scope
     can be minimized.
     """
-    return _ENCODE(stablehash(obj).digest()[:_HASH_BYTES])
+    # read config dynamically so runtime changes take effect
+    return _ENCODERS[TRAPI_CONFIG.hash_representation](
+        stablehash(obj).digest()[: TRAPI_CONFIG.hash_bytes]
+    )
 
 
 def tomhash_to_int(tom_hash: str) -> int:
     """Convert a tomhash to int."""
-    return int.from_bytes(_DECODE(tom_hash), byteorder="big")
+    return int.from_bytes(
+        _DECODERS[TRAPI_CONFIG.hash_representation](tom_hash), byteorder="big"
+    )
+
+
+def tomhash_int(obj: object) -> int:
+    """Hash an object directly to int, skipping the base64 encode/decode detour.
+
+    Yields the same value as tomhash_to_int(tomhash(obj)) without the round-trip.
+    """
+    # read config dynamically so runtime changes take effect
+    return int.from_bytes(
+        stablehash(obj).digest()[: TRAPI_CONFIG.hash_bytes], byteorder="big"
+    )

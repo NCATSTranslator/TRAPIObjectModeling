@@ -9,7 +9,7 @@ import ormsgpack
 from pydantic import BaseModel, ConfigDict, JsonValue
 from typing_extensions import Self, override
 
-from translator_tom.utils.hash import tomhash, tomhash_to_int
+from translator_tom.utils.hash import tomhash, tomhash_int
 
 
 def _stable_repr(val: Any) -> Any:
@@ -119,23 +119,30 @@ class TOMBase(BaseModel):
             raise ValueError(f"{type(self)} does not allow extra values.")
         self.__pydantic_extra__[key] = value
 
+    def _hash_repr(self) -> object:
+        """Build the stable hashable value shared by hash() and __hash__.
+
+        Subclasses override this (not hash()) so both the string hash() and the
+        int __hash__ derive from the same input.
+        """
+        # NOTE: only hashes fields that are not extra
+        return (
+            self.__class__.__name__,
+            *(
+                (key, _stable_repr(val))
+                for key, val in self.__dict__.items()
+                if key in self.__pydantic_fields__
+            ),
+        )
+
     def hash(self) -> str:
         """Hash the object into a hex string."""
-        # NOTE: only hashes fields that are not extra
-        return tomhash(
-            (
-                self.__class__.__name__,
-                *(
-                    (key, _stable_repr(val))
-                    for key, val in self.__dict__.items()
-                    if key in self.__pydantic_fields__
-                ),
-            )
-        )
+        return tomhash(self._hash_repr())
 
     @override
     def __hash__(self) -> int:
-        return tomhash_to_int(self.hash())
+        # derive int directly from digest, skipping the base64 round-trip
+        return tomhash_int(self._hash_repr())
 
     @override
     def __eq__(self, other: object) -> bool:

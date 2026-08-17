@@ -9,7 +9,6 @@ from typing_extensions import override
 from translator_tom.models.analysis import Analysis, PathfinderAnalysis
 from translator_tom.models.node_binding import NodeBinding
 from translator_tom.models.shared import EdgeID, Infores, QNodeID
-from translator_tom.utils.hash import tomhash
 from translator_tom.utils.object_base import TOMBase
 
 __all__ = ["Result"]
@@ -33,13 +32,11 @@ class Result(TOMBase):
     """The list of all Analysis components that contribute to the result."""
 
     @override
-    def hash(self) -> str:
-        return tomhash(
-            {
-                qnode_id: frozenset(b.hash() for b in bindings)
-                for qnode_id, bindings in self.node_bindings.items()
-            }
-        )
+    def _hash_repr(self) -> object:
+        return {
+            qnode_id: frozenset(b.hash() for b in bindings)
+            for qnode_id, bindings in self.node_bindings.items()
+        }
 
     def normalize(self, mapping: dict[EdgeID, EdgeID]) -> None:
         """Normalize the result given a mapping of old:new EdgeIDs."""

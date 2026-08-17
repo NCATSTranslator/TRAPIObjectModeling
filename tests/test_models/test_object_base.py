@@ -5,7 +5,8 @@ from typing import ClassVar
 import pytest
 from pydantic import ConfigDict
 
-from translator_tom import Attribute, RetrievalSource
+from translator_tom import Attribute, EdgeBinding, RetrievalSource
+from translator_tom.utils.hash import tomhash, tomhash_int, tomhash_to_int
 from translator_tom.utils.object_base import TOMBase, _stable_repr
 
 
@@ -142,6 +143,27 @@ class TestHashAndEquality:
         a = Attribute(attribute_type_id="biolink:foo", value=1)
         b = Attribute(attribute_type_id="biolink:foo", value=1)
         assert hash(a) == hash(b)
+
+    def test_dunder_hash_matches_string_hash_int(self):
+        # __hash__ must equal decoding hash() back to int (old formula, no detour)
+        a = Attribute(attribute_type_id="biolink:foo", value=1)
+        assert a.__hash__() == tomhash_to_int(a.hash())
+
+    def test_dunder_hash_matches_string_hash_int_for_override(self):
+        # holds for models that customize the hash input via _hash_repr
+        eb = EdgeBinding(
+            id="kg0", attributes=[Attribute(attribute_type_id="biolink:foo", value=1)]
+        )
+        assert eb.__hash__() == tomhash_to_int(eb.hash())
+
+    def test_hash_and_dunder_share_hash_repr(self):
+        # both string hash() and int __hash__ derive from the same _hash_repr()
+        for m in (
+            Attribute(attribute_type_id="biolink:foo", value=1),
+            EdgeBinding(id="kg0", attributes=[]),
+        ):
+            assert m.hash() == tomhash(m._hash_repr())
+            assert m.__hash__() == tomhash_int(m._hash_repr())
 
     def test_eq_returns_true_for_same_fields(self):
         a = Attribute(attribute_type_id="biolink:foo", value=1)

@@ -6,7 +6,6 @@ from typing import Literal
 from typing_extensions import override
 
 from translator_tom.models.shared import Infores
-from translator_tom.utils.hash import tomhash
 from translator_tom.utils.object_base import TOMBase
 
 __all__ = [
@@ -89,8 +88,8 @@ class RetrievalSource(TOMBase):
         return self.source_record_urls if self.source_record_urls is not None else []
 
     @override
-    def hash(self) -> str:
-        return tomhash((self.resource_id, self.resource_role))
+    def _hash_repr(self) -> object:
+        return (self.resource_id, self.resource_role)
 
     def update(self, other: RetrievalSource) -> None:
         """Update the first source in-place, merging information from the second."""
