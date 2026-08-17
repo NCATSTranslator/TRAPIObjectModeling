@@ -145,6 +145,18 @@ class TestGetDescendants:
         descendants = Biolink.get_descendants("biolink:Gene")
         assert "biolink:Gene" in descendants
 
+    def test_repeated_calls_are_cached_but_copied(self):
+        # copying_lru_cache: repeated calls hit the cache but hand back fresh copies,
+        # so mutating one caller's result can't poison the shared cache.
+        first = Biolink.get_descendants("biolink:related_to")
+        before = Biolink.get_descendants.cache_info().hits
+        second = Biolink.get_descendants("biolink:related_to")
+        assert first == second
+        assert second is not first
+        assert Biolink.get_descendants.cache_info().hits == before + 1
+        first.append("biolink:not_real")
+        assert "biolink:not_real" not in Biolink.get_descendants("biolink:related_to")
+
 
 class TestGetDescendantValues:
     def test_predicate_qualifier_branch(self):

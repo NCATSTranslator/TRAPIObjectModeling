@@ -3,13 +3,13 @@ from __future__ import annotations
 __all__ = ["Biolink"]
 
 import threading
-from functools import lru_cache
 from importlib.resources import files
 from typing import TYPE_CHECKING, TypeVar, cast, final
 
 from typing_extensions import override
 
 from translator_tom.models.shared import CURIE, Curie
+from translator_tom.utils.cache import lru_copy_cache
 from translator_tom.utils.config import TRAPI_CONFIG
 
 if TYPE_CHECKING:
@@ -210,7 +210,7 @@ class Biolink(metaclass=_BiolinkMeta):
         return expanded
 
     @staticmethod
-    @lru_cache
+    @lru_copy_cache()
     def get_all_qualifiers() -> set[Biolink.Qualifier]:
         """Return all qualifiers in the biolink model."""
         slots = Biolink.toolkit.get_all_edge_properties()
@@ -226,12 +226,13 @@ class Biolink(metaclass=_BiolinkMeta):
         return Biolink.toolkit.get_inverse_predicate(predicate, formatted=True)
 
     @staticmethod
+    @lru_copy_cache()
     def get_descendants(value: _T) -> list[_T]:
         """Get the descendants for a given biolink concept."""
         return cast(list[_T], Biolink.toolkit.get_descendants(value, formatted=True))
 
     @staticmethod
-    @lru_cache
+    @lru_copy_cache()
     def get_descendant_values(
         qualifier_type: Biolink.Qualifier, value: str
     ) -> set[str]:
