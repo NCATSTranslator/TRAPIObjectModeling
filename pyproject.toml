@@ -169,8 +169,10 @@ DEP002 = [
 [tool.pytest.ini_options]
 # bench uses standalone benchmark scripts
 norecursedirs = ["bench"]
-log_cli = true
-log_cli_level = "INFO"
+# so the sweep suites can import the shared `_sweep_helpers` harness
+pythonpath = ["tests"]
+# log_cli = true
+# log_cli_level = "INFO"
 
 [tool.coverage.run]
 branch = true
