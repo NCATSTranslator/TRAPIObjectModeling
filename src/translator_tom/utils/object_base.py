@@ -41,6 +41,7 @@ class TOMBase(BaseModel):
         validate_default=False,
         protected_namespaces=(),
         extra="allow",
+        use_attribute_docstrings=True,  # field docstrings -> schema descriptions
     )
 
     ###### I/O methods #####
