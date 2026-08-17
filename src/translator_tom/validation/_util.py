@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Collection, Iterable
-from functools import singledispatch
+from functools import lru_cache, singledispatch
 from typing import Any, Literal, Protocol, runtime_checkable
 
 from pydantic import AnyUrl, TypeAdapter, ValidationError
@@ -167,14 +167,16 @@ def validate_url(
         )
 
 
-def validate_biolink_element(
+@lru_cache
+def _biolink_element_verdict(
     element: str,
     element_type: Literal["category", "predicate", "association"],
-    location: Location | None = None,
-) -> SemanticValidationResult:
-    """Validate a given element."""
-    warnings, errors = SemanticValidationWarningList(), SemanticValidationErrorList()
+) -> tuple[str | None, str | None]:
+    """Compute the location-independent (error, warning) verdict for an element.
 
+    Cached: all BMT lookups live here so repeated elements are only checked once.
+    Returns (error_message, warning_message), each None when absent.
+    """
     element_valid = {
         "category": Biolink.is_valid_category,
         "predicate": Biolink.is_valid_predicate,
@@ -182,25 +184,20 @@ def validate_biolink_element(
     }[element_type](element)
 
     if not element_valid:
-        errors.append(
-            SemanticValidationError(
-                f"{element_type.title()} `{element}` is not a valid BioLink {element_type}.",
-                location,
-            )
+        return (
+            f"{element_type.title()} `{element}` is not a valid BioLink {element_type}.",
+            None,
         )
-        return warnings, errors
 
     if element != Biolink.get_formatted(element):
-        errors.append(
-            SemanticValidationError(
-                f"{element_type.title()} `{element}` is not in a valid format for use.",
-                location,
-            )
+        return (
+            f"{element_type.title()} `{element}` is not in a valid format for use.",
+            None,
         )
-        return warnings, errors
 
     bmt_element = Biolink.get_element(element)
     if bmt_element is None:
+        # lru_cache doesn't cache raised exceptions, so this stays uncached.
         raise ValueError(f"Valid {element_type} `{element}` is not a valid element?")
 
     if bmt_element.deprecated:
@@ -209,7 +206,23 @@ def validate_biolink_element(
             warning_msg += f" Use replacement instead: `{Biolink.get_formatted(bmt_element.deprecated_element_has_exact_replacement)}`."
         elif bmt_element.deprecated_element_has_possible_replacement:
             warning_msg += f" Possible replacement: `{Biolink.get_formatted(bmt_element.deprecated_element_has_possible_replacement)}`."
+        return (None, warning_msg)
 
+    return (None, None)
+
+
+def validate_biolink_element(
+    element: str,
+    element_type: Literal["category", "predicate", "association"],
+    location: Location | None = None,
+) -> SemanticValidationResult:
+    """Validate a given element."""
+    warnings, errors = SemanticValidationWarningList(), SemanticValidationErrorList()
+
+    error_msg, warning_msg = _biolink_element_verdict(element, element_type)
+    if error_msg is not None:
+        errors.append(SemanticValidationError(error_msg, location))
+    if warning_msg is not None:
         warnings.append(SemanticValidationWarning(warning_msg, location))
 
     return warnings, errors
@@ -304,8 +317,9 @@ def validate_node_exists(
     if node not in graph.nodes:
         errors.append(
             SemanticValidationError(
+                # callers already point `location` at the subject/object end
                 f"{end.capitalize()} `{node}` is not present in {graph_name}.",
-                extend_location(location, end),
+                location,
             )
         )
 

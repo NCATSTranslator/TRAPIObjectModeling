@@ -11,7 +11,6 @@ from translator_tom.models.query_graph import (
 )
 from translator_tom.validation._util import (
     Location,
-    SemanticValidationError,
     SemanticValidationResult,
     extend_location,
     get_dict_locations,
@@ -128,22 +127,6 @@ def _validate_qedge(
         )
         warnings.extend(w)
         errors.extend(e)
-
-    if qgraph is not None and isinstance(qgraph, QueryGraph):
-        if obj.subject not in qgraph.nodes:
-            errors.append(
-                SemanticValidationError(
-                    f"Subject `{obj.subject}` is not present in query_graph.",
-                    extend_location(location, "subject"),
-                )
-            )
-        if obj.object not in qgraph.nodes:
-            errors.append(
-                SemanticValidationError(
-                    f"Object `{obj.object}` is not present in query_graph.",
-                    extend_location(location, "object"),
-                )
-            )
 
     return warnings, errors
 

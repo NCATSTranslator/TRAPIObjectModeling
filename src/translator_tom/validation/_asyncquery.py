@@ -38,6 +38,6 @@ def _validate_async_query_status_response(
 ) -> SemanticValidationResult:
     if obj.response_url is not None:
         return validate_url(
-            obj.response_url, location=extend_location(location, "callback")
+            obj.response_url, location=extend_location(location, "response_url")
         )
     return always_valid()

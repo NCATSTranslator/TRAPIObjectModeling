@@ -84,6 +84,16 @@ def _validate_analysis(
     if qgraph is None:
         return warnings, errors
 
+    # Malformed pairing: edge_bindings can't be cross-checked without QEdges.
+    if not isinstance(qgraph, QueryGraph):
+        errors.append(
+            SemanticValidationError(
+                "Analysis edge_bindings cannot be cross-checked because the query_graph is not a QueryGraph with edges.",
+                (*(location or ()), "edge_binding"),
+            )
+        )
+        return warnings, errors
+
     for qedge_id in obj.edge_bindings:
         if qedge_id not in qgraph.edges:
             errors.append(
@@ -125,6 +135,16 @@ def _validate_pathfinder_analysis(
     )
 
     if qgraph is None:
+        return warnings, errors
+
+    # Malformed pairing: path_bindings can't be cross-checked without QPaths.
+    if not isinstance(qgraph, PathfinderQueryGraph):
+        errors.append(
+            SemanticValidationError(
+                "PathfinderAnalysis path_bindings cannot be cross-checked because the query_graph is not a PathfinderQueryGraph with paths.",
+                (*(location or ()), "path_bindings"),
+            )
+        )
         return warnings, errors
 
     for qpath_id in obj.path_bindings:

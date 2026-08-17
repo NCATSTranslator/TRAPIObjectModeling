@@ -48,7 +48,8 @@ def _validate_response(
     if obj.biolink_version != TRAPI_CONFIG.biolink_version:
         warnings.append(
             SemanticValidationWarning(
-                f"Response biolink_version `{obj.biolink_version}` does not match configured TOM biolink_version `{TRAPI_CONFIG.biolink_version}`."
+                f"Response biolink_version `{obj.biolink_version}` does not match configured TOM biolink_version `{TRAPI_CONFIG.biolink_version}`.",
+                extend_location(location, "biolink_version"),
             )
         )
 

@@ -31,7 +31,7 @@ def _validate_retrieval_source(
     ):
         errors.append(
             SemanticValidationError(
-                f"resoure_id {obj.resource_id} cannot be present in upstream_resource_ids.",
+                f"resource_id {obj.resource_id} cannot be present in upstream_resource_ids.",
                 extend_location(location, "upstream_resource_ids"),
             )
         )
@@ -39,7 +39,7 @@ def _validate_retrieval_source(
     if obj.source_record_urls is not None:
         for url in obj.source_record_urls:
             new_warn, new_err = validate_url(
-                url, location=extend_location(location, "callback")
+                url, location=extend_location(location, "source_record_urls")
             )
             warnings.extend(new_warn)
             errors.extend(new_err)

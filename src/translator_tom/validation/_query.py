@@ -21,11 +21,12 @@ def validate_query(
     **_: Any,
 ) -> SemanticValidationResult:
     return validation_pipeline(
-        semantic_validate(obj.message),
+        semantic_validate(obj.message, extend_location(location, "message")),
         validate_many(
             *obj.workflow_list,
             locations=get_list_locations(
                 obj.workflow_list, extend_location(location, "workflow")
             ),
+            qgraph=obj.message.query_graph,  # cross-check workflow ops against the query graph
         ),
     )

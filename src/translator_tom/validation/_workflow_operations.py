@@ -207,17 +207,7 @@ def _validate_overlay_jaccard_params(
             if qgraph is not None
             else always_valid()
         ),
-        (
-            validate_keys_exist(
-                [obj.virtual_relation_label],
-                qgraph.nodes.keys(),
-                "QNode",
-                "query_graph",
-                extend_location(location, "virtual_relation_label"),
-            )
-            if qgraph is not None
-            else always_valid()
-        ),
+        # virtual_relation_label names a NEW virtual QEdge the op creates; don't check it.
     )
 
 
