@@ -10,6 +10,7 @@ except PackageNotFoundError:  # pragma: no cover - package not installed (source
 
 __all__ = [
     "CURIE",
+    "TRAPI_CONFIG",
     "Analysis",
     "AsyncQuery",
     "AsyncQueryResponse",
@@ -23,10 +24,12 @@ __all__ = [
     "BaseQueryGraph",
     "Biolink",
     "Curie",
+    "DictUtil",
     "Edge",
     "EdgeBinding",
     "EdgeID",
     "FastJsonValue",
+    "HashRepEnum",
     "Infores",
     "KnowledgeGraph",
     "KnowledgeType",
@@ -67,8 +70,11 @@ __all__ = [
     "SetInterpretation",
     "SetInterpretationEnum",
     "TOMBase",
+    "diff",
     "infores",
+    "register_union_discriminator",
     "tomhash",
+    "tomhash_int",
     "tomhash_to_int",
     "workflow",
 ]
@@ -142,5 +148,12 @@ from translator_tom.models.workflow_operations import (
     Operation,
 )
 from translator_tom.utils.biolink import Biolink
-from translator_tom.utils.hash import tomhash, tomhash_to_int
+from translator_tom.utils.config import TRAPI_CONFIG, HashRepEnum
+from translator_tom.utils.dict_util_base import DictUtil, register_union_discriminator
+from translator_tom.utils.hash import tomhash, tomhash_int, tomhash_to_int
 from translator_tom.utils.object_base import TOMBase
+
+# `diff` imports `TOMBase` from the top-level package, so it must load after
+# `TOMBase` is bound above (isort would otherwise reorder it and cause a
+# partially-initialized-module circular import).
+from translator_tom.utils.diff import diff  # isort: skip
