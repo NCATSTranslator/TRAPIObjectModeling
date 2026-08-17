@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from pydantic import Field
 from typing_extensions import Self
 
 from translator_tom.models.log_entry import LogEntry
@@ -29,7 +28,7 @@ class Response(TOMBase):
     description: str | None = None
     """A brief human-readable description of the outcome."""
 
-    logs: list[LogEntry] = Field(default_factory=list)
+    logs: list[LogEntry] | None = None
     """A list of LogEntry items, containing errors, warnings, debugging information, etc.
 
     List items MUST be in chronological order with earliest first.
@@ -49,12 +48,16 @@ class Response(TOMBase):
         """Get the workflow operations as a guaranteed list, even if they are represented as None."""
         return self.workflow if self.workflow is not None else []
 
+    @property
+    def logs_list(self) -> list[LogEntry]:
+        """Get the logs as a guaranteed list, even if they are represented as None."""
+        return self.logs if self.logs is not None else []
+
     @classmethod
     def new(cls) -> Self:
         """Return an empty instance, without having to pass required containers."""
         return cls.model_construct(
             message=Message(),
-            logs=[],
             schema_version=TRAPI_CONFIG.schema_version,
             biolink_version=TRAPI_CONFIG.biolink_version,
         )

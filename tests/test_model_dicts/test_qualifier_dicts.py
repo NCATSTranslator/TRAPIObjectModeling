@@ -184,5 +184,5 @@ class TestGetInverse:
 
     def test_uninvertible_raises(self):
         qc = _qc(("biolink:qualified_predicate", "biolink:has_count"))
-        with pytest.raises(ValueError, match="non-inversible predicate"):
+        with pytest.raises(ValueError, match="Cannot invert qualified_predicate"):
             QualifierConstraintDictUtil.get_inverse(qc.to_dict())

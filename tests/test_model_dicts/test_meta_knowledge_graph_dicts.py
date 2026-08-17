@@ -125,6 +125,33 @@ class TestMetaEdge:
         }
         assert merged_values == model_values
 
+    def test_update_all_allowed_absorbs_concrete_parity(self):
+        # applicable_values=None ("all allowed") must survive the merge on both sides,
+        # not narrow to the concrete list. Asserts the absolute result, not just parity.
+        for self_vals, other_vals in ((None, ["activity"]), (["activity"], None)):
+            edge = _meta_edge(
+                qualifiers=[
+                    MetaQualifier(
+                        qualifier_type_id="biolink:subject_aspect_qualifier",
+                        applicable_values=self_vals,
+                    )
+                ]
+            )
+            other = _meta_edge(
+                qualifiers=[
+                    MetaQualifier(
+                        qualifier_type_id="biolink:subject_aspect_qualifier",
+                        applicable_values=other_vals,
+                    )
+                ]
+            )
+            edge_dict = edge.to_dict()
+            edge.update(other)
+            MetaEdgeDictUtil.update(edge_dict, other.to_dict())
+            assert (edge.qualifiers or [])[0].applicable_values is None
+            assert edge_dict["qualifiers"][0].get("applicable_values") is None
+            assert MetaEdgeDictUtil.hash(edge_dict) == edge.hash()
+
     def test_meets_attribute_constraints_parity(self):
         edge = _meta_edge(attributes=[MetaAttribute(attribute_type_id="biolink:foo")])
         constraints = [

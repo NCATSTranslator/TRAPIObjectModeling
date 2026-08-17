@@ -64,11 +64,14 @@ class Result(TOMBase):
 
         by_hash = {ana.hash(): ana for ana in self.analyses}
         for analysis in other.analyses:
-            existing = by_hash.get(analysis.hash())
+            h = analysis.hash()
+            existing = by_hash.get(h)
             if existing is not None:
                 existing.update(analysis)  # ty: ignore[invalid-argument-type] Equality means they're the same type
             else:
                 self.analyses.append(analysis)
+                # register so a later same-hash analysis in `other` merges, not re-appends
+                by_hash[h] = analysis
 
     @staticmethod
     def merge_results(
@@ -76,8 +79,7 @@ class Result(TOMBase):
     ) -> list[Result]:
         """Merge the given results in-place.
 
-        If new results are provided, merge them into the first list.
-        Does not mutate `new`.
+        `new` is merged into `results`; pass a copy to preserve it.
         """
         if new is None:
             new = []

@@ -260,5 +260,5 @@ class TestQualifierConstraintGetInverse:
             qualifier_value="x",
         )
         c = QualifierConstraint(qualifier_set=[q])
-        with pytest.raises(ValueError, match="Cannot inverse qualifier"):
+        with pytest.raises(ValueError, match="Cannot invert qualifier of type"):
             c.get_inverse()

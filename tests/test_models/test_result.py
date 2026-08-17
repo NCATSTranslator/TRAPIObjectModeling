@@ -130,6 +130,20 @@ class TestResultUpdate:
         a.update(b)
         assert len(a.analyses) == 1
 
+    def test_dedupes_internal_duplicate_analyses_in_other(self):
+        # `other` carries two equal-hash analyses absent from self; they must collapse
+        # to one on merge (each append registers in by_hash), not both re-append.
+        a = _result(edge_id="e1")
+        b = Result(
+            node_bindings={"n0": [_nb()]},
+            analyses=[
+                _analysis(resource_id="infores:other", edge_id="e2"),
+                _analysis(resource_id="infores:other", edge_id="e2"),
+            ],
+        )
+        a.update(b)
+        assert len(a.analyses) == 2  # self's original + one deduped from other
+
 
 class TestResultMergeResults:
     def test_dedupes_by_hash(self):

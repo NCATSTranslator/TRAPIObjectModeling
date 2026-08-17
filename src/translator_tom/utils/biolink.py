@@ -154,7 +154,8 @@ class Biolink(metaclass=_BiolinkMeta):
                 Biolink("related_to") in Biolink.get_ancestors(desc)
                 for desc in Biolink.get_descendants(predicate)
             )
-        except Exception:
+        # ValueError: unknown/malformed term; AttributeError: non-str input. Infra errors propagate.
+        except (ValueError, AttributeError):
             return False
 
     @staticmethod
@@ -165,16 +166,18 @@ class Biolink(metaclass=_BiolinkMeta):
                 Biolink("NamedThing") in Biolink.get_ancestors(desc)
                 for desc in Biolink.get_descendants(category)
             )
-        except Exception:
+        # ValueError: unknown/malformed term; AttributeError: non-str input. Infra errors propagate.
+        except (ValueError, AttributeError):
             return False
 
     @staticmethod
     def is_valid_association(association: Biolink.Entity) -> bool:
-        """Validate that a given association is a real biolink association."""
+        """Validate that a given association is a real biolink association (at any depth)."""
         try:
-            element = Biolink.get_element(association)
-            return element is not None and element.is_a == "association"
-        except Exception:
+            # get_ancestors is reflexive, so the root `Association` and any descendant match.
+            return "biolink:Association" in Biolink.get_ancestors(association)
+        # AttributeError: non-str input; ValueError: unknown/malformed term. Infra errors propagate.
+        except (ValueError, AttributeError):
             return False
 
     @staticmethod

@@ -96,20 +96,54 @@ def _tag_literals(annotation: Any) -> tuple[Any, ...]:
     return values
 
 
-def _container_kind(annotation: Any) -> Literal["scalar", "list", "dict"]:
-    """Classify a field's outermost container (after stripping `Annotated`/`Optional`)."""
+_ValueHasher = Callable[[Any], Any]
+
+# element-wise containers, keyed by origin -> how to re-wrap the hashed elements
+# (set-likes collapse to `frozenset`, matching `_stable_repr`'s order-independent hash).
+_SEQ_WRAP: dict[Any, Callable[[Any], Any]] = {
+    list: list,
+    tuple: tuple,
+    set: frozenset,
+    frozenset: frozenset,
+}
+
+
+def _first_arg(node: Any) -> Any:
+    """The first type argument of a generic (its element type), or `Any` if unparameterized."""
+    args = get_args(node)
+    return args[0] if args else Any
+
+
+def _build_value_hasher(annotation: Any, resolve: _Resolver) -> _ValueHasher:
+    """Build a hasher for a nested-model field's value, mirroring `_stable_repr`.
+
+    Recurses through arbitrarily-nested `list`/`dict`/`set`/`tuple` containers to the
+    model leaves, replacing each nested-model dict with `resolve(v).hash(v)` and keeping
+    container types (`set`/`frozenset` -> `frozenset`, `tuple` -> `tuple`) so the
+    dict-side hash matches the model-side `_stable_repr` at any nesting depth.
+    """
     node = annotation
-    while getattr(node, "__metadata__", None) is not None:
+    while getattr(node, "__metadata__", None) is not None:  # strip Annotated[X, ...]
         node = node.__origin__
     origin = get_origin(node)
+
     if origin is Union or origin is types.UnionType:
-        non_none = [arg for arg in get_args(node) if arg is not type(None)]
-        return _container_kind(non_none[0]) if len(non_none) == 1 else "scalar"
-    if origin in {list, set, frozenset, tuple}:
-        return "list"
+        members = [arg for arg in get_args(node) if arg is not type(None)]
+        if len(members) == 1:  # Optional[X] -> X
+            return _build_value_hasher(members[0], resolve)
+        # union of models: leaf, resolver discriminates by value
+        return lambda v: resolve(v).hash(v)
+    if origin in _SEQ_WRAP:
+        wrap = _SEQ_WRAP[origin]
+        inner = _build_value_hasher(_first_arg(node), resolve)
+        return lambda v: wrap(inner(x) for x in v)
     if origin is dict:
-        return "dict"
-    return "scalar"
+        args = get_args(node)  # (key, value) or () for a bare dict
+        inner = _build_value_hasher(args[-1] if args else Any, resolve)
+        return lambda v: {k: inner(x) for k, x in v.items()}
+    if isinstance(node, type) and issubclass(node, TOMBase):  # model leaf
+        return lambda v: resolve(v).hash(v)
+    return _stable_repr  # non-model scalar leaf (defensive; nested fields bottom out at models)
 
 
 class DictUtil(Generic[_TD]):
@@ -129,7 +163,7 @@ class DictUtil(Generic[_TD]):
     # Registry of model -> its DictUtil, populated as subclasses are defined.
     _registry: ClassVar[dict[type[TOMBase], type[DictUtil[Any]]]] = {}
     # Per-subclass cache for `_nested_fields()`.
-    _nested_fields_cache: ClassVar[dict[str, _NestedField] | None] = None
+    _nested_fields_cache: ClassVar[dict[str, _ValueHasher] | None] = None
     # Per-subclass cache for `_field_defaults()`.
     _field_defaults_cache: ClassVar[dict[str, Any] | None] = None
     # Per-subclass cache for `_adapter()` (built lazily on first validating parse).
@@ -191,6 +225,10 @@ class DictUtil(Generic[_TD]):
     @classmethod
     def to_json(cls, obj: _TD, as_str: Literal[False]) -> bytes: ...
 
+    @overload
+    @classmethod
+    def to_json(cls, obj: _TD, as_str: bool) -> str | bytes: ...
+
     @classmethod
     def to_json(cls, obj: _TD, as_str: bool = False) -> str | bytes:
         """Serialize a dict to JSON.
@@ -223,24 +261,23 @@ class DictUtil(Generic[_TD]):
     ##### Hashing #####
 
     @classmethod
-    def _nested_fields(cls) -> dict[str, _NestedField]:
-        """Map each field holding nested model(s) to how its value should be hashed.
+    def _nested_fields(cls) -> dict[str, _ValueHasher]:
+        """Map each field holding nested model(s) to a value-hasher.
 
-        Derived and cached from the mirrored model's field types: each entry pairs the
-        field's container shape with a resolver that picks the member util per element
-        (see `_container_kind` and `_nested_resolver`).
+        Derived and cached from the mirrored model's field types: each hasher mirrors
+        `_stable_repr`'s structure for that field's (possibly nested) containers,
+        substituting nested-model dicts with the resolved member util's hash
+        (see `_build_value_hasher` and `_nested_resolver`).
         """
         cached = cls.__dict__.get("_nested_fields_cache")
         if cached is not None:
             return cached
-        mapping: dict[str, _NestedField] = {}
+        mapping: dict[str, _ValueHasher] = {}
         for name, field in cls._model.model_fields.items():
             models = _nested_models(field.annotation)
             if models:
-                mapping[name] = _NestedField(
-                    _container_kind(field.annotation),
-                    cls._nested_resolver(name, field, models),
-                )
+                resolve = cls._nested_resolver(name, field, models)
+                mapping[name] = _build_value_hasher(field.annotation, resolve)
         cls._nested_fields_cache = mapping
         return mapping
 
@@ -294,10 +331,10 @@ class DictUtil(Generic[_TD]):
     @classmethod
     def _hash_field(cls, key: str, value: Any) -> Any:
         """Produce the stable representation of one declared field for hashing."""
-        nested = cls._nested_fields().get(key)
-        if nested is None or value is None:
+        hasher = cls._nested_fields().get(key)
+        if hasher is None or value is None:
             return _stable_repr(value)
-        return nested.hashed(value)
+        return hasher(value)
 
     @classmethod
     def _field_defaults(cls) -> dict[str, Any]:
@@ -344,27 +381,6 @@ class DictUtil(Generic[_TD]):
 _Resolver = Callable[[Any], "type[DictUtil[Any]]"]
 # A structural-union discriminator maps a raw dict to its concrete member model.
 _Discriminator = Callable[[Mapping[str, Any]], type[TOMBase]]
-
-
-@dataclass
-class _NestedField:
-    """How to hash one field that holds nested model(s): container shape + util resolver.
-
-    `kind` (from the field annotation, not the value) says whether the field is a single
-    nested model, a `list` of them, or a `dict` of them; `resolve` picks the member util
-    for each element.
-    """
-
-    kind: Literal["scalar", "list", "dict"]
-    resolve: _Resolver
-
-    def hashed(self, value: Any) -> Any:
-        """Return the stable representation of the field's value for hashing."""
-        if self.kind == "list":
-            return [self.resolve(v).hash(v) for v in value]
-        if self.kind == "dict":
-            return {k: self.resolve(v).hash(v) for k, v in value.items()}
-        return self.resolve(value).hash(value)
 
 
 @dataclass

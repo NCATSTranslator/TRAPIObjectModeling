@@ -16,7 +16,7 @@ class ResponseDict(TypedDict):
     message: MessageDict
     status: NotRequired[str | None]
     description: NotRequired[str | None]
-    logs: NotRequired[list[LogEntryDict]]
+    logs: NotRequired[list[LogEntryDict] | None]
     workflow: NotRequired[list[OperationDict] | None]
     schema_version: NotRequired[str | None]
     biolink_version: NotRequired[str | None]
@@ -34,9 +34,15 @@ class ResponseDictUtil(DictUtil[ResponseDict]):
         return workflow if workflow is not None else []
 
     @staticmethod
+    def logs_list(response: ResponseDict) -> list[LogEntryDict]:
+        """Get the logs as a guaranteed list, even if they are represented as None."""
+        logs = response.get("logs")
+        return logs if logs is not None else []
+
+    @staticmethod
     def new() -> ResponseDict:
         """Return an empty instance, without having to pass required containers."""
-        # logs defaults to [] and is dropped by exclude_defaults, matching Response.new().
+        # logs omitted; defaults to None, matching Response.new().
         return {
             "message": {},
             "schema_version": TRAPI_CONFIG.schema_version,

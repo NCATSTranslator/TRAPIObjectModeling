@@ -95,11 +95,14 @@ class ResultDictUtil(DictUtil[ResultDict]):
 
         by_hash = {_analysis_hash(ana): ana for ana in result["analyses"]}
         for analysis in other["analyses"]:
-            existing = by_hash.get(_analysis_hash(analysis))
+            h = _analysis_hash(analysis)
+            existing = by_hash.get(h)
             if existing is not None:
                 _update_analysis(existing, analysis)
             else:
                 result["analyses"].append(analysis)
+                # register so a later same-hash analysis in `other` merges, not re-appends
+                by_hash[h] = analysis
 
     @staticmethod
     def merge_results(
@@ -107,8 +110,7 @@ class ResultDictUtil(DictUtil[ResultDict]):
     ) -> list[ResultDict]:
         """Merge the given results in-place.
 
-        If new results are provided, merge them into the first list.
-        Does not mutate `new`.
+        `new` is merged into (and aliased by) `results`; pass a copy to preserve it.
         """
         if new is None:
             new = []

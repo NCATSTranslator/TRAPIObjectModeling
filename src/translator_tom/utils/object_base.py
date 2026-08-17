@@ -74,6 +74,9 @@ class TOMBase(BaseModel):
     @overload
     def to_json(self, as_str: Literal[False]) -> bytes: ...
 
+    @overload
+    def to_json(self, as_str: bool) -> str | bytes: ...
+
     def to_json(self, as_str: bool = False) -> str | bytes:
         """Serialize an instance to json.
 
@@ -101,13 +104,14 @@ class TOMBase(BaseModel):
 
     @property
     def extra_dict(self) -> dict[str, JsonValue]:
-        """Return a dict which is either the model extra fields, or empty if not present.
+        """Return the model extra fields, or a fresh empty dict if none are present.
 
-        Don't modify this dict, use set or __setitem__.
+        Don't mutate the returned dict; use .extra_set() to add extras. When the model
+        has no extras this returns a throwaway empty dict, so mutating it has no effect.
         """
         return self.__pydantic_extra__ or {}
 
-    def extra_get(self, key: str, default: Any | None = None) -> Any:
+    def extra_get(self, key: str, default: Any = None) -> Any:
         """Get an extra field or the given default, if extra is allowed."""
         if self.__pydantic_extra__ is None:
             raise ValueError(f"{type(self)} does not allow extra values.")

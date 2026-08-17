@@ -8,7 +8,7 @@ from pydantic import ConfigDict, Field, WithJsonSchema
 from typing_extensions import override
 
 from translator_tom.models.meta_attribute import MetaAttribute
-from translator_tom.models.shared import CURIE, FastJsonValue
+from translator_tom.models.shared import CURIE, OBJECT_RE, SUBJECT_RE, FastJsonValue
 from translator_tom.utils.object_base import TOMBase
 
 __all__ = [
@@ -168,12 +168,6 @@ class Attribute(TOMBase):
 
         old.clear()
         old.extend(attrs.values())
-
-
-# Match "subject"/"object" only as whole words, so a free-form `id` such as
-# "biolink:objective_*" is not mangled into "subjective_*" when reversing.
-_SUBJECT_RE = re.compile(r"(?<![a-zA-Z])subject(?![a-zA-Z])")
-_OBJECT_RE = re.compile(r"(?<![a-zA-Z])object(?![a-zA-Z])")
 
 
 class AttributeConstraint(TOMBase):
@@ -339,10 +333,10 @@ class AttributeConstraint(TOMBase):
         Flips subject/object for the few directional attribute types.
         """
         new = self.model_copy()
-        if _OBJECT_RE.search(self.id):
-            new.id = _OBJECT_RE.sub("subject", self.id)
-            new.name = _OBJECT_RE.sub("subject", self.name)
-        elif _SUBJECT_RE.search(self.id):
-            new.id = _SUBJECT_RE.sub("object", self.id)
-            new.name = _SUBJECT_RE.sub("object", self.name)
+        if OBJECT_RE.search(self.id):
+            new.id = OBJECT_RE.sub("subject", self.id)
+            new.name = OBJECT_RE.sub("subject", self.name)
+        elif SUBJECT_RE.search(self.id):
+            new.id = SUBJECT_RE.sub("object", self.id)
+            new.name = SUBJECT_RE.sub("object", self.name)
         return new

@@ -3,8 +3,10 @@ from __future__ import annotations
 from typing import Annotated
 
 from pydantic import Field
+from typing_extensions import Self, override
 
 from translator_tom.models.log_entry import LogEntry
+from translator_tom.models.message import Message
 from translator_tom.models.query import Query
 from translator_tom.utils.object_base import TOMBase
 
@@ -28,6 +30,13 @@ class AsyncQuery(Query):
             does not succeed, the server SHOULD retry the POST at least
             once.
     """
+
+    @classmethod
+    @override
+    # `callback` is required, so this intentionally can't match Query.new's signature
+    def new(cls, callback: str) -> Self:  # ty: ignore[invalid-method-override]
+        """Return an empty instance, without having to pass optional containers."""
+        return cls.model_construct(message=Message.model_construct(), callback=callback)
 
 
 class AsyncQueryResponse(TOMBase):

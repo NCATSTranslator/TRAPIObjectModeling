@@ -10,13 +10,11 @@ from translator_tom.model_dicts.meta_attribute import (
     MetaAttributeDictUtil,
 )
 from translator_tom.models.attribute import (
-    _OBJECT_RE,
-    _SUBJECT_RE,
     Attribute,
     AttributeConstraint,
     Operator,
 )
-from translator_tom.models.shared import CURIE, FastJsonValue
+from translator_tom.models.shared import CURIE, OBJECT_RE, SUBJECT_RE, FastJsonValue
 from translator_tom.utils.dict_util_base import DictUtil
 from translator_tom.utils.hash import tomhash
 
@@ -123,12 +121,12 @@ class AttributeConstraintDictUtil(DictUtil[AttributeConstraintDict]):
         inverted = cast("AttributeConstraintDict", {**constraint})
         cid = constraint["id"]
         name = constraint["name"]
-        if _OBJECT_RE.search(cid):
-            inverted["id"] = _OBJECT_RE.sub("subject", cid)
-            inverted["name"] = _OBJECT_RE.sub("subject", name)
-        elif _SUBJECT_RE.search(cid):
-            inverted["id"] = _SUBJECT_RE.sub("object", cid)
-            inverted["name"] = _SUBJECT_RE.sub("object", name)
+        if OBJECT_RE.search(cid):
+            inverted["id"] = OBJECT_RE.sub("subject", cid)
+            inverted["name"] = OBJECT_RE.sub("subject", name)
+        elif SUBJECT_RE.search(cid):
+            inverted["id"] = SUBJECT_RE.sub("object", cid)
+            inverted["name"] = SUBJECT_RE.sub("object", name)
         return inverted
 
     @staticmethod

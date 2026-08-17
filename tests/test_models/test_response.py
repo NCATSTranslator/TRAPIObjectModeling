@@ -13,7 +13,7 @@ class TestResponseBasics:
         assert isinstance(r.message, Message)
         assert r.status is None
         assert r.description is None
-        assert r.logs == []
+        assert r.logs is None
         assert r.workflow is None
         assert r.schema_version is None
         assert r.biolink_version is None
@@ -22,12 +22,10 @@ class TestResponseBasics:
         with pytest.raises(ValidationError):
             Response()  # type: ignore[call-arg]
 
-    def test_logs_default_factory_is_independent(self):
-        # default_factory=list means each instance gets its own list.
-        a = Response(message=Message())
-        b = Response(message=Message())
-        a.logs.append(...)  # type: ignore[arg-type]
-        assert b.logs == []
+    def test_logs_defaults_to_none(self):
+        r = Response(message=Message())
+        assert r.logs is None
+        assert r.logs_list == []
 
 
 class TestResponseWorkflowList:
@@ -46,4 +44,4 @@ class TestResponseNew:
         assert r.schema_version == TRAPI_CONFIG.schema_version
         assert r.biolink_version == TRAPI_CONFIG.biolink_version
         assert isinstance(r.message, Message)
-        assert r.logs == []
+        assert r.logs is None

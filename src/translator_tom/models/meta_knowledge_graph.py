@@ -23,6 +23,15 @@ __all__ = [
 ]
 
 
+def merged_applicable_values(
+    a: list[str] | None, b: list[str] | None
+) -> list[str] | None:
+    """Union two MetaQualifier value sets; None ("all values allowed") absorbs any list."""
+    if a is None or b is None:
+        return None
+    return list(set(a) | set(b))
+
+
 class MetaKnowledgeGraph(TOMBase):
     """Knowledge-map representation of this TRAPI web service.
 
@@ -163,12 +172,10 @@ class MetaEdge(TOMBase):
 
         for type_id, qual in new_quals_by_type.items():
             if type_id in quals_by_type:
-                merged = list(
-                    set(quals_by_type[type_id].applicable_values_list)
-                    | set(qual.applicable_values_list)
+                existing = quals_by_type[type_id]
+                existing.applicable_values = merged_applicable_values(
+                    existing.applicable_values, qual.applicable_values
                 )
-                if len(merged) > 0:
-                    quals_by_type[type_id].applicable_values = merged
             else:
                 quals_by_type[type_id] = qual
 

@@ -309,15 +309,17 @@ class _OuterDictUtil(DictUtil[dict[str, object]]):
 
 class TestNestedDerivation:
     def test_derived_mapping(self):
-        # Each entry pairs the field's container kind with a util resolver.
+        # Each entry is a value-hasher mirroring the field's container shape and
+        # routing element dicts through the resolved member util.
+        ac = {"id": "biolink:x", "name": "n", "operator": "==", "value": 1}
+        qc = {"qualifier_set": [{"qualifier_type_id": "biolink:x", "qualifier_value": "y"}]}
         qnode = QNodeDictUtil._nested_fields()
         assert set(qnode) == {"constraints"}
-        assert qnode["constraints"].kind == "list"
-        assert qnode["constraints"].resolve({}) is AttributeConstraintDictUtil
+        assert qnode["constraints"]([ac]) == [AttributeConstraintDictUtil.hash(ac)]
         qedge = QEdgeDictUtil._nested_fields()
         assert set(qedge) == {"attribute_constraints", "qualifier_constraints"}
-        assert qedge["attribute_constraints"].resolve({}) is AttributeConstraintDictUtil
-        assert qedge["qualifier_constraints"].resolve({}) is QualifierConstraintDictUtil
+        assert qedge["attribute_constraints"]([ac]) == [AttributeConstraintDictUtil.hash(ac)]
+        assert qedge["qualifier_constraints"]([qc]) == [QualifierConstraintDictUtil.hash(qc)]
 
     def test_scalar_only_model_has_empty_mapping(self):
         # AttributeConstraintDictUtil overrides hash, but base derivation still
@@ -327,6 +329,47 @@ class TestNestedDerivation:
     def test_missing_nested_util_raises_loudly(self):
         with pytest.raises(LookupError, match="_InnerDictUtil"):
             _OuterDictUtil.hash({"inner": {"x": 1}})
+
+
+# ============================================================================
+# Deeply-nested containers (dict-of-lists, list-of-lists, set/tuple leaves)
+# ============================================================================
+
+
+class _Leaf(TOMBase):
+    x: int = 0
+
+
+class _LeafDictUtil(DictUtil[dict[str, object]]):
+    _model = _Leaf
+
+
+class _Nested(TOMBase):
+    dl: dict[str, list[_Leaf]] | None = None  # dict of lists of models
+    ll: list[list[_Leaf]] | None = None  # list of lists of models
+    tup: tuple[_Leaf, ...] | None = None  # tuple leaf (container kind preserved)
+
+
+class _NestedDictUtil(DictUtil[dict[str, object]]):
+    _model = _Nested
+
+
+class TestDeeplyNestedContainerHashing:
+    """The value-hasher must recurse through *nested* containers, not just the
+    outermost one, and preserve each container's kind for parity.
+    """
+
+    def test_dict_of_lists_and_list_of_lists_parity(self):
+        m = _Nested(
+            dl={"a": [_Leaf(x=1), _Leaf(x=2)], "b": [_Leaf(x=3)]},
+            ll=[[_Leaf(x=4)], [_Leaf(x=5), _Leaf(x=6)]],
+            tup=(_Leaf(x=7), _Leaf(x=8)),
+        )
+        assert _NestedDictUtil.hash(m.to_dict()) == m.hash()
+
+    def test_empty_nested_containers_parity(self):
+        m = _Nested(dl={}, ll=[])
+        assert _NestedDictUtil.hash(m.to_dict()) == m.hash()
 
 
 # ============================================================================
@@ -410,9 +453,10 @@ class TestUnionHashParity:
 
     def test_tagged_union_resolver_picks_by_tag(self):
         pets = _PetHolderDictUtil._nested_fields()["pets"]
-        assert pets.kind == "list"
-        assert pets.resolve({"kind": "cat"}) is _CatDictUtil
-        assert pets.resolve({"kind": "dog"}) is _DogDictUtil
+        cat = {"kind": "cat", "meow": 3}
+        dog = {"kind": "dog", "woof": 4}
+        # list-hasher routes each element to the util matching its tag
+        assert pets([cat, dog]) == [_CatDictUtil.hash(cat), _DogDictUtil.hash(dog)]
 
 
 class _UnregisteredA(TOMBase):

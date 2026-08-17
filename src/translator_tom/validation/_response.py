@@ -25,8 +25,10 @@ def _validate_response(
     warnings, errors = validation_pipeline(
         semantic_validate(obj.message, extend_location(location, "message")),
         validate_many(
-            *obj.logs,
-            locations=get_list_locations(obj.logs, extend_location(location, "logs")),
+            *obj.logs_list,
+            locations=get_list_locations(
+                obj.logs_list, extend_location(location, "logs")
+            ),
         ),
         validate_many(
             *obj.workflow_list,

@@ -215,6 +215,30 @@ class TestMetaEdgeUpdate:
             "abundance",
         }
 
+    def test_qualifier_all_allowed_absorbs_concrete_values(self):
+        # applicable_values=None means "all allowed"; merging it with a concrete list
+        # must stay None (all allowed), not narrow to that list. Both directions.
+        for self_vals, other_vals in ((None, ["activity"]), (["activity"], None)):
+            a = _meta_edge(
+                qualifiers=[
+                    MetaQualifier(
+                        qualifier_type_id="biolink:subject_aspect_qualifier",
+                        applicable_values=self_vals,
+                    )
+                ]
+            )
+            b = _meta_edge(
+                qualifiers=[
+                    MetaQualifier(
+                        qualifier_type_id="biolink:subject_aspect_qualifier",
+                        applicable_values=other_vals,
+                    )
+                ]
+            )
+            a.update(b)
+            assert a.qualifiers is not None
+            assert a.qualifiers[0].applicable_values is None
+
     def test_qualifier_appends_new_type(self):
         a = _meta_edge(
             qualifiers=[

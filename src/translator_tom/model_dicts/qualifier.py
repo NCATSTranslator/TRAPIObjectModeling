@@ -8,6 +8,7 @@ from typing_extensions import TypedDict
 
 from translator_tom.model_dicts.meta_qualifier import MetaQualifierDict
 from translator_tom.models.qualifier import Qualifier, QualifierConstraint
+from translator_tom.models.shared import OBJECT_RE, SUBJECT_RE
 from translator_tom.utils.biolink import Biolink
 from translator_tom.utils.dict_util_base import DictUtil
 
@@ -118,22 +119,19 @@ class QualifierConstraintDictUtil(DictUtil[QualifierConstraintDict]):
             new_qualifier = cast("QualifierDict", {**qualifier})
             type_id = qualifier["qualifier_type_id"]
             value = qualifier["qualifier_value"]
-            if "object" in type_id:
-                new_qualifier["qualifier_type_id"] = type_id.replace(
-                    "object", "subject"
-                )
-            elif "subject" in type_id:
-                new_qualifier["qualifier_type_id"] = type_id.replace(
-                    "subject", "object"
-                )
-            elif inverse := (
-                type_id == "biolink:qualified_predicate" and Biolink.get_inverse(value)
-            ):
+            if OBJECT_RE.search(type_id):
+                new_qualifier["qualifier_type_id"] = OBJECT_RE.sub("subject", type_id)
+            elif SUBJECT_RE.search(type_id):
+                new_qualifier["qualifier_type_id"] = SUBJECT_RE.sub("object", type_id)
+            elif type_id == "biolink:qualified_predicate":
+                inverse = Biolink.get_inverse(value)
+                if not inverse:
+                    raise ValueError(
+                        f"Cannot invert qualified_predicate: no inverse for predicate {value}"
+                    )
                 new_qualifier["qualifier_value"] = inverse
             else:
-                raise ValueError(
-                    f"Cannot inverse qualifier because its value is non-inversible predicate {value}"
-                )
+                raise ValueError(f"Cannot invert qualifier of type {type_id}")
             new_qualifier_set.append(new_qualifier)
 
         return {"qualifier_set": new_qualifier_set}

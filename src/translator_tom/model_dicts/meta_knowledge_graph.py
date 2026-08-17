@@ -10,10 +10,7 @@ from translator_tom.model_dicts.meta_attribute import (
     MetaAttributeDict,
     MetaAttributeDictUtil,
 )
-from translator_tom.model_dicts.meta_qualifier import (
-    MetaQualifierDict,
-    MetaQualifierDictUtil,
-)
+from translator_tom.model_dicts.meta_qualifier import MetaQualifierDict
 from translator_tom.model_dicts.qualifier import (
     QualifierConstraintDict,
     QualifierConstraintDictUtil,
@@ -22,6 +19,7 @@ from translator_tom.models.meta_knowledge_graph import (
     MetaEdge,
     MetaKnowledgeGraph,
     MetaNode,
+    merged_applicable_values,
 )
 from translator_tom.models.shared import KnowledgeType
 from translator_tom.utils.biolink import Biolink
@@ -140,20 +138,24 @@ class MetaEdgeDictUtil(DictUtil[MetaEdgeDict]):
         new_quals_by_type = {qual["qualifier_type_id"]: qual for qual in other_quals}
         for type_id, qual in new_quals_by_type.items():
             if type_id in quals_by_type:
-                merged = list(
-                    set(
-                        MetaQualifierDictUtil.applicable_values_list(
-                            quals_by_type[type_id]
-                        )
-                    )
-                    | set(MetaQualifierDictUtil.applicable_values_list(qual))
-                )
-                if len(merged) > 0:
-                    quals_by_type[type_id]["applicable_values"] = merged
+                MetaEdgeDictUtil._merge_applicable_values(quals_by_type[type_id], qual)
             else:
                 quals_by_type[type_id] = qual
 
         meta_edge["qualifiers"] = list(quals_by_type.values())
+
+    @staticmethod
+    def _merge_applicable_values(
+        existing: MetaQualifierDict, other: MetaQualifierDict
+    ) -> None:
+        """Merge `other`'s applicable_values into `existing` in place (None absorbs any list)."""
+        merged = merged_applicable_values(
+            existing.get("applicable_values"), other.get("applicable_values")
+        )
+        if merged is None:
+            existing.pop("applicable_values", None)  # "all allowed": omit the key
+        else:
+            existing["applicable_values"] = merged
 
     @staticmethod
     def meets_attribute_constraints(

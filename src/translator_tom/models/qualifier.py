@@ -8,6 +8,7 @@ from pydantic import ConfigDict
 from typing_extensions import Self
 
 from translator_tom.models.meta_qualifier import MetaQualifier
+from translator_tom.models.shared import OBJECT_RE, SUBJECT_RE
 from translator_tom.utils.biolink import Biolink
 from translator_tom.utils.object_base import TOMBase
 
@@ -118,23 +119,20 @@ class QualifierConstraint(TOMBase):
         new_qualifier_set = list[Qualifier]()
         for qualifier in self.qualifier_set:
             new_qualifier = qualifier.model_copy()
-            if "object" in qualifier.qualifier_type_id:
-                new_qualifier.qualifier_type_id = qualifier.qualifier_type_id.replace(
-                    "object", "subject"
-                )
-            elif "subject" in qualifier.qualifier_type_id:
-                new_qualifier.qualifier_type_id = qualifier.qualifier_type_id.replace(
-                    "subject", "object"
-                )
-            elif inverse := (
-                qualifier.qualifier_type_id == "biolink:qualified_predicate"
-                and Biolink.get_inverse(qualifier.qualifier_value)
-            ):
+            type_id = qualifier.qualifier_type_id
+            if OBJECT_RE.search(type_id):
+                new_qualifier.qualifier_type_id = OBJECT_RE.sub("subject", type_id)
+            elif SUBJECT_RE.search(type_id):
+                new_qualifier.qualifier_type_id = SUBJECT_RE.sub("object", type_id)
+            elif type_id == "biolink:qualified_predicate":
+                inverse = Biolink.get_inverse(qualifier.qualifier_value)
+                if not inverse:
+                    raise ValueError(
+                        f"Cannot invert qualified_predicate: no inverse for predicate {qualifier.qualifier_value}"
+                    )
                 new_qualifier.qualifier_value = inverse
             else:
-                raise ValueError(
-                    f"Cannot inverse qualifier because its value is non-inversible predicate {qualifier.qualifier_value}"
-                )
+                raise ValueError(f"Cannot invert qualifier of type {type_id}")
             new_qualifier_set.append(new_qualifier)
 
         return QualifierConstraint(qualifier_set=new_qualifier_set)

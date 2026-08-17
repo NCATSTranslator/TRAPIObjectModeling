@@ -109,6 +109,27 @@ class TestUpdate:
         ResultDictUtil.update(r_dict, {"node_bindings": {}, "analyses": []})
         assert _dict_analysis_hashes(r_dict) == _model_analysis_hashes(r)
 
+    def test_dedupes_internal_duplicate_analyses_in_other(self):
+        # `other` carries two equal-hash analyses absent from self; assert the absolute
+        # dedup (count), not just parity, since the bug was identical on both sides.
+        r = _result(
+            "n0", "CHEBI:1", [Analysis(resource_id="infores:x", edge_bindings={})]
+        )
+        other = _result(
+            "n0",
+            "CHEBI:1",
+            [
+                Analysis(resource_id="infores:y", edge_bindings={}),
+                Analysis(resource_id="infores:y", edge_bindings={}),
+            ],
+        )
+        r_dict = r.to_dict()
+        r.update(other)
+        ResultDictUtil.update(r_dict, other.to_dict())
+        assert len(r.analyses) == 2
+        assert len(r_dict["analyses"]) == 2
+        assert _dict_analysis_hashes(r_dict) == _model_analysis_hashes(r)
+
 
 class TestMergeResults:
     def test_parity(self):

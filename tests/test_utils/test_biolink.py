@@ -52,6 +52,17 @@ class TestIsValidAssociation:
         # `ContributorAssociation` is a direct child of `association` in biolink.
         assert Biolink.is_valid_association("biolink:ContributorAssociation") is True
 
+    def test_root_association_returns_true(self):
+        # The base `Association` itself is a valid association (get_ancestors is reflexive).
+        assert Biolink.is_valid_association("biolink:Association") is True
+
+    def test_deeply_nested_association_returns_true(self):
+        # A grandchild+ association whose direct parent is not "association".
+        assert (
+            Biolink.is_valid_association("biolink:ChemicalAffectsGeneAssociation")
+            is True
+        )
+
 
 class TestGetAncestors:
     def test_includes_self_and_parents(self):

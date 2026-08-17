@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from enum import Enum
 from typing import Annotated, Any, Literal, final
 
@@ -40,6 +41,11 @@ prefix, such as http://identifiers.org/uniprot/, to form a full URI.
 
 Infores = CURIE
 """A CURIE which begins with `infores:`"""
+
+# Match "subject"/"object" only as whole words when reversing SPO constraints, so a
+# free-form id like "biolink:objective_*" isn't mangled into "subjective_*".
+SUBJECT_RE = re.compile(r"(?<![a-zA-Z])subject(?![a-zA-Z])")
+OBJECT_RE = re.compile(r"(?<![a-zA-Z])object(?![a-zA-Z])")
 
 
 def infores(ref: str) -> Infores:
