@@ -49,7 +49,7 @@ class AsyncQueryResponse(TOMBase):
     """A brief human-readable description of the result of the async_query submission."""
 
     job_id: str
-    """An identifier for the submitted job that can be used with async_query_status to receive an update on the status of the job."""
+    """An identifier for the submitted job that can be used with /async_query_status to receive an update on the status of the job."""
 
 
 class AsyncQueryStatusResponse(TOMBase):
