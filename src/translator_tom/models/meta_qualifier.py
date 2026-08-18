@@ -1,5 +1,9 @@
 from __future__ import annotations
 
+from typing import Annotated
+
+from pydantic import Field
+
 from translator_tom.utils.biolink import Biolink
 from translator_tom.utils.object_base import TOMBase
 
@@ -12,7 +16,7 @@ class MetaQualifier(TOMBase):
     qualifier_type_id: Biolink.Qualifier
     """The CURIE of the qualifier type."""
 
-    applicable_values: list[str] | None = None
+    applicable_values: Annotated[list[str], Field(min_length=1)] | None = None
     """The list of values that are possible for this qualifier."""
 
     @property

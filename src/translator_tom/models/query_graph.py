@@ -4,10 +4,11 @@ from enum import Enum
 from typing import Annotated, Literal
 
 from pydantic import Field
+from typing_extensions import Self
 
 from translator_tom.models.attribute import AttributeConstraint
+from translator_tom.models.constraints import QEdgeConstraints
 from translator_tom.models.path_constraint import PathConstraint
-from translator_tom.models.qualifier import QualifierConstraint
 from translator_tom.models.shared import (
     CURIE,
     KnowledgeType,
@@ -19,8 +20,6 @@ from translator_tom.utils.biolink import Biolink
 from translator_tom.utils.object_base import TOMBase
 
 __all__ = [
-    "BaseQueryGraph",
-    "PathfinderQueryGraph",
     "QEdge",
     "QNode",
     "QPath",
@@ -30,15 +29,15 @@ __all__ = [
 ]
 
 
-class BaseQueryGraph(TOMBase):
+class QueryGraph(TOMBase):
     """A graph representing a biomedical question.
 
-    It serves as a template for
-    each result (answer), where each bound knowledge graph node/edge is
-    expected to obey the constraints of the associated query graph element.
+    It serves as a template for each Result (answer), where each bound
+    knowledge graph node/edge is expected to obey the constraints of the
+    associated QueryGraph element.
     """
 
-    nodes: dict[QNodeID, QNode]
+    nodes: Annotated[dict[QNodeID, QNode], Field(min_length=1)]
     """The node specifications.
 
     The keys of this map are unique node
@@ -46,11 +45,7 @@ class BaseQueryGraph(TOMBase):
     on bound nodes.
     """
 
-
-class QueryGraph(BaseQueryGraph):
-    """A non-Pathfinder query SHOULD have edges following the QEdge schema and SHOULD NOT have paths."""
-
-    edges: dict[QEdgeID, QEdge]
+    edges: Annotated[dict[QEdgeID, QEdge], Field(min_length=1)] | None = None
     """The edge specifications.
 
     The keys of this map are unique edge
@@ -58,17 +53,30 @@ class QueryGraph(BaseQueryGraph):
     on bound edges, in addition to specifying the subject and object QNodes.
     """
 
-
-class PathfinderQueryGraph(BaseQueryGraph):
-    """A Pathfinder query SHOULD have paths following the QPath schema and SHOULD NOT have edges."""
-
-    paths: Annotated[dict[QPathID, QPath], Field(min_length=1, max_length=1)]
+    paths: Annotated[dict[QPathID, QPath], Field(min_length=1, max_length=1)] | None = (
+        None
+    )
     """The QueryGraph path specification, used only for pathfinder type queries.
 
     The keys of this map are unique path identifiers and the
     corresponding values include the constraints on bound paths, in
     addition to specifying the subject, object, and intermediate QNodes.
     """
+
+    @property
+    def edges_dict(self) -> dict[QEdgeID, QEdge]:
+        """Get the edges as a guaranteed dict, even if they are represented as None."""
+        return self.edges if self.edges is not None else {}
+
+    @property
+    def paths_dict(self) -> dict[QPathID, QPath]:
+        """Get the paths as a guaranteed dict, even if they are represented as None."""
+        return self.paths if self.paths is not None else {}
+
+    @classmethod
+    def new(cls) -> Self:
+        """Return an empty instance, without having to pass required containers."""
+        return cls.model_construct(nodes={})
 
 
 class SetInterpretationEnum(str, Enum):
@@ -83,37 +91,40 @@ class SetInterpretationEnum(str, Enum):
     ALL = "ALL"
     """ALL means that all specified CURIES MUST appear in each Result."""
 
+    COLLATE = "COLLATE"
+    """COLLATE indicates that multiple matching nodes MUST be collated into a single Result, rather than separated into separate Results."""
 
-SetInterpretation = Literal["BATCH", "MANY", "ALL"]
+
+SetInterpretation = Literal["BATCH", "MANY", "ALL", "COLLATE"]
 
 
 class QNode(TOMBase):
     """A node in the QueryGraph used to represent an entity in a query.
 
-    If a CURIE is not specified, any nodes matching the category
+    If no CURIEs are not specified, any nodes matching the category
     of the QNode will be returned in the Results.
     """
 
     ids: Annotated[list[CURIE] | None, Field(min_length=1)] = None
-    """A CURIE identifier (or list of identifiers) for this node.
+    """A list of one or more CURIE identifiers for this node.
 
-    The 'ids' field will hold a list of CURIEs only in the case of a
+    The 'ids' property will hold a list of CURIEs only in the case of a
     BATCH set_interpretation, where each CURIE is queried
     separately. If a list of queried CURIEs is to be considered as a
-    set (as under a MANY or ALL set_interpretation), the 'ids' field
+    set (as under a MANY or ALL set_interpretation), the 'ids' property
     will hold a single id representing this set, and the individual members
-    of this set will be captured in a separate 'member_ids' field.
+    of this set will be captured in a separate 'member_ids' property.
     Note that the set id MUST be created as a UUID by the system that
     defines the queried set, using a centralized nodenorm service.
     Note also that downstream systems MUST re-use the original set UUID
-    in the messages they create/send, which will facilitate merging or
+    in the messages that they create/send to facilitate merging or
     caching operations.
     """
 
     categories: Annotated[list[Biolink.Entity] | None, Field(min_length=1)] = None
-    """These should be Biolink Model categories and are allowed to be of type 'abstract' or 'mixin' (only in QGraphs!).
+    """Biolink Model categories, which are allowed to be of type 'abstract' or 'mixin' (only in QGraphs!).
 
-    Use of 'deprecated' categories should be avoided.
+    Use of deprecated categories SHOULD be avoided.
     """
 
     set_interpretation: SetInterpretation | None = None
@@ -125,18 +136,23 @@ class QNode(TOMBase):
     MANY means that member CURIEs MUST form one or more
     sets in the Results, and sets with more members are generally
     considered more desirable that sets with fewer members.
-    If this property is missing or null, the default is BATCH.
+    Only when there are no ids provided, set_interpretation MAY be
+    set to COLLATE to indicate that multiple matching nodes MUST be
+    collated into a single Result, rather than separated into
+    separate Results. If this property is absent, the default is
+    BATCH.
     """
 
-    member_ids: list[CURIE] | None = None
+    member_ids: Annotated[list[CURIE] | None, Field(min_length=1)] = None
     """A list of CURIE identifiers for members of a queried set.
 
-    This field MUST be populated under a set_interpretation of MANY
-    or ALL, when the 'ids' field holds a UUID representing the set
-    itself. This field MUST NOT be used under a set_interpretation
-    of BATCH."""
+    This property MUST be populated under a set_interpretation of MANY
+    or ALL, when the 'ids' property holds a UUID representing the set
+    itself. This property MUST NOT be used under a set_interpretation
+    of BATCH or COLLATE or when set_interpretation is absent.
+    """
 
-    constraints: list[AttributeConstraint] | None = None
+    constraints: Annotated[list[AttributeConstraint] | None, Field(min_length=1)] = None
     """A list of constraints applied to a query node.
 
     If there are multiple items, they must all be true (equivalent to AND).
@@ -181,15 +197,14 @@ class QEdge(TOMBase):
     knowledge sources. If the value is 'inferred', then the client
     wants the server to get creative and connect the subject and
     object in more speculative and non-direct-lookup ways. If this
-    property is absent or null, it MUST be assumed to mean
-    'lookup'. This feature is currently experimental and may be
-    further extended in the future.
+    property is absent, it MUST be assumed to mean 'lookup'.
     """
 
     predicates: Annotated[list[Biolink.Predicate] | None, Field(min_length=1)] = None
     """These should be Biolink Model predicates and are allowed to be of type 'abstract' or 'mixin' (only in QGraphs!).
 
-    Use of 'deprecated' predicates should be avoided."""
+    Use of 'deprecated' predicates SHOULD be avoided.
+    """
 
     subject: QNodeID
     """Corresponds to the map key identifier of the subject concept node anchoring the query filter pattern for the query relationship edge."""
@@ -197,38 +212,18 @@ class QEdge(TOMBase):
     object: QNodeID
     """Corresponds to the map key identifier of the object concept node anchoring the query filter pattern for the query relationship edge."""
 
-    attribute_constraints: list[AttributeConstraint] | None = None
-    """A list of attribute constraints applied to a query edge. If there are multiple items, they must all be true (equivalent to AND)."""
+    constraints: QEdgeConstraints | None = None
+    """An object containing all constraints placed on the QEdge.
 
-    qualifier_constraints: list[QualifierConstraint] | None = None
-    """A list of QualifierConstraints that provide nuance to the QEdge.
-
-    If multiple QualifierConstraints are provided, there is an OR
-    relationship between them. If the QEdge has multiple
-    predicates or if the QNodes that correspond to the subject or
-    object of this QEdge have multiple categories or multiple
-    curies, then qualifier_constraints MUST NOT be specified
-    because these complex use cases are not supported at this time.
+    ALL edges bound to this QEdge MUST conform to ALL given constraints;
+    underlying edges (such as those appearing in supporting graphs)
+    are not required to conform to the given constraints.
     """
 
     @property
     def predicates_list(self) -> list[Biolink.Predicate]:
         """Get the predicates as a guaranteed list, even if they are represented as None."""
         return self.predicates if self.predicates is not None else []
-
-    @property
-    def attribute_constraints_list(self) -> list[AttributeConstraint]:
-        """Get the attribute_constraints as a guaranteed list, even if they are represented as None."""
-        return (
-            self.attribute_constraints if self.attribute_constraints is not None else []
-        )
-
-    @property
-    def qualifier_constraints_list(self) -> list[QualifierConstraint]:
-        """Get the qualifier_constraints as a guaranteed list, even if they are represented as None."""
-        return (
-            self.qualifier_constraints if self.qualifier_constraints is not None else []
-        )
 
     def get_inverse(self) -> QEdge:
         """Get an inverse copy of the QEdge."""
@@ -249,12 +244,8 @@ class QEdge(TOMBase):
             predicates=inverse_predicates or None,
             subject=self.object,
             object=self.subject,
-            attribute_constraints=(
-                [ac.get_inverse() for ac in self.attribute_constraints_list] or None
-            ),
-            qualifier_constraints=(
-                [qconstr.get_inverse() for qconstr in self.qualifier_constraints_list]
-                or None
+            constraints=(
+                self.constraints.get_inverse() if self.constraints is not None else None
             ),
         )
 
@@ -262,9 +253,9 @@ class QEdge(TOMBase):
 class QPath(TOMBase):
     """A path in the QueryGraph used for pathfinder queries.
 
-    Both subject and object MUST reference QNodes that have a CURIE in their ids field.
-    Paths returned that bind to this QPath can represent some
-    relationship between subject and object.
+    Both subject and object MUST reference QNodes that have a CURIE in their ids property.
+    Paths returned that bind to this QPath MUST represent some
+    relationship between the subject and object.
     """
 
     subject: QNodeID
@@ -279,15 +270,14 @@ class QPath(TOMBase):
     If no predicate is listed, the ARA SHOULD find paths such that the
     relationship represented by the path is a "related_to" relationship.
     These should be Biolink Model predicates and are allowed to be of type
-    'abstract' or 'mixin' (only in QGraphs!). Use of 'deprecated'
-    predicates should be avoided.
+    'abstract' or 'mixin'. Use of 'deprecated' predicates SHOULD be avoided.
     """
 
     constraints: Annotated[list[PathConstraint] | None, Field(min_length=1)] = None
     """A list of constraints for the QPath.
 
-    If multiple constraints are listed, it should be interpreted as an OR relationship. Each path returned is
-    required to comply with at least one constraint.
+    If multiple constraints are listed, it should be interpreted as an OR
+    relationship. Each path returned MUST comply with at least one constraint.
     """
 
     @property
@@ -302,6 +292,4 @@ class QPath(TOMBase):
 
 
 # Don't defer model builds
-BaseQueryGraph.model_rebuild()
 QueryGraph.model_rebuild()
-PathfinderQueryGraph.model_rebuild()

@@ -12,8 +12,8 @@ from translator_tom.model_dicts.meta_attribute import (
 )
 from translator_tom.model_dicts.meta_qualifier import MetaQualifierDict
 from translator_tom.model_dicts.qualifier import (
-    QualifierConstraintDict,
-    QualifierConstraintDictUtil,
+    QualifierDictUtil,
+    QualifierSetConstraint,
 )
 from translator_tom.models.meta_knowledge_graph import (
     MetaEdge,
@@ -168,10 +168,10 @@ class MetaEdgeDictUtil(DictUtil[MetaEdgeDict]):
 
     @staticmethod
     def meets_qualifier_constraints(
-        meta_edge: MetaEdgeDict, constraints: list[QualifierConstraintDict]
+        meta_edge: MetaEdgeDict, constraints: list[QualifierSetConstraint]
     ) -> bool:
         """Check if the meta edge satisfies the qualifier constraints."""
-        return QualifierConstraintDictUtil.set_met_by(
+        return QualifierDictUtil.constraint_set_met_by(
             constraints, MetaEdgeDictUtil.qualifiers_list(meta_edge)
         )
 

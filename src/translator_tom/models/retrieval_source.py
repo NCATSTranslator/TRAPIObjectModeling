@@ -1,8 +1,9 @@
 from __future__ import annotations
 
 from enum import Enum
-from typing import Literal
+from typing import Annotated, Literal
 
+from pydantic import Field
 from typing_extensions import override
 
 from translator_tom.models.shared import Infores
@@ -55,21 +56,21 @@ class RetrievalSource(TOMBase):
     'aggregator' or 'supporting data' sources.
     """
 
-    upstream_resource_ids: list[Infores] | None = None
+    upstream_resource_ids: Annotated[list[Infores], Field(min_length=1)] | None = None
     """An upstream InformationResource from which the resource being described directly retrieved a record of the knowledge expressed in the Edge, or data used to generate this knowledge.
 
     This is an array because there are cases where a merged Edge
     holds knowledge that was retrieved from multiple sources. e.g.
-    an Edge provided by the ARAGORN ARA can expressing knowledge it
+    an Edge provided by the ARAGORN ARA can express knowledge it
     retrieved from both the automat-mychem-info and molepro KPs,
     which both provided it with records of this single fact.
     """
 
-    source_record_urls: list[str] | None = None
-    """A URL linking to a specific web page or document provided by the source, that contains a record of the knowledge expressed in the Edge.
+    source_record_urls: Annotated[list[str], Field(min_length=1)] | None = None
+    """A URL linking to a specific web page or document provided by the source that contains a record of the knowledge expressed in the Edge.
 
     If the knowledge is contained in more than one web page on
-    an Information Resource's site, urls MAY be provided for each.
+    an information resource's site, urls MAY be provided for each.
     For example, Therapeutic Targets Database (TTD) has separate web
     pages for 'Imatinib' and its protein target KIT, both of which hold
     the claim that 'the KIT protein is a therapeutic target for Imatinib'.

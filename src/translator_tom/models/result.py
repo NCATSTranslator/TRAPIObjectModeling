@@ -1,12 +1,12 @@
 from __future__ import annotations
 
-import itertools
+import copy
 from typing import Annotated
 
 from pydantic import Field
 from typing_extensions import override
 
-from translator_tom.models.analysis import Analysis, PathfinderAnalysis
+from translator_tom.models.analysis import Analysis
 from translator_tom.models.node_binding import NodeBinding
 from translator_tom.models.shared import EdgeID, Infores, QNodeID
 from translator_tom.utils.object_base import TOMBase
@@ -21,32 +21,35 @@ class Result(TOMBase):
     to knowledge graph node mappings) and a list of Analysis objects.
     """
 
-    node_bindings: dict[QNodeID, Annotated[list[NodeBinding], Field(min_length=1)]]
-    """The dictionary of Input Query Graph to Result Knowledge Graph node bindings where the dictionary keys are the key identifiers of the Query Graph nodes and the associated values of those keys are instances of NodeBinding schema type (see below).
+    node_bindings: Annotated[dict[QNodeID, NodeBinding], Field(min_length=1)]
+    """The dictionary of input QNodes to KnowledgeGraph Node bindings where the dictionary keys are the key identifiers of the QNodes and the associated values of those keys are instances of NodeBinding schema type (see below).
 
-    This value is an array of NodeBindings since a given query node may have multiple
-    knowledge graph Node bindings in the result.
+    Because a given QNode may have multiple KnowledgeGraph Nodes bound in the result,
+    the NodeBinding object may list multiple KnowledgeGraph Nodes.
     """
 
-    analyses: list[Analysis | PathfinderAnalysis]
-    """The list of all Analysis components that contribute to the result."""
+    analyses: Annotated[list[Analysis], Field(min_length=1)] | None = None
+    """The list of all Analysis components that contribute to the result.
+
+    See below for Analysis components.
+    """
+
+    @property
+    def analyses_list(self) -> list[Analysis]:
+        """Get the analyses as a guaranteed list, even if they are represented as None."""
+        return self.analyses if self.analyses is not None else []
 
     @override
     def _hash_repr(self) -> object:
         return {
-            qnode_id: frozenset(b.hash() for b in bindings)
-            for qnode_id, bindings in self.node_bindings.items()
+            qnode_id: binding.hash() for qnode_id, binding in self.node_bindings.items()
         }
 
     def normalize(self, mapping: dict[EdgeID, EdgeID]) -> None:
         """Normalize the result given a mapping of old:new EdgeIDs."""
-        for analysis in self.analyses:
-            if not isinstance(analysis, Analysis):
-                continue
-            for binding in itertools.chain(
-                *(bindings for bindings in analysis.edge_bindings.values())
-            ):
-                binding.id = mapping.get(binding.id, binding.id)
+        for analysis in self.analyses_list:
+            for binding in analysis.edge_bindings_dict.values():
+                binding.ids = [mapping.get(edge_id, edge_id) for edge_id in binding.ids]
 
     @staticmethod
     def normalize_list(results: list[Result], mapping: dict[EdgeID, EdgeID]) -> None:
@@ -59,7 +62,7 @@ class Result(TOMBase):
         if not other.analyses:
             return
         if not self.analyses:
-            self.analyses = other.analyses
+            self.analyses = copy.deepcopy(other.analyses)
             return
 
         by_hash = {ana.hash(): ana for ana in self.analyses}
@@ -67,11 +70,12 @@ class Result(TOMBase):
             h = analysis.hash()
             existing = by_hash.get(h)
             if existing is not None:
-                existing.update(analysis)  # ty: ignore[invalid-argument-type] Equality means they're the same type
+                existing.update(analysis)
             else:
-                self.analyses.append(analysis)
+                new_analysis = copy.deepcopy(analysis)
+                self.analyses.append(new_analysis)
                 # register so a later same-hash analysis in `other` merges, not re-appends
-                by_hash[h] = analysis
+                by_hash[h] = new_analysis
 
     @staticmethod
     def merge_results(
@@ -101,16 +105,12 @@ class Result(TOMBase):
         Useful when a service unintentionally adds multiple analyses to a single result,
         Combines all of those analyses.
         """
-        merged: dict[
-            tuple[type[Analysis | PathfinderAnalysis], Infores],
-            Analysis | PathfinderAnalysis,
-        ] = {}
-        for analysis in self.analyses:
-            key = (type(analysis), analysis.resource_id)
-            existing = merged.get(key)
+        merged = dict[Infores, Analysis]()
+        for analysis in self.analyses_list:
+            existing = merged.get(analysis.resource_id)
             if existing is None:
-                merged[key] = analysis
+                merged[analysis.resource_id] = analysis
             else:
-                existing.update(analysis)  # ty: ignore[invalid-argument-type] key includes type, so they match
+                existing.update(analysis)
 
-        self.analyses = list(merged.values())
+        self.analyses = list(merged.values()) or None

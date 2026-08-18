@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import copy
-from collections.abc import Mapping
+from typing import TypeVar
 
 from typing_extensions import NotRequired, TypedDict
 
@@ -14,78 +14,24 @@ from translator_tom.model_dicts.path_binding import (
     PathBindingDict,
     PathBindingDictUtil,
 )
-from translator_tom.models.analysis import Analysis, BaseAnalysis, PathfinderAnalysis
+from translator_tom.models.analysis import Analysis
 from translator_tom.models.shared import CURIE, AuxGraphID, QEdgeID, QPathID
-from translator_tom.utils.dict_util_base import DictUtil, register_union_discriminator
+from translator_tom.utils.dict_util_base import DictUtil
 from translator_tom.utils.hash import tomhash
 
-__all__ = [
-    "AnalysisDict",
-    "AnalysisDictUtil",
-    "BaseAnalysisDict",
-    "BaseAnalysisDictUtil",
-    "PathfinderAnalysisDict",
-    "PathfinderAnalysisDictUtil",
-]
+__all__ = ["AnalysisDict", "AnalysisDictUtil"]
+
+_BindingDictT = TypeVar("_BindingDictT", EdgeBindingDict, PathBindingDict)
 
 
-class BaseAnalysisDict(TypedDict):
+class AnalysisDict(TypedDict):
     resource_id: CURIE
+    edge_bindings: NotRequired[dict[QEdgeID, EdgeBindingDict] | None]
+    path_bindings: NotRequired[dict[QPathID, PathBindingDict] | None]
     score: NotRequired[float | None]
     support_graphs: NotRequired[list[AuxGraphID] | None]
     scoring_method: NotRequired[str | None]
     attributes: NotRequired[list[AttributeDict] | None]
-
-
-def _update_base(analysis: BaseAnalysisDict, other: BaseAnalysisDict) -> None:
-    """Merge the shared BaseAnalysis fields (attributes, support graphs) in-place."""
-    analysis_attrs = analysis.get("attributes")
-    other_attrs = other.get("attributes")
-    if (not analysis_attrs) and other_attrs:
-        analysis["attributes"] = other_attrs
-    elif analysis_attrs and other_attrs:
-        AttributeDictUtil.merge_attribute_lists(analysis_attrs, other_attrs)
-
-    analysis_sg = analysis.get("support_graphs")
-    other_sg = other.get("support_graphs")
-    if (not analysis_sg) and other_sg:
-        analysis["support_graphs"] = other_sg
-    elif analysis_sg and other_sg:
-        analysis["support_graphs"] = list(set(analysis_sg) | set(other_sg))
-
-
-class BaseAnalysisDictUtil(DictUtil[BaseAnalysisDict]):
-    """Utility methods for `BaseAnalysisDict`, mirroring those on the `BaseAnalysis` model."""
-
-    _model = BaseAnalysis
-
-    @staticmethod
-    def support_graphs_list(analysis: BaseAnalysisDict) -> list[AuxGraphID]:
-        """Get the support graphs as a guaranteed list, even if they are represented as None."""
-        support_graphs = analysis.get("support_graphs")
-        return support_graphs if support_graphs is not None else []
-
-    @staticmethod
-    def attributes_list(analysis: BaseAnalysisDict) -> list[AttributeDict]:
-        """Get the attributes as a guaranteed list, even if they are represented as None."""
-        attributes = analysis.get("attributes")
-        return attributes if attributes is not None else []
-
-    @classmethod
-    def hash(cls, obj: BaseAnalysisDict) -> str:
-        """Hash matching `BaseAnalysis.hash` (resource, score, support graphs, method)."""
-        return tomhash(
-            (
-                obj["resource_id"],
-                obj.get("score"),
-                frozenset(cls.support_graphs_list(obj)),
-                obj.get("scoring_method"),
-            )
-        )
-
-
-class AnalysisDict(BaseAnalysisDict):
-    edge_bindings: dict[QEdgeID, list[EdgeBindingDict]]
 
 
 class AnalysisDictUtil(DictUtil[AnalysisDict]):
@@ -93,19 +39,46 @@ class AnalysisDictUtil(DictUtil[AnalysisDict]):
 
     _model = Analysis
 
-    # AnalysisDict is a BaseAnalysisDict, so mirror BaseAnalysis's inherited accessors.
-    support_graphs_list = staticmethod(BaseAnalysisDictUtil.support_graphs_list)
-    attributes_list = staticmethod(BaseAnalysisDictUtil.attributes_list)
+    @staticmethod
+    def edge_bindings_dict(analysis: AnalysisDict) -> dict[QEdgeID, EdgeBindingDict]:
+        """Get the edge_bindings as a guaranteed dict, even if they are represented as None."""
+        edge_bindings = analysis.get("edge_bindings")
+        return edge_bindings if edge_bindings is not None else {}
+
+    @staticmethod
+    def path_bindings_dict(analysis: AnalysisDict) -> dict[QPathID, PathBindingDict]:
+        """Get the path_bindings as a guaranteed dict, even if they are represented as None."""
+        path_bindings = analysis.get("path_bindings")
+        return path_bindings if path_bindings is not None else {}
+
+    @staticmethod
+    def support_graphs_list(analysis: AnalysisDict) -> list[AuxGraphID]:
+        """Get the support graphs as a guaranteed list, even if they are represented as None."""
+        support_graphs = analysis.get("support_graphs")
+        return support_graphs if support_graphs is not None else []
+
+    @staticmethod
+    def attributes_list(analysis: AnalysisDict) -> list[AttributeDict]:
+        """Get the attributes as a guaranteed list, even if they are represented as None."""
+        attributes = analysis.get("attributes")
+        return attributes if attributes is not None else []
 
     @classmethod
     def hash(cls, obj: AnalysisDict) -> str:
-        """Hash matching `Analysis.hash` (base analysis plus edge bindings)."""
+        """Hash matching `Analysis.hash` (scalars, support graphs, both binding maps)."""
         return tomhash(
             (
-                BaseAnalysisDictUtil.hash(obj),
+                obj["resource_id"],
+                obj.get("score"),
+                frozenset(cls.support_graphs_list(obj)),
+                obj.get("scoring_method"),
                 {
-                    qedge_id: frozenset(EdgeBindingDictUtil.hash(b) for b in bindings)
-                    for qedge_id, bindings in obj["edge_bindings"].items()
+                    qedge_id: EdgeBindingDictUtil.hash(binding)
+                    for qedge_id, binding in cls.edge_bindings_dict(obj).items()
+                },
+                {
+                    qpath_id: PathBindingDictUtil.hash(binding)
+                    for qpath_id, binding in cls.path_bindings_dict(obj).items()
                 },
             )
         )
@@ -113,75 +86,47 @@ class AnalysisDictUtil(DictUtil[AnalysisDict]):
     @staticmethod
     def update(analysis: AnalysisDict, other: AnalysisDict) -> None:
         """Update the analysis in-place with another analysis."""
-        _update_base(analysis, other)
-        for k in other["edge_bindings"]:
-            if k in analysis["edge_bindings"]:
-                # Dedupe by hash, existing bindings win
-                merged = {
-                    EdgeBindingDictUtil.hash(b): b for b in analysis["edge_bindings"][k]
-                }
-                for b in other["edge_bindings"][k]:
-                    h = EdgeBindingDictUtil.hash(b)
-                    if h not in merged:  # copy only genuinely-new bindings
-                        merged[h] = copy.deepcopy(b)
-                analysis["edge_bindings"][k] = list(merged.values())
+        analysis_attrs = analysis.get("attributes")
+        other_attrs = other.get("attributes")
+        if (not analysis_attrs) and other_attrs:
+            analysis["attributes"] = other_attrs
+        elif analysis_attrs and other_attrs:
+            AttributeDictUtil.merge_attribute_lists(analysis_attrs, other_attrs)
+
+        analysis_sg = analysis.get("support_graphs")
+        other_sg = other.get("support_graphs")
+        if (not analysis_sg) and other_sg:
+            analysis["support_graphs"] = other_sg
+        elif analysis_sg and other_sg:
+            analysis["support_graphs"] = list(set(analysis_sg) | set(other_sg))
+
+        other_eb = other.get("edge_bindings")
+        if other_eb:
+            analysis_eb = analysis.get("edge_bindings")
+            if analysis_eb is None:
+                analysis["edge_bindings"] = copy.deepcopy(other_eb)
             else:
-                analysis["edge_bindings"][k] = copy.deepcopy(other["edge_bindings"][k])
+                AnalysisDictUtil._merge_binding_map(analysis_eb, other_eb)
 
-
-class PathfinderAnalysisDict(BaseAnalysisDict):
-    path_bindings: dict[QPathID, list[PathBindingDict]]
-
-
-class PathfinderAnalysisDictUtil(DictUtil[PathfinderAnalysisDict]):
-    """Utility methods for `PathfinderAnalysisDict`, mirroring the `PathfinderAnalysis` model."""
-
-    _model = PathfinderAnalysis
-
-    # PathfinderAnalysisDict is a BaseAnalysisDict, so mirror BaseAnalysis's accessors.
-    support_graphs_list = staticmethod(BaseAnalysisDictUtil.support_graphs_list)
-    attributes_list = staticmethod(BaseAnalysisDictUtil.attributes_list)
-
-    @classmethod
-    def hash(cls, obj: PathfinderAnalysisDict) -> str:
-        """Hash matching `PathfinderAnalysis.hash` (base analysis plus path bindings)."""
-        return tomhash(
-            (
-                BaseAnalysisDictUtil.hash(obj),
-                {
-                    qpath_id: frozenset(PathBindingDictUtil.hash(b) for b in bindings)
-                    for qpath_id, bindings in obj["path_bindings"].items()
-                },
-            )
-        )
+        other_pb = other.get("path_bindings")
+        if other_pb:
+            analysis_pb = analysis.get("path_bindings")
+            if analysis_pb is None:
+                analysis["path_bindings"] = copy.deepcopy(other_pb)
+            else:
+                AnalysisDictUtil._merge_binding_map(analysis_pb, other_pb)
 
     @staticmethod
-    def update(analysis: PathfinderAnalysisDict, other: PathfinderAnalysisDict) -> None:
-        """Update the analysis in-place with another analysis."""
-        _update_base(analysis, other)
-        for k in other["path_bindings"]:
-            if k in analysis["path_bindings"]:
-                # Dedupe by hash, existing bindings win
-                merged = {
-                    PathBindingDictUtil.hash(b): b for b in analysis["path_bindings"][k]
-                }
-                for b in other["path_bindings"][k]:
-                    h = PathBindingDictUtil.hash(b)
-                    if h not in merged:  # copy only genuinely-new bindings
-                        merged[h] = copy.deepcopy(b)
-                analysis["path_bindings"][k] = list(merged.values())
+    def _merge_binding_map(
+        target: dict[str, _BindingDictT], other: dict[str, _BindingDictT]
+    ) -> None:
+        """Merge `other` into `target` in-place, unioning each binding's ids per key."""
+        for key, binding in other.items():
+            existing = target.get(key)
+            if existing is None:
+                target[key] = copy.deepcopy(binding)
             else:
-                analysis["path_bindings"][k] = copy.deepcopy(other["path_bindings"][k])
-
-
-def _discriminate_analysis(
-    value: Mapping[str, object],
-) -> type[Analysis | PathfinderAnalysis]:
-    """Pick the concrete analysis model for a raw dict (`path_bindings` -> Pathfinder)."""
-    return PathfinderAnalysis if "path_bindings" in value else Analysis
-
-
-# `Result.analyses` is an `Analysis | PathfinderAnalysis` union with no pydantic
-# discriminator. `Result.hash` ignores `analyses`, so this isn't hit by base hashing
-# today, but register it so any future base-hashed use resolves correctly.
-register_union_discriminator((Analysis, PathfinderAnalysis), _discriminate_analysis)
+                # ids identify a set of KG edges/aux graphs; union, deduped, order-stable.
+                existing["ids"] = list(
+                    dict.fromkeys((*existing["ids"], *binding["ids"]))
+                )

@@ -1,8 +1,10 @@
 from __future__ import annotations
 
+from typing import Annotated
+
+from pydantic import Field
 from typing_extensions import override
 
-from translator_tom.models.attribute import Attribute
 from translator_tom.models.shared import CURIE
 from translator_tom.utils.object_base import TOMBase
 
@@ -10,36 +12,17 @@ __all__ = ["NodeBinding"]
 
 
 class NodeBinding(TOMBase):
-    """An instance of NodeBinding is a single KnowledgeGraph Node mapping, identified by the corresponding 'id' object key identifier of the Node within the Knowledge Graph.
+    """A NodeBinding object defines all relevant KnowledgeGraph Node mappings, identified by the corresponding object key identifier(s) of the Node(s) within the Knowledge Graph.
 
-    Instances of NodeBinding may include extra annotation in the form of additional properties
-    (such annotation is not yet fully standardized).
-    Each Node Binding must bind directly to node in the original Query Graph.
+    Instances of NodeBinding may
+    include extra annotation in the form of additional properties.
+    (such annotation is not yet fully standardized). Each Node
+    Binding must bind directly to node in the original Query Graph.
     """
 
-    id: CURIE
-    """The CURIE of a Node within the Knowledge Graph."""
-
-    query_id: CURIE | None = None
-    """An optional property to provide the CURIE in the QueryGraph to which this binding applies.
-
-    If the bound QNode does not have an
-    an 'id' property or if it is empty, then this query_id MUST be
-    null or absent. If the bound QNode has one or more CURIEs
-    as an 'id' and this NodeBinding's 'id' refers to a QNode 'id'
-    in a manner where the CURIEs are different (typically due to
-    the NodeBinding.id being a descendant of a QNode.id), then
-    this query_id MUST be provided. In other cases, there is no
-    ambiguity, and this query_id SHOULD NOT be provided.
-    """
-
-    attributes: list[Attribute]
-    """A list of attributes providing further information about the node binding.
-    This is not intended for capturing node attributes
-    and should only be used for properties that vary from result to
-    result.
-    """
+    ids: Annotated[list[CURIE], Field(min_length=1)]
+    """The CURIEs of one or more Nodes within the Knowledge Graph."""
 
     @override
     def _hash_repr(self) -> object:
-        return (self.id, self.query_id, frozenset(a.hash() for a in self.attributes))
+        return frozenset(self.ids)

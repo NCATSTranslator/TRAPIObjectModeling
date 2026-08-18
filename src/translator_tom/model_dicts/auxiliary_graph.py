@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from typing_extensions import TypedDict
 
-from translator_tom.model_dicts.attribute import AttributeDict, AttributeDictUtil
 from translator_tom.models.auxiliary_graph import AuxiliaryGraph
 from translator_tom.models.shared import AuxGraphID, EdgeID
 from translator_tom.utils.dict_util_base import DictUtil
@@ -13,7 +12,6 @@ __all__ = ["AuxiliaryGraphDict", "AuxiliaryGraphDictUtil", "AuxiliaryGraphsDict"
 
 class AuxiliaryGraphDict(TypedDict):
     edges: list[EdgeID]
-    attributes: list[AttributeDict]
 
 
 AuxiliaryGraphsDict = dict[AuxGraphID, AuxiliaryGraphDict]
@@ -26,13 +24,8 @@ class AuxiliaryGraphDictUtil(DictUtil[AuxiliaryGraphDict]):
 
     @classmethod
     def hash(cls, obj: AuxiliaryGraphDict) -> str:
-        """Hash matching `AuxiliaryGraph.hash` (unordered edges plus attributes)."""
-        return tomhash(
-            (
-                frozenset(obj["edges"]),
-                frozenset(AttributeDictUtil.hash(a) for a in obj["attributes"]),
-            )
-        )
+        """Hash matching `AuxiliaryGraph.hash` (unordered edges)."""
+        return tomhash(frozenset(obj["edges"]))
 
     @staticmethod
     def normalize(
@@ -53,13 +46,10 @@ class AuxiliaryGraphDictUtil(DictUtil[AuxiliaryGraphDict]):
 
     @staticmethod
     def update(auxiliary_graph: AuxiliaryGraphDict, other: AuxiliaryGraphDict) -> None:
-        """Update the auxiliary graph in-place using the other."""
-        if (not auxiliary_graph["attributes"]) and other["attributes"]:
-            auxiliary_graph["attributes"] = other["attributes"]
-        elif auxiliary_graph["attributes"] and other["attributes"]:
-            AttributeDictUtil.merge_attribute_lists(
-                auxiliary_graph["attributes"], other["attributes"]
-            )
+        """Update the auxiliary graph in-place using the other (union of edges)."""
+        new_edges = list(set(auxiliary_graph["edges"]) | set(other["edges"]))
+        auxiliary_graph["edges"].clear()
+        auxiliary_graph["edges"].extend(new_edges)
 
     @staticmethod
     def merge_dictionaries(old: AuxiliaryGraphsDict, new: AuxiliaryGraphsDict) -> None:

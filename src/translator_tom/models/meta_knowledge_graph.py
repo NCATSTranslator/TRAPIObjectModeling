@@ -8,7 +8,7 @@ from typing_extensions import Self
 from translator_tom.models.attribute import AttributeConstraint
 from translator_tom.models.meta_attribute import MetaAttribute
 from translator_tom.models.meta_qualifier import MetaQualifier
-from translator_tom.models.qualifier import QualifierConstraint
+from translator_tom.models.qualifier import Qualifier, QualifierSetConstraint
 from translator_tom.models.shared import (
     CURIE,
     KnowledgeType,
@@ -39,7 +39,7 @@ class MetaKnowledgeGraph(TOMBase):
     and predicates for each node and edge.
     """
 
-    nodes: dict[Biolink.Entity, MetaNode]
+    nodes: Annotated[dict[Biolink.Entity, MetaNode], Field(min_length=1)]
     """Collection of the most specific node categories provided by this TRAPI web service, indexed by Biolink class CURIEs.
 
     A node category is only exposed here if there is
@@ -102,14 +102,14 @@ class MetaEdge(TOMBase):
     knowledge_types: Annotated[list[KnowledgeType] | None, Field(min_length=1)] = None
     """A list of knowledge_types that are supported by the service.
 
-    If the knowledge_types is null, this means that only 'lookup'
+    If this property is absent, this means that only 'lookup'
     is supported. Currently allowed values are 'lookup' or 'inferred'.
     """
 
     attributes: list[MetaAttribute] | None = None
     """Edge attributes provided by this TRAPI web service."""
 
-    qualifiers: list[MetaQualifier] | None = None
+    qualifiers: Annotated[list[MetaQualifier], Field(min_length=1)] | None = None
     """Qualifiers that are possible to be found on this edge type."""
 
     association: Biolink.Entity | None = None
@@ -199,17 +199,10 @@ class MetaEdge(TOMBase):
         )
 
     def meets_qualifier_constraints(
-        self, constraints: list[QualifierConstraint]
+        self, constraints: list[QualifierSetConstraint]
     ) -> bool:
         """Check if the meta edge satisfies the qualifier constraints."""
-        if len(constraints) == 0:
-            return True
-        elif len(self.qualifiers_list) == 0:
-            return False
-
-        return any(
-            constraint.met_by(self.qualifiers_list) for constraint in constraints
-        )
+        return Qualifier.constraint_set_met_by(constraints, self.qualifiers_list)
 
 
 MetaKnowledgeGraph.model_rebuild()  # Don't defer model build

@@ -21,14 +21,13 @@ class AsyncQuery(Query):
     """The AsyncQuery class is effectively the same as the Query class but it requires a callback property."""
 
     callback: str
-    """Upon completion, this server will send a POST request to the
-            callback URL with `Content-Type: application/json` header and
-            request body containing a JSON-encoded `Response` object.
-            The server MAY POST `Response` objects before work is fully
-            complete to provide interim results with a Response.status
-            value of 'Running'. If a POST operation to the callback URL
-            does not succeed, the server SHOULD retry the POST at least
-            once.
+    """Upon completion, this server will send a POST request to the callback URL with `Content-Type: application/json` header and request body containing a JSON-encoded `Response` object.
+
+    The server MAY POST `Response` objects before work is fully
+    complete to provide interim results with a Response.status
+    value of 'Running'. If a POST operation to the callback URL
+    does not succeed, the server SHOULD retry the POST at least
+    once.
     """
 
     @classmethod

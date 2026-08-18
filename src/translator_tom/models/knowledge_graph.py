@@ -1,15 +1,14 @@
 from __future__ import annotations
 
 import itertools
-from typing import Annotated, ClassVar, Literal, cast
+from typing import TYPE_CHECKING, Annotated, ClassVar, Literal, cast
 
 from pydantic import ConfigDict, Field
 from typing_extensions import Self, override
 
-from translator_tom.models.analysis import Analysis
 from translator_tom.models.attribute import Attribute, AttributeConstraint
 from translator_tom.models.auxiliary_graph import AuxiliaryGraphsDict
-from translator_tom.models.qualifier import Qualifier, QualifierConstraint
+from translator_tom.models.qualifier import Qualifier, QualifierSetConstraint
 from translator_tom.models.result import Result
 from translator_tom.models.retrieval_source import (
     ResourceRoleEnum,
@@ -23,6 +22,14 @@ from translator_tom.models.shared import (
 )
 from translator_tom.utils.biolink import Biolink
 from translator_tom.utils.object_base import TOMBase
+
+if TYPE_CHECKING:
+    from translator_tom.models.constraints import (
+        AgentTypeConstraint,
+        KnowledgeLevelConstraint,
+        QEdgeConstraints,
+        SourceConstraint,
+    )
 
 __all__ = [
     "Edge",
@@ -44,13 +51,21 @@ class KnowledgeGraph(TOMBase):
     nodes: dict[CURIE, Node]
     """Dictionary of Node instances used in the KnowledgeGraph, referenced elsewhere in the TRAPI output by the dictionary key."""
 
-    edges: dict[EdgeID, Edge]
+    edges: dict[EdgeID, Edge] | None = None
     """Dictionary of Edge instances used in the KnowledgeGraph, referenced elsewhere in the TRAPI output by the dictionary key."""
 
+    @property
+    def edges_dict(self) -> dict[EdgeID, Edge]:
+        """Get the edges as a guaranteed dict, even if they are represented as None."""
+        return self.edges if self.edges is not None else {}
+
     @classmethod
-    def new(cls) -> Self:
+    def new(cls, edges: bool = True) -> Self:
         """Return an empty instance, without having to pass required containers."""
-        return cls.model_construct(nodes={}, edges={})
+        kg = cls.model_construct(nodes={})
+        if edges:
+            kg.edges = {}
+        return kg
 
     def normalize(self) -> dict[EdgeID, EdgeID]:
         """Normalize the kgraph edge IDs and return a mapping of old:new.
@@ -58,6 +73,8 @@ class KnowledgeGraph(TOMBase):
         Mutates the kgraph; references to specific edges may become stale.
         """
         mapping = dict[EdgeID, EdgeID]()
+        if self.edges is None:
+            return mapping
 
         for edge_id in list(self.edges.keys()):
             edge = self.edges.pop(edge_id)
@@ -101,7 +118,8 @@ class KnowledgeGraph(TOMBase):
             # Normalize a shallow copy of the other dict so as not to modify the original
             # (model_construct skips validation)
             other = KnowledgeGraph.model_construct(
-                nodes=dict(other.nodes), edges=dict(other.edges)
+                nodes=dict(other.nodes),
+                edges=dict(other.edges) if other.edges is not None else None,
             )
             other_mapping = other.normalize()
 
@@ -111,11 +129,14 @@ class KnowledgeGraph(TOMBase):
                 continue
             self.nodes[node_id] = node.model_copy(deep=True) if copy else node
 
-        for edge_id, edge in other.edges.items():
-            if edge_id in self.edges:
-                self.edges[edge_id].update(edge)
-                continue
-            self.edges[edge_id] = edge.model_copy(deep=True) if copy else edge
+        if other.edges:
+            if self.edges is None:
+                self.edges = {}
+            for edge_id, edge in other.edges.items():
+                if edge_id in self.edges:
+                    self.edges[edge_id].update(edge)
+                    continue
+                self.edges[edge_id] = edge.model_copy(deep=True) if copy else edge
 
         return self_mapping, other_mapping
 
@@ -126,20 +147,16 @@ class KnowledgeGraph(TOMBase):
         bound_edges = set[EdgeID]()
         bound_nodes = set[CURIE]()
         for result in results:
-            for node_binding_set in result.node_bindings.values():
-                bound_nodes.update([binding.id for binding in node_binding_set])
-            for analysis in result.analyses:
+            for node_binding in result.node_bindings.values():
+                bound_nodes.update(node_binding.ids)
+            for analysis in result.analyses_list:
                 for aux_id in analysis.support_graphs_list:
                     bound_edges.update(aux_graphs[aux_id].edges)
-                if isinstance(analysis, Analysis):
-                    for edge_binding_set in analysis.edge_bindings.values():
-                        bound_edges.update(binding.id for binding in edge_binding_set)
-                else:
-                    for path_binding in itertools.chain(
-                        *(analysis.path_bindings.values())
-                    ):
-                        if path_binding.id in aux_graphs:
-                            bound_edges.update(aux_graphs[path_binding.id].edges)
+                for edge_binding in analysis.edge_bindings_dict.values():
+                    bound_edges.update(edge_binding.ids)
+                for path_binding in analysis.path_bindings_dict.values():
+                    for aux_id in path_binding.ids:
+                        bound_edges.update(aux_graphs[aux_id].edges)
         return bound_edges, bound_nodes
 
     def prune(self, aux_graphs: AuxiliaryGraphsDict, results: list[Result]) -> None:
@@ -164,7 +181,7 @@ class KnowledgeGraph(TOMBase):
                 continue
             checked_edges.add(edge_id)
 
-            edge = self.edges[edge_id]
+            edge = self.edges_dict[edge_id]
 
             bound_edges.add(edge_id)
             bound_nodes.add(edge.subject)
@@ -188,7 +205,9 @@ class KnowledgeGraph(TOMBase):
         # prior_edge_count = len(self.edges)
         # prior_node_count = len(self.nodes)
 
-        self.edges = {edge_id: self.edges[edge_id] for edge_id in bound_edges}
+        self.edges = {
+            edge_id: self.edges_dict[edge_id] for edge_id in bound_edges
+        } or None
         self.nodes = {curie: self.nodes[curie] for curie in bound_nodes}
 
         # pruned_edges = prior_edge_count - len(self.edges)
@@ -209,17 +228,22 @@ class Node(TOMBase):
     categories: Annotated[list[Biolink.Entity], Field(min_length=1)]
     """These should be Biolink Model categories and are NOT allowed to be of type 'abstract' or 'mixin'.
 
-    Returning 'deprecated' categories should also be avoided.
+    Returning 'deprecated' categories SHOULD also be avoided.
     """
 
-    attributes: list[Attribute]
+    attributes: list[Attribute] | None = None
     """A list of attributes describing the node."""
 
     is_set: bool | None = None
     """Indicates that the node represents a set of entities.
 
-    If this property is missing or null, it is assumed to be false.
+    If this property is absent, it is assumed to be false.
     """
+
+    @property
+    def attributes_list(self) -> list[Attribute]:
+        """Get the attributes as a guaranteed list, even if they are represented as None."""
+        return self.attributes if self.attributes is not None else []
 
     @override
     def _hash_repr(self) -> object:
@@ -230,7 +254,7 @@ class Node(TOMBase):
 
     def meets_constraints(self, constraints: list[AttributeConstraint]) -> bool:
         """Check if all constraints are satisfied by the node's attributes."""
-        return AttributeConstraint.set_met_by(constraints, self.attributes)
+        return AttributeConstraint.set_met_by(constraints, self.attributes_list)
 
     def update(self, other: Node) -> None:
         """Update the node in-place with another node.
@@ -241,24 +265,24 @@ class Node(TOMBase):
         self.categories = list(set(self.categories) | set(other.categories))
 
         if other.attributes:
-            attrs = {attr.hash(): attr for attr in self.attributes}
+            attrs = {attr.hash(): attr for attr in self.attributes_list}
             for attr in other.attributes:
                 attrs[attr.hash()] = attr.model_copy(deep=True)
             self.attributes = list(attrs.values())
 
 
 class Edge(TOMBase):
-    """A specification of the semantic relationship linking two concepts that are expressed as nodes in the knowledge "thought" graph resulting from a query upon the underlying knowledge source."""
+    """A specification of the semantic relationship linking two concepts that are expressed as nodes in the knowledge graph resulting from a query to the service."""
 
     model_config: ClassVar[ConfigDict] = ConfigDict(extra="forbid")
 
     predicate: Biolink.Predicate
     """The type of relationship between the subject and object for the statement expressed in an Edge.
 
-    These should be Biolink Model predicate terms and are NOT allowed
-
-    to be of type 'abstract' or 'mixin'. Returning 'deprecated'
-    predicate terms should also be avoided."""
+    The predicate SHOULD be from the Biolink Model and MUST NOT be
+    of type 'abstract' or 'mixin'. Returning 'deprecated'
+    predicate terms SHOULD be avoided.
+    """
 
     subject: CURIE
     """Corresponds to the map key CURIE of the subject concept node of this relationship edge."""
@@ -269,14 +293,22 @@ class Edge(TOMBase):
     attributes: list[Attribute] | None = None
     """A list of additional attributes for this edge."""
 
-    qualifiers: list[Qualifier] | None = None
+    qualifiers: Annotated[list[Qualifier], Field(min_length=1)] | None = None
     """A set of Qualifiers that act together to add nuance or detail to the statement expressed in an Edge."""
 
     sources: Annotated[list[RetrievalSource], Field(min_length=1)]
-    """A list of RetrievalSource objects that provide information
-    about how a particular Information Resource served
-    as a source from which the knowledge expressed in an Edge,
-    or data used to generate this knowledge, was retrieved.
+    """A list of RetrievalSource objects that provide information about how a particular information resource served as a source from which the knowledge expressed in an Edge, or data used to generate this knowledge, was retrieved."""
+
+    knowledge_level: str
+    """One of the biolink-enumerated permissible values for `knowledge level` that provides the level of knowledge the Edge represents.
+
+    (See https://biolink.github.io/biolink-model/KnowledgeLevelEnum/)
+    """
+
+    agent_type: str
+    """One of the biolink-enumerated permissible values for `agent type` that provides the kind of agent that originated the knowledge presented by the Edge.
+
+    (See https://biolink.github.io/biolink-model/AgentTypeEnum/)
     """
 
     @property
@@ -344,15 +376,15 @@ class Edge(TOMBase):
 
         Does not mutate `other`.
         """
+        # New KL/AT win.
+        self.knowledge_level = other.knowledge_level
+        self.agent_type = other.agent_type
+
         if (not self.attributes) and other.attributes:
             self.attributes = [attr.model_copy(deep=True) for attr in other.attributes]
         elif self.attributes and other.attributes:
             attrs = {attr.hash(): attr for attr in self.attributes}
-            kl_at = (Biolink("knowledge_level"), Biolink("agent_type"))
             for attr in other.attributes:
-                # Avoid multiple KL/AT
-                if attr.attribute_type_id in kl_at:
-                    continue
                 attrs[attr.hash()] = attr.model_copy(deep=True)
             self.attributes = list(attrs.values())
 
@@ -376,10 +408,46 @@ class Edge(TOMBase):
         return AttributeConstraint.set_met_by(constraints, self.attributes_list)
 
     def meets_qualifier_constraints(
-        self, constraints: list[QualifierConstraint]
+        self, constraints: list[QualifierSetConstraint]
     ) -> bool:
         """Check if the edge satisfies the qualifier constraints."""
-        return QualifierConstraint.set_met_by(constraints, self.qualifiers_list)
+        return Qualifier.constraint_set_met_by(constraints, self.qualifiers_list)
+
+    def meets_knowledge_level_constraint(
+        self, constraint: KnowledgeLevelConstraint
+    ) -> bool:
+        """Check if the edge's knowledge_level satisfies the constraint."""
+        return constraint.met_by(self.knowledge_level)
+
+    def meets_agent_type_constraint(self, constraint: AgentTypeConstraint) -> bool:
+        """Check if the edge's agent_type satisfies the constraint."""
+        return constraint.met_by(self.agent_type)
+
+    def meets_source_constraint(self, constraint: SourceConstraint) -> bool:
+        """Check if the edge's sources satisfy the constraint."""
+        return constraint.met_by(self.sources)
+
+    def meets_constraints(self, constraints: QEdgeConstraints) -> bool:
+        """Check if the edge satisfies all of a QEdge's constraints.
+
+        Each present constraint must be met (AND); absent constraints are ignored.
+        """
+        return (
+            (
+                constraints.knowledge_level is None
+                or self.meets_knowledge_level_constraint(constraints.knowledge_level)
+            )
+            and (
+                constraints.agent_type is None
+                or self.meets_agent_type_constraint(constraints.agent_type)
+            )
+            and (
+                constraints.sources is None
+                or self.meets_source_constraint(constraints.sources)
+            )
+            and self.meets_attribute_constraints(constraints.attributes_list)
+            and self.meets_qualifier_constraints(constraints.qualifiers_list)
+        )
 
     def append_aggregator(self, source: Infores) -> None:
         """Append an aggregator source to the present chain with appropriate upstreams."""

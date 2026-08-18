@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from copy import deepcopy
-from typing import Literal, cast
+from typing import Literal
 
 from typing_extensions import NotRequired, TypedDict
 
@@ -15,8 +15,6 @@ from translator_tom.model_dicts.knowledge_graph import (
     KnowledgeGraphDictUtil,
 )
 from translator_tom.model_dicts.query_graph import (
-    PathfinderQueryGraphDict,
-    PathfinderQueryGraphDictUtil,
     QueryGraphDict,
     QueryGraphDictUtil,
 )
@@ -30,21 +28,15 @@ __all__ = ["MessageDict", "MessageDictUtil"]
 
 class MessageDict(TypedDict):
     results: NotRequired[list[ResultDict] | None]
-    query_graph: NotRequired[QueryGraphDict | PathfinderQueryGraphDict | None]
+    query_graph: NotRequired[QueryGraphDict | None]
     knowledge_graph: NotRequired[KnowledgeGraphDict | None]
     auxiliary_graphs: NotRequired[dict[AuxGraphID, AuxiliaryGraphDict] | None]
 
 
-def _query_graph_hash(
-    query_graph: QueryGraphDict | PathfinderQueryGraphDict | None,
-) -> str | None:
+def _query_graph_hash(query_graph: QueryGraphDict | None) -> str | None:
     """Hash a query graph for identity comparison, ignoring extra keys (like model `==`)."""
     if query_graph is None:
         return None
-    if "paths" in query_graph:
-        return PathfinderQueryGraphDictUtil.hash(
-            cast("PathfinderQueryGraphDict", query_graph)
-        )
     return QueryGraphDictUtil.hash(query_graph)
 
 
@@ -58,10 +50,11 @@ def _mergeable_copy(other: MessageDict) -> MessageDict:
     if "query_graph" in other:
         copied["query_graph"] = other["query_graph"]
     if other_kg := other.get("knowledge_graph"):
-        copied["knowledge_graph"] = {
-            "nodes": dict(other_kg["nodes"]),
-            "edges": dict(other_kg["edges"]),
-        }
+        kg_copy: KnowledgeGraphDict = {"nodes": dict(other_kg["nodes"])}
+        other_kg_edges = other_kg.get("edges")
+        if other_kg_edges is not None:
+            kg_copy["edges"] = dict(other_kg_edges)
+        copied["knowledge_graph"] = kg_copy
     results = other.get("results")
     if results is not None:
         copied["results"] = deepcopy(results)

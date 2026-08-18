@@ -4,10 +4,13 @@ from typing_extensions import NotRequired, TypedDict
 
 from translator_tom.model_dicts.log_entry import LogEntryDict
 
-# MessageDict/LogLevel are in scope so pydantic can resolve QueryDict's inherited
-# forward-ref fields when building TypeAdapter[AsyncQueryDict] (validate=True).
+# In scope so pydantic can resolve QueryDict's inherited forward-refs when building
+# TypeAdapter[AsyncQueryDict] (validate=True).
 from translator_tom.model_dicts.message import MessageDict  # noqa: F401
 from translator_tom.model_dicts.query import QueryDict
+from translator_tom.model_dicts.query_parameters import (  # noqa: F401
+    QueryParametersDict,
+)
 from translator_tom.model_dicts.workflow_operations import OperationDict
 from translator_tom.models.asyncquery import (
     AsyncQuery,

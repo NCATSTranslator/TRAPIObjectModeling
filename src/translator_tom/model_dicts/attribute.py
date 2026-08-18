@@ -82,7 +82,7 @@ AttributeConstraintDict = TypedDict(
     "AttributeConstraintDict",
     {
         "id": CURIE,
-        "name": str,
+        "name": NotRequired[str | None],
         "not": NotRequired[bool],
         "operator": Operator,
         "value": FastJsonValue,
@@ -103,7 +103,7 @@ class AttributeConstraintDictUtil(DictUtil[AttributeConstraintDict]):
         return tomhash(
             (
                 obj["id"],
-                obj["name"],
+                obj.get("name"),
                 obj.get("not", cls._default("negated")),
                 obj["operator"],
                 obj["value"],
@@ -120,13 +120,15 @@ class AttributeConstraintDictUtil(DictUtil[AttributeConstraintDict]):
         """
         inverted = cast("AttributeConstraintDict", {**constraint})
         cid = constraint["id"]
-        name = constraint["name"]
+        name = constraint.get("name")
         if OBJECT_RE.search(cid):
             inverted["id"] = OBJECT_RE.sub("subject", cid)
-            inverted["name"] = OBJECT_RE.sub("subject", name)
+            if name is not None:
+                inverted["name"] = OBJECT_RE.sub("subject", name)
         elif SUBJECT_RE.search(cid):
             inverted["id"] = SUBJECT_RE.sub("object", cid)
-            inverted["name"] = SUBJECT_RE.sub("object", name)
+            if name is not None:
+                inverted["name"] = SUBJECT_RE.sub("object", name)
         return inverted
 
     @staticmethod

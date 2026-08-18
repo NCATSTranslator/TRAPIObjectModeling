@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from typing_extensions import Self
 
-from translator_tom.models.log_entry import LogLevel
 from translator_tom.models.message import Message
+from translator_tom.models.query_parameters import QueryParameters
 from translator_tom.models.workflow_operations import Operation
 from translator_tom.utils.object_base import TOMBase
 
@@ -21,42 +21,40 @@ class Query(TOMBase):
     log information when debugging an issue.
     """
 
+    submitter: str | None = None
+    """Any string for self-identifying the submitter of a query.
+
+    The purpose of this optional property is to aid in the tracking of
+    the source of queries for development and issue resolution.
+    """
+
+    parameters: QueryParameters | None = None
+    """Query-time parameters that don't affect the semantics
+    of the query or intended workflow, but may affect overall
+    behavior of the server in the execution of this query.
+    The server MUST repeat the parameters it is given in its Response.
+    """
+
     message: Message
     """The query Message is a serialization of the user request.
 
     Content of the Message object depends on the intended TRAPI operation.
-    For example, the fill operation requires a non-empty query_graph field
+    For example, the fill operation requires a non-empty query_graph property
     as part of the Message, whereas other operations, e.g. overlay,
-    require non-empty results and knowledge_graph fields.
+    require non-empty results and knowledge_graph properties.
     """
-
-    log_level: LogLevel | None = None
-    """The least critical level of logs to return."""
 
     workflow: list[Operation] | None = None
     """List of workflow steps to be executed."""
-
-    submitter: str | None = None
-    """Any string for self-identifying the submitter of a query.
-
-    The purpose of this optional field is to aid in the tracking of
-    the source of queries for development and issue resolution.
-    """
-
-    bypass_cache: bool = False
-    """Set to true in order to request that the agent obtain
-    fresh information from its sources in all cases where
-    it has a viable choice between requesting fresh information
-    in real time and using cached information.
-
-    The agent receiving this flag MUST also include it in TRAPI sent to
-    downstream sources (e.g., ARS -> ARAs -> KPs).
-    """
 
     @property
     def workflow_list(self) -> list[Operation]:
         """Get the workflow operations as a guaranteed list, even if they are represented as None."""
         return self.workflow if self.workflow is not None else []
+
+    def get_parameters(self) -> QueryParameters:
+        """Get the parameters, or an empty QueryParameters if they are represented as None."""
+        return self.parameters if self.parameters is not None else QueryParameters()
 
     @classmethod
     def new(cls) -> Self:

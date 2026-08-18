@@ -1,8 +1,10 @@
 from __future__ import annotations
 
+from typing import Annotated
+
+from pydantic import Field
 from typing_extensions import override
 
-from translator_tom.models.attribute import Attribute
 from translator_tom.models.shared import EdgeID
 from translator_tom.utils.object_base import TOMBase
 
@@ -10,25 +12,18 @@ __all__ = ["EdgeBinding"]
 
 
 class EdgeBinding(TOMBase):
-    """A instance of EdgeBinding is a single KnowledgeGraph Edge mapping, identified by the corresponding 'id' object key identifier of the Edge within the Knowledge Graph.
+    """An EdgeBinding object defines all relevant KnowledgeGraph Edge mappings, identified by the corresponding 'id' object key identifier of the Edge within the knowledge graph.
 
-    Instances of EdgeBinding may include extra annotation
-    (such annotation is not yet fully standardized).
-    Edge bindings are captured within a specific reasoner's Analysis
-    object because the Edges in the Knowledge Graph that get bound to
-    the input Query Graph may differ between reasoners.
+    Instances of EdgeBinding may include
+    extra annotation (such annotation is not yet fully standardized).
+    EdgeBindings are captured within a specific reasoner's Analysis
+    object because the Edges in the KnowledgeGraph that get bound to
+    the input QueryGraph may differ between reasoners.
     """
 
-    id: EdgeID
-    """The key identifier of a specific KnowledgeGraph Edge."""
-
-    attributes: list[Attribute]
-    """A list of attributes providing further information about the edge binding.
-    This is not intended for capturing edge attributes
-    and should only be used for properties that vary from result to
-    result.
-    """
+    ids: Annotated[list[EdgeID], Field(min_length=1)]
+    """The key identifiers of specific KnowledgeGraph Edges."""
 
     @override
     def _hash_repr(self) -> object:
-        return (self.id, frozenset(a.hash() for a in self.attributes))
+        return frozenset(self.ids)

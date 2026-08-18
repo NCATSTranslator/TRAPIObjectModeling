@@ -80,9 +80,9 @@ Operator = Literal["==", "===", ">", "<", "matches"]
 
 
 class Attribute(TOMBase):
-    """Generic attribute for a node or an edge that expands the key-value pair concept by including fields for additional metadata.
+    """Generic attribute for a node or an edge that expands the key-value pair concept by including properties for additional metadata.
 
-    These fields can be used to describe the source of the statement made in a key-value
+    These properties MAY be used to describe the source of the statement made in a key-value
     pair of the attribute object, or describe the attribute's value itself
     including its semantic type, or a url providing additional information
     about it. An attribute may be further qualified with sub-attributes
@@ -92,13 +92,11 @@ class Attribute(TOMBase):
     model_config: ClassVar[ConfigDict] = ConfigDict(extra="forbid")
 
     attribute_type_id: CURIE
-    """The 'key' of the attribute object, holding a CURIE of an ontology property defining the attribute (preferably the CURIE of a Biolink association slot).
+    """The main 'key' of the attribute object, holding a CURIE of an ontology property defining the specific attribute (preferably the CURIE of a Biolink association slot).
 
     This property captures the relationship asserted to hold between the value of the attribute, and the node
-    or edge from  which it hangs. For example, that a value of
-    '0.000153' represents a p-value supporting an edge, or that
-    a value of 'ChEMBL' represents the original source of the knowledge
-    expressed in the edge.
+    or edge from which it hangs. For example, that a value of
+    '0.000153' represents a p-value supporting an edge.
     """
 
     original_attribute_name: str | None = None
@@ -106,9 +104,9 @@ class Attribute(TOMBase):
 
     This may be a column name in a source tsv file, or a key in a source json
     document for the field in the data that held the attribute's
-    value. Capturing this information  where possible lets us preserve
-    what the original source said. Note that the data type is string'
-    but the contents of the field could also be a CURIE of a third
+    value. Capturing this information where possible preserves original
+    source meaning. Note that the data type is string
+    but the contents of the property MAY be a CURIE of a third
     party ontology term.
     """
 
@@ -131,7 +129,7 @@ class Attribute(TOMBase):
     """
 
     value_url: str | None = None
-    """Human-consumable URL linking to a web document that provides additional information about an attribute's value (not the node or the edge fom which it hangs)."""
+    """Human-consumable URL linking to a web document that provides additional information about this attribute's value (not the node or the edge from which it hangs)."""
 
     description: str | None = None
     """Human-readable description for the attribute and its value."""
@@ -181,19 +179,19 @@ class AttributeConstraint(TOMBase):
     id: CURIE
     """CURIE of the concept being constrained.
 
-    For properties defined by the Biolink model this SHOULD be a biolink CURIE.
-    otherwise, if possible, from the EDAM ontology. If a suitable
+    For properties defined by the Biolink Model this SHOULD be a biolink CURIE,
+    or else, if possible, from the EDAM ontology. If a suitable
     CURIE does not exist, enter a descriptive phrase here and
     submit the new type for consideration by the appropriate
-    authority.
+    ontology.
     """
 
-    name: str
+    name: str | None = None
     """Human-readable name or label for the constraint concept.
 
-    If appropriate, it SHOULD be the term name of the CURIE used
-    as the 'id'. This is redundant but required for human
-    readability.
+    It SHOULD be the term name of the CURIE used as the 'id' and SHOULD NOT
+    supersede the use of AttributeConstraint.id (which is required). This is
+    redundant but recommended for human readability.
     """
 
     negated: Annotated[bool, Field(alias="not")] = False
@@ -335,8 +333,10 @@ class AttributeConstraint(TOMBase):
         new = self.model_copy()
         if OBJECT_RE.search(self.id):
             new.id = OBJECT_RE.sub("subject", self.id)
-            new.name = OBJECT_RE.sub("subject", self.name)
+            if self.name is not None:
+                new.name = OBJECT_RE.sub("subject", self.name)
         elif SUBJECT_RE.search(self.id):
             new.id = SUBJECT_RE.sub("object", self.id)
-            new.name = SUBJECT_RE.sub("object", self.name)
+            if self.name is not None:
+                new.name = SUBJECT_RE.sub("object", self.name)
         return new

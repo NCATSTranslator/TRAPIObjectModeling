@@ -1,16 +1,10 @@
 from __future__ import annotations
 
-import itertools
-from typing import cast
+import copy
 
-from typing_extensions import TypedDict
+from typing_extensions import NotRequired, TypedDict
 
-from translator_tom.model_dicts.analysis import (
-    AnalysisDict,
-    AnalysisDictUtil,
-    PathfinderAnalysisDict,
-    PathfinderAnalysisDictUtil,
-)
+from translator_tom.model_dicts.analysis import AnalysisDict, AnalysisDictUtil
 from translator_tom.model_dicts.node_binding import (
     NodeBindingDict,
     NodeBindingDictUtil,
@@ -24,29 +18,8 @@ __all__ = ["ResultDict", "ResultDictUtil"]
 
 
 class ResultDict(TypedDict):
-    node_bindings: dict[QNodeID, list[NodeBindingDict]]
-    analyses: list[AnalysisDict | PathfinderAnalysisDict]
-
-
-def _analysis_hash(analysis: AnalysisDict | PathfinderAnalysisDict) -> str:
-    """Hash an analysis dict, dispatching on its structural shape."""
-    if "path_bindings" in analysis:
-        return PathfinderAnalysisDictUtil.hash(cast("PathfinderAnalysisDict", analysis))
-    return AnalysisDictUtil.hash(analysis)
-
-
-def _update_analysis(
-    existing: AnalysisDict | PathfinderAnalysisDict,
-    other: AnalysisDict | PathfinderAnalysisDict,
-) -> None:
-    """Update one analysis dict with another of the same structural shape."""
-    if "path_bindings" in existing:
-        PathfinderAnalysisDictUtil.update(
-            cast("PathfinderAnalysisDict", existing),
-            cast("PathfinderAnalysisDict", other),
-        )
-    else:
-        AnalysisDictUtil.update(existing, cast("AnalysisDict", other))
+    node_bindings: dict[QNodeID, NodeBindingDict]
+    analyses: NotRequired[list[AnalysisDict] | None]
 
 
 class ResultDictUtil(DictUtil[ResultDict]):
@@ -54,27 +27,30 @@ class ResultDictUtil(DictUtil[ResultDict]):
 
     _model = Result
 
+    @staticmethod
+    def analyses_list(result: ResultDict) -> list[AnalysisDict]:
+        """Get the analyses as a guaranteed list, even if they are represented as None."""
+        analyses = result.get("analyses")
+        return analyses if analyses is not None else []
+
     @classmethod
     def hash(cls, obj: ResultDict) -> str:
         """Hash matching `Result.hash` (node bindings only)."""
         return tomhash(
             {
-                qnode_id: frozenset(NodeBindingDictUtil.hash(b) for b in bindings)
-                for qnode_id, bindings in obj["node_bindings"].items()
+                qnode_id: NodeBindingDictUtil.hash(binding)
+                for qnode_id, binding in obj["node_bindings"].items()
             }
         )
 
     @staticmethod
     def normalize(result: ResultDict, mapping: dict[EdgeID, EdgeID]) -> None:
         """Normalize the result given a mapping of old:new EdgeIDs."""
-        for analysis in result["analyses"]:
-            if "edge_bindings" not in analysis:
-                continue
-            analysis = cast("AnalysisDict", analysis)
-            for binding in itertools.chain(
-                *(bindings for bindings in analysis["edge_bindings"].values())
-            ):
-                binding["id"] = mapping.get(binding["id"], binding["id"])
+        for analysis in ResultDictUtil.analyses_list(result):
+            for binding in AnalysisDictUtil.edge_bindings_dict(analysis).values():
+                binding["ids"] = [
+                    mapping.get(edge_id, edge_id) for edge_id in binding["ids"]
+                ]
 
     @staticmethod
     def normalize_list(
@@ -87,22 +63,25 @@ class ResultDictUtil(DictUtil[ResultDict]):
     @staticmethod
     def update(result: ResultDict, other: ResultDict) -> None:
         """Update the result in-place with another result."""
-        if not other["analyses"]:
+        other_analyses = other.get("analyses")
+        if not other_analyses:
             return
-        if not result["analyses"]:
-            result["analyses"] = other["analyses"]
+        result_analyses = result.get("analyses")
+        if not result_analyses:
+            result["analyses"] = copy.deepcopy(other_analyses)
             return
 
-        by_hash = {_analysis_hash(ana): ana for ana in result["analyses"]}
-        for analysis in other["analyses"]:
-            h = _analysis_hash(analysis)
+        by_hash = {AnalysisDictUtil.hash(ana): ana for ana in result_analyses}
+        for analysis in other_analyses:
+            h = AnalysisDictUtil.hash(analysis)
             existing = by_hash.get(h)
             if existing is not None:
-                _update_analysis(existing, analysis)
+                AnalysisDictUtil.update(existing, analysis)
             else:
-                result["analyses"].append(analysis)
+                new_analysis = copy.deepcopy(analysis)
+                result_analyses.append(new_analysis)
                 # register so a later same-hash analysis in `other` merges, not re-appends
-                by_hash[h] = analysis
+                by_hash[h] = new_analysis
 
     @staticmethod
     def merge_results(
@@ -133,15 +112,12 @@ class ResultDictUtil(DictUtil[ResultDict]):
         Useful when a service unintentionally adds multiple analyses to a single result,
         combining all of those analyses.
         """
-        merged: dict[tuple[bool, CURIE], AnalysisDict | PathfinderAnalysisDict] = {}
-        for analysis in result["analyses"]:
-            # The bool distinguishes Analysis vs PathfinderAnalysis (mirrors the
-            # model keying by type), so only same-shape analyses ever merge.
-            key = ("path_bindings" in analysis, analysis["resource_id"])
-            existing = merged.get(key)
+        merged = dict[CURIE, AnalysisDict]()
+        for analysis in ResultDictUtil.analyses_list(result):
+            existing = merged.get(analysis["resource_id"])
             if existing is None:
-                merged[key] = analysis
+                merged[analysis["resource_id"]] = analysis
             else:
-                _update_analysis(existing, analysis)
+                AnalysisDictUtil.update(existing, analysis)
 
-        result["analyses"] = list(merged.values())
+        result["analyses"] = list(merged.values()) or None

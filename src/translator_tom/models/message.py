@@ -1,12 +1,12 @@
 from __future__ import annotations
 
-from typing import ClassVar, Literal
+from typing import Annotated, ClassVar, Literal
 
-from pydantic import ConfigDict
+from pydantic import ConfigDict, Field
 
 from translator_tom.models.auxiliary_graph import AuxiliaryGraph, AuxiliaryGraphsDict
 from translator_tom.models.knowledge_graph import KnowledgeGraph
-from translator_tom.models.query_graph import PathfinderQueryGraph, QueryGraph
+from translator_tom.models.query_graph import QueryGraph
 from translator_tom.models.result import Result
 from translator_tom.models.shared import EdgeID
 from translator_tom.utils.object_base import TOMBase
@@ -24,7 +24,10 @@ def _mergeable_copy(other: Message) -> Message:
     return Message.model_construct(
         query_graph=other.query_graph,
         knowledge_graph=(
-            KnowledgeGraph.model_construct(nodes=dict(okg.nodes), edges=dict(okg.edges))
+            KnowledgeGraph.model_construct(
+                nodes=dict(okg.nodes),
+                edges=dict(okg.edges) if okg.edges is not None else None,
+            )
             if okg is not None
             else None
         ),
@@ -63,18 +66,18 @@ class Message(TOMBase):
     The list SHOULD NOT be assumed to be ordered. The 'score' property,
     if present, MAY be used to infer result rankings. If Results are
     not expected (such as for a query Message), this property SHOULD
-    be null or absent. If Results are expected (such as for a response
+    be absent. If Results are expected (such as for a response
     Message) and no Results are available, this property SHOULD be an
     array with 0 Results in it.
     """
 
-    query_graph: QueryGraph | PathfinderQueryGraph | None = None
+    query_graph: QueryGraph | None = None
     """QueryGraph object that contains a serialization of a query in the form of a graph."""
 
     knowledge_graph: KnowledgeGraph | None = None
     """KnowledgeGraph object that contains lists of nodes and edges in the thought graph corresponding to the message."""
 
-    auxiliary_graphs: AuxiliaryGraphsDict | None = None
+    auxiliary_graphs: Annotated[AuxiliaryGraphsDict, Field(min_length=1)] | None = None
     """Dictionary of AuxiliaryGraph instances that are used by Knowledge Graph Edges and Result Analyses.
 
     These are referenced elsewhere by the dictionary key.

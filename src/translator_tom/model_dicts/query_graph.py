@@ -1,20 +1,14 @@
 from __future__ import annotations
 
-from collections.abc import Mapping
-
 from typing_extensions import NotRequired, TypedDict
 
-from translator_tom.model_dicts.attribute import (
-    AttributeConstraintDict,
-    AttributeConstraintDictUtil,
+from translator_tom.model_dicts.attribute import AttributeConstraintDict
+from translator_tom.model_dicts.constraints import (
+    QEdgeConstraintsDict,
+    QEdgeConstraintsDictUtil,
 )
 from translator_tom.model_dicts.path_constraint import PathConstraintDict
-from translator_tom.model_dicts.qualifier import (
-    QualifierConstraintDict,
-    QualifierConstraintDictUtil,
-)
 from translator_tom.models.query_graph import (
-    PathfinderQueryGraph,
     QEdge,
     QNode,
     QPath,
@@ -29,12 +23,9 @@ from translator_tom.models.shared import (
     QPathID,
 )
 from translator_tom.utils.biolink import Biolink
-from translator_tom.utils.dict_util_base import DictUtil, register_union_discriminator
+from translator_tom.utils.dict_util_base import DictUtil
 
 __all__ = [
-    "BaseQueryGraphDict",
-    "PathfinderQueryGraphDict",
-    "PathfinderQueryGraphDictUtil",
     "QEdgeDict",
     "QEdgeDictUtil",
     "QNodeDict",
@@ -89,8 +80,7 @@ class QEdgeDict(TypedDict):
     predicates: NotRequired[list[Biolink.Predicate] | None]
     subject: QNodeID
     object: QNodeID
-    attribute_constraints: NotRequired[list[AttributeConstraintDict] | None]
-    qualifier_constraints: NotRequired[list[QualifierConstraintDict] | None]
+    constraints: NotRequired[QEdgeConstraintsDict | None]
 
 
 class QEdgeDictUtil(DictUtil[QEdgeDict]):
@@ -103,18 +93,6 @@ class QEdgeDictUtil(DictUtil[QEdgeDict]):
         """Get the predicates as a guaranteed list, even if they are represented as None."""
         predicates = qedge.get("predicates")
         return predicates if predicates is not None else []
-
-    @staticmethod
-    def attribute_constraints_list(qedge: QEdgeDict) -> list[AttributeConstraintDict]:
-        """Get the attribute_constraints as a guaranteed list, even if they are represented as None."""
-        attribute_constraints = qedge.get("attribute_constraints")
-        return attribute_constraints if attribute_constraints is not None else []
-
-    @staticmethod
-    def qualifier_constraints_list(qedge: QEdgeDict) -> list[QualifierConstraintDict]:
-        """Get the qualifier_constraints as a guaranteed list, even if they are represented as None."""
-        qualifier_constraints = qedge.get("qualifier_constraints")
-        return qualifier_constraints if qualifier_constraints is not None else []
 
     @staticmethod
     def get_inverse(qedge: QEdgeDict) -> QEdgeDict:
@@ -131,7 +109,7 @@ class QEdgeDictUtil(DictUtil[QEdgeDict]):
         if len(failed_predicates) > 0:
             raise ValueError(f"Cannot invert predicates {failed_predicates}.")
 
-        # Keep dict minimal as in model behavior
+        # Keep dict minimal as in model behavior.
         inverted: QEdgeDict = {
             "subject": qedge["object"],
             "object": qedge["subject"],
@@ -141,18 +119,9 @@ class QEdgeDictUtil(DictUtil[QEdgeDict]):
             inverted["knowledge_type"] = knowledge_type
         if inverse_predicates:
             inverted["predicates"] = inverse_predicates
-        inverse_attribute_constraints = [
-            AttributeConstraintDictUtil.get_inverse(ac)
-            for ac in QEdgeDictUtil.attribute_constraints_list(qedge)
-        ]
-        if inverse_attribute_constraints:
-            inverted["attribute_constraints"] = inverse_attribute_constraints
-        inverse_qualifier_constraints = [
-            QualifierConstraintDictUtil.get_inverse(qc)
-            for qc in QEdgeDictUtil.qualifier_constraints_list(qedge)
-        ]
-        if inverse_qualifier_constraints:
-            inverted["qualifier_constraints"] = inverse_qualifier_constraints
+        constraints = qedge.get("constraints")
+        if constraints is not None:
+            inverted["constraints"] = QEdgeConstraintsDictUtil.get_inverse(constraints)
         return inverted
 
 
@@ -181,38 +150,30 @@ class QPathDictUtil(DictUtil[QPathDict]):
         return constraints if constraints is not None else []
 
 
-class BaseQueryGraphDict(TypedDict):
+class QueryGraphDict(TypedDict):
     nodes: dict[QNodeID, QNodeDict]
-
-
-class QueryGraphDict(BaseQueryGraphDict):
-    edges: dict[QEdgeID, QEdgeDict]
+    edges: NotRequired[dict[QEdgeID, QEdgeDict] | None]
+    paths: NotRequired[dict[QPathID, QPathDict] | None]
 
 
 class QueryGraphDictUtil(DictUtil[QueryGraphDict]):
-    """Registration-only util for `QueryGraphDict`."""
+    """Utility methods for `QueryGraphDict`, mirroring those on the `QueryGraph` model."""
 
     _model = QueryGraph
 
+    @staticmethod
+    def edges_dict(query_graph: QueryGraphDict) -> dict[QEdgeID, QEdgeDict]:
+        """Get the edges as a guaranteed dict, even if they are represented as None."""
+        edges = query_graph.get("edges")
+        return edges if edges is not None else {}
 
-class PathfinderQueryGraphDict(BaseQueryGraphDict):
-    paths: dict[QPathID, QPathDict]
+    @staticmethod
+    def paths_dict(query_graph: QueryGraphDict) -> dict[QPathID, QPathDict]:
+        """Get the paths as a guaranteed dict, even if they are represented as None."""
+        paths = query_graph.get("paths")
+        return paths if paths is not None else {}
 
-
-class PathfinderQueryGraphDictUtil(DictUtil[PathfinderQueryGraphDict]):
-    """Registration-only util for `PathfinderQueryGraphDict`."""
-
-    _model = PathfinderQueryGraph
-
-
-def _discriminate_query_graph(
-    value: Mapping[str, object],
-) -> type[QueryGraph | PathfinderQueryGraph]:
-    """Pick the concrete query-graph model for a raw dict (`paths` -> Pathfinder)."""
-    return PathfinderQueryGraph if "paths" in value else QueryGraph
-
-
-# Message.query_graph is a union QueryGraph | PathfinderQueryGraph, requires explicit discriminator
-register_union_discriminator(
-    (QueryGraph, PathfinderQueryGraph), _discriminate_query_graph
-)
+    @staticmethod
+    def new() -> QueryGraphDict:
+        """Return an empty instance, without having to pass required containers."""
+        return {"nodes": {}}

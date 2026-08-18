@@ -2,10 +2,9 @@ from __future__ import annotations
 
 import itertools
 from collections.abc import Iterable
-from typing import ClassVar
+from typing import Annotated, ClassVar
 
-from pydantic import ConfigDict
-from typing_extensions import Self
+from pydantic import ConfigDict, Field
 
 from translator_tom.models.meta_qualifier import MetaQualifier
 from translator_tom.models.shared import OBJECT_RE, SUBJECT_RE
@@ -14,7 +13,7 @@ from translator_tom.utils.object_base import TOMBase
 
 __all__ = [
     "Qualifier",
-    "QualifierConstraint",
+    "QualifierSetConstraint",
 ]
 
 
@@ -24,44 +23,28 @@ class Qualifier(TOMBase):
     model_config: ClassVar[ConfigDict] = ConfigDict(extra="forbid")
 
     qualifier_type_id: Biolink.Qualifier
-    """CURIE for a Biolink 'qualifier' association slot, generally taken from Biolink association slots designated for this purpose (that is, association slots with names ending in 'qualifier') e.g. biolink:subject_aspect_qualifier,  biolink:subject_direction_qualifier, biolink:object_aspect_qualifier, etc. Such qualifiers are used to elaborate a second layer of meaning of a knowledge graph edge.
+    """CURIE for a Biolink 'qualifier' association slot, generally taken from Biolink association slots designated for this purpose e.g. biolink:subject_aspect_qualifier, biolink:subject_direction_qualifier, biolink:object_aspect_qualifier, etc.
 
-    Available qualifiers are edge properties in the Biolink Model (see
-    https://biolink.github.io/biolink-model/docs/edge_properties.html)
-    which have slot names with the suffix string 'qualifier'.
+    Such qualifiers are used to elaborate a second layer of meaning of a
+    knowledge graph edge. Available qualifiers can be found at
+    https://biolink.github.io/biolink-model/qualifiers.html, which mostly
+    have slot names with the suffix string 'qualifier'.
     """
 
     qualifier_value: str
     """The value associated with the type of the qualifier, drawn from a set of controlled values by the type as specified in the Biolink model (e.g. 'expression' or 'abundance' for the qualifier type 'biolink:subject_aspect_qualifier', etc).
 
     The enumeration of qualifier values for a given qualifier
-    type is generally going to be constrained by the category
-    of edge (i.e. biolink:Association subtype) of the (Q)Edge.
+    type is generally constrained by the category of the edge
+    (i.e. biolink:Association subtype).
     """
 
-
-class QualifierConstraint(TOMBase):
-    """Defines a query constraint based on the qualifier_types and qualifier_values of a set of Qualifiers attached to an edge.
-
-    For example, it can constrain a
-    "ChemicalX - affects - ?Gene" query to return only edges where
-    ChemicalX specifically affects the 'expression' of the Gene, by
-    constraining on the qualifier_type "biolink:object_aspect_qualifier"
-    with a qualifier_value of "expression".
-    """
-
-    model_config: ClassVar[ConfigDict] = ConfigDict(extra="forbid")
-
-    qualifier_set: list[Qualifier]
-    """A set of Qualifiers that serves to add nuance to a query, by constraining allowed values held by Qualifiers on queried Edges."""
-
-    @classmethod
-    def new(cls) -> Self:
-        """Return an empty instance, without having to pass required containers."""
-        return cls.model_construct(qualifier_set=[])
-
-    def met_by(self, qualifiers: Iterable[Qualifier] | Iterable[MetaQualifier]) -> bool:
-        """Check that the given qualifiers satisfy the constraint."""
+    @staticmethod
+    def constraint_met_by(
+        constraint: QualifierSetConstraint,
+        qualifiers: Iterable[Qualifier] | Iterable[MetaQualifier],
+    ) -> bool:
+        """Check that the given qualifiers satisfy the constraint (a set of qualifier type/value pairs, AND-ed)."""
         qualifier_pairs: list[tuple[Biolink.Qualifier, set[str] | None]] = [
             (
                 qualifier.qualifier_type_id,
@@ -76,8 +59,8 @@ class QualifierConstraint(TOMBase):
             for qualifier in qualifiers
         ]
 
-        for constr in self.qualifier_set:
-            applicable_types = set(Biolink.get_descendants(constr.qualifier_type_id))
+        for constr_type_id, constr_value in constraint.items():
+            applicable_types = set(Biolink.get_descendants(constr_type_id))
             allowed_values: set[str] | None = None
             met = False
             for qual_type, available_values in qualifier_pairs:
@@ -87,7 +70,7 @@ class QualifierConstraint(TOMBase):
                     # expand values once a type matches
                     allowed_values = set(
                         itertools.chain.from_iterable(
-                            Biolink.get_descendant_values(t, constr.qualifier_value)
+                            Biolink.get_descendant_qualifier_values(t, constr_value)
                             for t in applicable_types
                         )
                     )
@@ -102,37 +85,53 @@ class QualifierConstraint(TOMBase):
         return True
 
     @staticmethod
-    def set_met_by(
-        constraints: list[QualifierConstraint],
+    def constraint_set_met_by(
+        constraints: list[QualifierSetConstraint],
         qualifiers: list[Qualifier] | list[MetaQualifier],
     ) -> bool:
-        """Check if the given set of constraints are met by the given qualifiers."""
+        """Check if the given constraints are met by the given qualifiers (constraints are OR-ed)."""
         if len(constraints) == 0:
             return True
         elif len(qualifiers) == 0:
             return False
 
-        return any(constraint.met_by(qualifiers) for constraint in constraints)
+        return any(
+            Qualifier.constraint_met_by(constraint, qualifiers)
+            for constraint in constraints
+        )
 
-    def get_inverse(self) -> QualifierConstraint:
+    @staticmethod
+    def get_constraint_inverse(
+        constraint: QualifierSetConstraint,
+    ) -> QualifierSetConstraint:
         """Return a (SPO) inverse of the constraint, for reversing edges."""
-        new_qualifier_set = list[Qualifier]()
-        for qualifier in self.qualifier_set:
-            new_qualifier = qualifier.model_copy()
-            type_id = qualifier.qualifier_type_id
+        inverse = dict[Biolink.Qualifier, str]()
+        for type_id, value in constraint.items():
             if OBJECT_RE.search(type_id):
-                new_qualifier.qualifier_type_id = OBJECT_RE.sub("subject", type_id)
+                inverse[OBJECT_RE.sub("subject", type_id)] = value
             elif SUBJECT_RE.search(type_id):
-                new_qualifier.qualifier_type_id = SUBJECT_RE.sub("object", type_id)
+                inverse[SUBJECT_RE.sub("object", type_id)] = value
             elif type_id == "biolink:qualified_predicate":
-                inverse = Biolink.get_inverse(qualifier.qualifier_value)
-                if not inverse:
+                inverse_value = Biolink.get_inverse(value)
+                if not inverse_value:
                     raise ValueError(
-                        f"Cannot invert qualified_predicate: no inverse for predicate {qualifier.qualifier_value}"
+                        f"Cannot invert qualified_predicate: no inverse for predicate {value}"
                     )
-                new_qualifier.qualifier_value = inverse
+                inverse[type_id] = inverse_value
             else:
                 raise ValueError(f"Cannot invert qualifier of type {type_id}")
-            new_qualifier_set.append(new_qualifier)
+        return inverse
 
-        return QualifierConstraint(qualifier_set=new_qualifier_set)
+
+QualifierSetConstraint = Annotated[dict[Biolink.Qualifier, str], Field(min_length=1)]
+"""A constraint on the qualifiers of a bound Edge (types and values).
+
+A given key-value pair defines the required qualifier_type_id
+and qualifier_value of one Qualifier, respectively.
+For example, a QualifierSetConstraint can constrain a
+"ChemicalX - affects - ?Gene" query to return only edges where
+ChemicalX specifically affects the 'expression' of the Gene, by
+constraining on the qualifier_type "biolink:object_aspect_qualifier"
+with a qualifier_value of "expression".
+Multiple type-value pairs have an AND relationship.
+"""

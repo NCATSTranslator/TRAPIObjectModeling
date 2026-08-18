@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from typing_extensions import TypedDict
 
-from translator_tom.model_dicts.attribute import AttributeDict, AttributeDictUtil
 from translator_tom.models.edge_binding import EdgeBinding
 from translator_tom.models.shared import EdgeID
 from translator_tom.utils.dict_util_base import DictUtil
@@ -12,8 +11,7 @@ __all__ = ["EdgeBindingDict", "EdgeBindingDictUtil"]
 
 
 class EdgeBindingDict(TypedDict):
-    id: EdgeID
-    attributes: list[AttributeDict]
+    ids: list[EdgeID]
 
 
 class EdgeBindingDictUtil(DictUtil[EdgeBindingDict]):
@@ -23,7 +21,5 @@ class EdgeBindingDictUtil(DictUtil[EdgeBindingDict]):
 
     @classmethod
     def hash(cls, obj: EdgeBindingDict) -> str:
-        """Hash matching `EdgeBinding.hash` (bound edge id plus its attributes)."""
-        return tomhash(
-            (obj["id"], frozenset(AttributeDictUtil.hash(a) for a in obj["attributes"]))
-        )
+        """Hash matching `EdgeBinding.hash` (unordered bound edge ids)."""
+        return tomhash(frozenset(obj["ids"]))

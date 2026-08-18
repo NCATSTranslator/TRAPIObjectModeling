@@ -3,6 +3,7 @@ from __future__ import annotations
 __all__ = ["Biolink"]
 
 import threading
+from functools import lru_cache
 from importlib.resources import files
 from typing import TYPE_CHECKING, TypeVar, cast, final
 
@@ -233,7 +234,7 @@ class Biolink(metaclass=_BiolinkMeta):
 
     @staticmethod
     @lru_copy_cache()
-    def get_descendant_values(
+    def get_descendant_qualifier_values(
         qualifier_type: Biolink.Qualifier, value: str
     ) -> set[str]:
         """Given a biolink qualifier and associated value, return applicable descendant values."""
@@ -248,3 +249,65 @@ class Biolink(metaclass=_BiolinkMeta):
                 )
 
         return permissible_values
+
+    @staticmethod
+    @lru_copy_cache()
+    def get_permissible_value_descendants(enum_name: str, value: str) -> set[str]:
+        """Return a permissible value plus its descendants within the named biolink enum.
+
+        Used for constraint hierarchy expansion (e.g. KnowledgeLevelEnum, AgentTypeEnum).
+        Raises KeyError if `enum_name` is not a biolink enum (a programming error). An
+        unknown `value` (not a permissible value of the enum) expands to just `{value}`.
+        """
+        enum_def = next(
+            (
+                definition
+                for name, definition in Biolink.toolkit.view.all_enums().items()
+                if name == enum_name
+            ),
+            None,
+        )
+        if enum_def is None:
+            raise KeyError(f"No such biolink enum: {enum_name!r}")
+        if value not in cast(dict[str, object], enum_def.permissible_values or {}):
+            return {value}
+        return {
+            value,
+            *Biolink.toolkit.get_permissible_value_descendants(value, enum_name),
+        }
+
+    @staticmethod
+    @lru_cache
+    def get_permissible_values(enum_name: str) -> frozenset[str]:
+        """Return all permissible value names of the named biolink enum.
+
+        Raises KeyError if `enum_name` is not a biolink enum (a programming error).
+        """
+        enum_def = next(
+            (
+                definition
+                for name, definition in Biolink.toolkit.view.all_enums().items()
+                if name == enum_name
+            ),
+            None,
+        )
+        if enum_def is None:
+            raise KeyError(f"No such biolink enum: {enum_name!r}")
+        return frozenset(cast(dict[str, object], enum_def.permissible_values or {}))
+
+    @staticmethod
+    @lru_cache
+    def expand_permissible_values(
+        enum_name: str, values: frozenset[str]
+    ) -> frozenset[str]:
+        """Union of each value's permissible-value descendants within the named enum.
+
+        Cached so constraint checks don't rebuild the expanded set per bound Edge.
+        """
+        return frozenset(
+            descendant
+            for value in values
+            for descendant in Biolink.get_permissible_value_descendants(
+                enum_name, value
+            )
+        )

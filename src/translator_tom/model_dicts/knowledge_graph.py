@@ -6,7 +6,7 @@ from typing import Literal, cast
 
 from typing_extensions import NotRequired, TypedDict
 
-from translator_tom.model_dicts.analysis import AnalysisDict
+from translator_tom.model_dicts.analysis import AnalysisDictUtil
 from translator_tom.model_dicts.attribute import (
     AttributeConstraintDict,
     AttributeConstraintDictUtil,
@@ -14,13 +14,22 @@ from translator_tom.model_dicts.attribute import (
     AttributeDictUtil,
 )
 from translator_tom.model_dicts.auxiliary_graph import AuxiliaryGraphsDict
+from translator_tom.model_dicts.constraints import (
+    AgentTypeConstraintDict,
+    AgentTypeConstraintDictUtil,
+    KnowledgeLevelConstraintDict,
+    KnowledgeLevelConstraintDictUtil,
+    QEdgeConstraintsDict,
+    QEdgeConstraintsDictUtil,
+    SourceConstraintDict,
+    SourceConstraintDictUtil,
+)
 from translator_tom.model_dicts.qualifier import (
-    QualifierConstraintDict,
-    QualifierConstraintDictUtil,
     QualifierDict,
     QualifierDictUtil,
+    QualifierSetConstraint,
 )
-from translator_tom.model_dicts.result import ResultDict
+from translator_tom.model_dicts.result import ResultDict, ResultDictUtil
 from translator_tom.model_dicts.retrieval_source import (
     RetrievalSourceDict,
     RetrievalSourceDictUtil,
@@ -45,7 +54,7 @@ __all__ = [
 class NodeDict(TypedDict):
     name: NotRequired[str | None]
     categories: list[Biolink.Entity]
-    attributes: list[AttributeDict]
+    attributes: NotRequired[list[AttributeDict] | None]
     is_set: NotRequired[bool | None]
 
 
@@ -53,6 +62,12 @@ class NodeDictUtil(DictUtil[NodeDict]):
     """Utility methods for `NodeDict`, mirroring those on the `Node` model."""
 
     _model = Node
+
+    @staticmethod
+    def attributes_list(node: NodeDict) -> list[AttributeDict]:
+        """Get the attributes as a guaranteed list, even if they are represented as None."""
+        attributes = node.get("attributes")
+        return attributes if attributes is not None else []
 
     @classmethod
     def hash(cls, obj: NodeDict) -> str:
@@ -65,7 +80,9 @@ class NodeDictUtil(DictUtil[NodeDict]):
         node: NodeDict, constraints: list[AttributeConstraintDict]
     ) -> bool:
         """Check if all constraints are satisfied by the node's attributes."""
-        return AttributeConstraintDictUtil.set_met_by(constraints, node["attributes"])
+        return AttributeConstraintDictUtil.set_met_by(
+            constraints, NodeDictUtil.attributes_list(node)
+        )
 
     @staticmethod
     def update(node: NodeDict, other: NodeDict) -> None:
@@ -76,9 +93,13 @@ class NodeDictUtil(DictUtil[NodeDict]):
         node["name"] = other.get("name") or node.get("name")
         node["categories"] = list(set(node["categories"]) | set(other["categories"]))
 
-        if other["attributes"]:
-            attrs = {AttributeDictUtil.hash(attr): attr for attr in node["attributes"]}
-            for attr in other["attributes"]:
+        other_attrs = other.get("attributes")
+        if other_attrs:
+            attrs = {
+                AttributeDictUtil.hash(attr): attr
+                for attr in NodeDictUtil.attributes_list(node)
+            }
+            for attr in other_attrs:
                 attrs[AttributeDictUtil.hash(attr)] = deepcopy(attr)
             node["attributes"] = list(attrs.values())
 
@@ -90,6 +111,8 @@ class EdgeDict(TypedDict):
     attributes: NotRequired[list[AttributeDict] | None]
     qualifiers: NotRequired[list[QualifierDict] | None]
     sources: list[RetrievalSourceDict]
+    knowledge_level: str
+    agent_type: str
 
 
 class EdgeDictUtil(DictUtil[EdgeDict]):
@@ -174,17 +197,17 @@ class EdgeDictUtil(DictUtil[EdgeDict]):
 
         Does not mutate `other`.
         """
+        # New KL/AT win.
+        edge["knowledge_level"] = other["knowledge_level"]
+        edge["agent_type"] = other["agent_type"]
+
         edge_attrs = edge.get("attributes")
         other_attrs = other.get("attributes")
         if (not edge_attrs) and other_attrs:
             edge["attributes"] = [deepcopy(attr) for attr in other_attrs]
         elif edge_attrs and other_attrs:
             attrs = {AttributeDictUtil.hash(attr): attr for attr in edge_attrs}
-            kl_at = (Biolink("knowledge_level"), Biolink("agent_type"))
             for attr in other_attrs:
-                # Avoid multiple KL/AT
-                if attr["attribute_type_id"] in kl_at:
-                    continue
                 attrs[AttributeDictUtil.hash(attr)] = deepcopy(attr)
             edge["attributes"] = list(attrs.values())
 
@@ -216,11 +239,61 @@ class EdgeDictUtil(DictUtil[EdgeDict]):
 
     @staticmethod
     def meets_qualifier_constraints(
-        edge: EdgeDict, constraints: list[QualifierConstraintDict]
+        edge: EdgeDict, constraints: list[QualifierSetConstraint]
     ) -> bool:
         """Check if the edge satisfies the qualifier constraints."""
-        return QualifierConstraintDictUtil.set_met_by(
+        return QualifierDictUtil.constraint_set_met_by(
             constraints, EdgeDictUtil.qualifiers_list(edge)
+        )
+
+    @staticmethod
+    def meets_knowledge_level_constraint(
+        edge: EdgeDict, constraint: KnowledgeLevelConstraintDict
+    ) -> bool:
+        """Check if the edge's knowledge_level satisfies the constraint."""
+        return KnowledgeLevelConstraintDictUtil.met_by(
+            constraint, edge["knowledge_level"]
+        )
+
+    @staticmethod
+    def meets_agent_type_constraint(
+        edge: EdgeDict, constraint: AgentTypeConstraintDict
+    ) -> bool:
+        """Check if the edge's agent_type satisfies the constraint."""
+        return AgentTypeConstraintDictUtil.met_by(constraint, edge["agent_type"])
+
+    @staticmethod
+    def meets_source_constraint(
+        edge: EdgeDict, constraint: SourceConstraintDict
+    ) -> bool:
+        """Check if the edge's sources satisfy the constraint."""
+        return SourceConstraintDictUtil.met_by(constraint, edge["sources"])
+
+    @staticmethod
+    def meets_constraints(edge: EdgeDict, constraints: QEdgeConstraintsDict) -> bool:
+        """Check if the edge satisfies all of a QEdge's constraints.
+
+        Each present constraint must be met (AND); absent constraints are ignored.
+        """
+        knowledge_level = constraints.get("knowledge_level")
+        agent_type = constraints.get("agent_type")
+        sources = constraints.get("sources")
+        return (
+            (
+                knowledge_level is None
+                or EdgeDictUtil.meets_knowledge_level_constraint(edge, knowledge_level)
+            )
+            and (
+                agent_type is None
+                or EdgeDictUtil.meets_agent_type_constraint(edge, agent_type)
+            )
+            and (sources is None or EdgeDictUtil.meets_source_constraint(edge, sources))
+            and EdgeDictUtil.meets_attribute_constraints(
+                edge, QEdgeConstraintsDictUtil.attributes_list(constraints)
+            )
+            and EdgeDictUtil.meets_qualifier_constraints(
+                edge, QEdgeConstraintsDictUtil.qualifiers_list(constraints)
+            )
         )
 
     @staticmethod
@@ -240,7 +313,7 @@ class EdgeDictUtil(DictUtil[EdgeDict]):
 
 class KnowledgeGraphDict(TypedDict):
     nodes: dict[CURIE, NodeDict]
-    edges: dict[EdgeID, EdgeDict]
+    edges: NotRequired[dict[EdgeID, EdgeDict] | None]
 
 
 class KnowledgeGraphDictUtil(DictUtil[KnowledgeGraphDict]):
@@ -249,9 +322,18 @@ class KnowledgeGraphDictUtil(DictUtil[KnowledgeGraphDict]):
     _model = KnowledgeGraph
 
     @staticmethod
-    def new() -> KnowledgeGraphDict:
+    def edges_dict(knowledge_graph: KnowledgeGraphDict) -> dict[EdgeID, EdgeDict]:
+        """Get the edges as a guaranteed dict, even if they are represented as None."""
+        edges = knowledge_graph.get("edges")
+        return edges if edges is not None else {}
+
+    @staticmethod
+    def new(edges: bool = True) -> KnowledgeGraphDict:
         """Return an empty instance, without having to pass required containers."""
-        return {"nodes": {}, "edges": {}}
+        knowledge_graph: KnowledgeGraphDict = {"nodes": {}}
+        if edges:
+            knowledge_graph["edges"] = {}
+        return knowledge_graph
 
     @staticmethod
     def normalize(knowledge_graph: KnowledgeGraphDict) -> dict[EdgeID, EdgeID]:
@@ -260,18 +342,22 @@ class KnowledgeGraphDictUtil(DictUtil[KnowledgeGraphDict]):
         Mutates the kgraph; references to specific edges may become stale.
         """
         mapping = dict[EdgeID, EdgeID]()
+        edges = knowledge_graph.get("edges")
+        if edges is None:
+            return mapping
 
-        for edge_id in list(knowledge_graph["edges"].keys()):
-            edge = knowledge_graph["edges"].pop(edge_id)
+        for edge_id in list(edges.keys()):
+            edge = edges.pop(edge_id)
             new_id = EdgeDictUtil.hash(edge)
             mapping[edge_id] = new_id
-            if existing := knowledge_graph["edges"].get(new_id):
+            existing = edges.get(new_id)
+            if existing is not None:
                 # Copy on collision so .update()'s normalization doesn't mutate its `other`
                 merged = deepcopy(existing)
                 EdgeDictUtil.update(merged, edge)
-                knowledge_graph["edges"][new_id] = merged
+                edges[new_id] = merged
             else:
-                knowledge_graph["edges"][new_id] = edge
+                edges[new_id] = edge
 
         return mapping
 
@@ -302,7 +388,11 @@ class KnowledgeGraphDictUtil(DictUtil[KnowledgeGraphDict]):
             self_mapping = KnowledgeGraphDictUtil.normalize(knowledge_graph)
         if pre_normalized in ("neither", "self"):
             # Normalize a shallow copy of the other dict so as not to modify the original.
-            other = {"nodes": dict(other["nodes"]), "edges": dict(other["edges"])}
+            other_copy: KnowledgeGraphDict = {"nodes": dict(other["nodes"])}
+            other_edges = other.get("edges")
+            if other_edges is not None:
+                other_copy["edges"] = dict(other_edges)
+            other = other_copy
             other_mapping = KnowledgeGraphDictUtil.normalize(other)
 
         for node_id, node in other["nodes"].items():
@@ -311,11 +401,16 @@ class KnowledgeGraphDictUtil(DictUtil[KnowledgeGraphDict]):
                 continue
             knowledge_graph["nodes"][node_id] = deepcopy(node) if copy else node
 
-        for edge_id, edge in other["edges"].items():
-            if edge_id in knowledge_graph["edges"]:
-                EdgeDictUtil.update(knowledge_graph["edges"][edge_id], edge)
-                continue
-            knowledge_graph["edges"][edge_id] = deepcopy(edge) if copy else edge
+        other_edges = other.get("edges")
+        if other_edges:
+            kg_edges = knowledge_graph.get("edges")
+            if kg_edges is None:
+                kg_edges = knowledge_graph["edges"] = {}
+            for edge_id, edge in other_edges.items():
+                if edge_id in kg_edges:
+                    EdgeDictUtil.update(kg_edges[edge_id], edge)
+                    continue
+                kg_edges[edge_id] = deepcopy(edge) if copy else edge
 
         return self_mapping, other_mapping
 
@@ -327,23 +422,20 @@ class KnowledgeGraphDictUtil(DictUtil[KnowledgeGraphDict]):
         bound_edges = set[EdgeID]()
         bound_nodes = set[CURIE]()
         for result in results:
-            for node_binding_set in result["node_bindings"].values():
-                bound_nodes.update(binding["id"] for binding in node_binding_set)
-            for analysis in result["analyses"]:
-                for aux_id in analysis.get("support_graphs") or []:
+            for node_binding in result["node_bindings"].values():
+                bound_nodes.update(node_binding["ids"])
+            for analysis in ResultDictUtil.analyses_list(result):
+                for aux_id in AnalysisDictUtil.support_graphs_list(analysis):
                     bound_edges.update(aux_graphs[aux_id]["edges"])
-                if "edge_bindings" in analysis:
-                    analysis = cast("AnalysisDict", analysis)
-                    for edge_binding_set in analysis["edge_bindings"].values():
-                        bound_edges.update(
-                            binding["id"] for binding in edge_binding_set
-                        )
-                else:
-                    for path_binding in itertools.chain(
-                        *(analysis["path_bindings"].values())
-                    ):
-                        if path_binding["id"] in aux_graphs:
-                            bound_edges.update(aux_graphs[path_binding["id"]]["edges"])
+                for edge_binding in AnalysisDictUtil.edge_bindings_dict(
+                    analysis
+                ).values():
+                    bound_edges.update(edge_binding["ids"])
+                for path_binding in AnalysisDictUtil.path_bindings_dict(
+                    analysis
+                ).values():
+                    for aux_id in path_binding["ids"]:
+                        bound_edges.update(aux_graphs[aux_id]["edges"])
         return bound_edges, bound_nodes
 
     @staticmethod
@@ -365,6 +457,7 @@ class KnowledgeGraphDictUtil(DictUtil[KnowledgeGraphDict]):
         bound_edges, bound_nodes = KnowledgeGraphDictUtil._walk_results(
             aux_graphs, results
         )
+        edges = KnowledgeGraphDictUtil.edges_dict(knowledge_graph)
 
         checked_edges = set[EdgeID]()
         edges_to_check = list(bound_edges)
@@ -376,7 +469,7 @@ class KnowledgeGraphDictUtil(DictUtil[KnowledgeGraphDict]):
                 continue
             checked_edges.add(edge_id)
 
-            edge = knowledge_graph["edges"][edge_id]
+            edge = edges[edge_id]
 
             bound_edges.add(edge_id)
             bound_nodes.add(edge["subject"])
@@ -398,8 +491,8 @@ class KnowledgeGraphDictUtil(DictUtil[KnowledgeGraphDict]):
                 edges_to_check.extend(aux_graphs[aux_graph_id]["edges"])
 
         knowledge_graph["edges"] = {
-            edge_id: knowledge_graph["edges"][edge_id] for edge_id in bound_edges
-        }
+            edge_id: edges[edge_id] for edge_id in bound_edges
+        } or None
         knowledge_graph["nodes"] = {
             curie: knowledge_graph["nodes"][curie] for curie in bound_nodes
         }

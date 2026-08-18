@@ -7,28 +7,21 @@ from typing import cast
 from typing_extensions import TypedDict
 
 from translator_tom.model_dicts.meta_qualifier import MetaQualifierDict
-from translator_tom.models.qualifier import Qualifier, QualifierConstraint
+from translator_tom.models.qualifier import Qualifier, QualifierSetConstraint
 from translator_tom.models.shared import OBJECT_RE, SUBJECT_RE
 from translator_tom.utils.biolink import Biolink
 from translator_tom.utils.dict_util_base import DictUtil
 
 __all__ = [
-    "QualifierConstraintDict",
-    "QualifierConstraintDictUtil",
     "QualifierDict",
     "QualifierDictUtil",
+    "QualifierSetConstraint",
 ]
 
 
 class QualifierDict(TypedDict):
     qualifier_type_id: Biolink.Qualifier
     qualifier_value: str
-
-
-class QualifierDictUtil(DictUtil[QualifierDict]):
-    """Registration-only util for `QualifierDict`."""
-
-    _model = Qualifier
 
 
 def _qualifier_values(
@@ -46,33 +39,24 @@ def _qualifier_values(
     return set(applicable) if applicable is not None else None
 
 
-class QualifierConstraintDict(TypedDict):
-    qualifier_set: list[QualifierDict]
+class QualifierDictUtil(DictUtil[QualifierDict]):
+    """Utility methods for `QualifierDict`, mirroring those on the `Qualifier` model."""
 
-
-class QualifierConstraintDictUtil(DictUtil[QualifierConstraintDict]):
-    """Utility methods for `QualifierConstraintDict`, mirroring those on the `QualifierConstraint` model."""
-
-    _model = QualifierConstraint
+    _model = Qualifier
 
     @staticmethod
-    def new() -> QualifierConstraintDict:
-        """Return an empty instance, without having to pass required containers."""
-        return {"qualifier_set": []}
-
-    @staticmethod
-    def met_by(
-        constraint: QualifierConstraintDict,
+    def constraint_met_by(
+        constraint: QualifierSetConstraint,
         qualifiers: Iterable[QualifierDict] | Iterable[MetaQualifierDict],
     ) -> bool:
-        """Check that the given qualifiers satisfy the constraint."""
+        """Check that the given qualifiers satisfy the constraint (type/value pairs, AND-ed)."""
         qualifier_pairs: list[tuple[Biolink.Qualifier, set[str] | None]] = [
             (qualifier["qualifier_type_id"], _qualifier_values(qualifier))
             for qualifier in qualifiers
         ]
 
-        for constr in constraint["qualifier_set"]:
-            applicable_types = set(Biolink.get_descendants(constr["qualifier_type_id"]))
+        for constr_type_id, constr_value in constraint.items():
+            applicable_types = set(Biolink.get_descendants(constr_type_id))
             allowed_values: set[str] | None = None
             met = False
             for qual_type, available_values in qualifier_pairs:
@@ -82,7 +66,7 @@ class QualifierConstraintDictUtil(DictUtil[QualifierConstraintDict]):
                     # expand values once a type matches
                     allowed_values = set(
                         itertools.chain.from_iterable(
-                            Biolink.get_descendant_values(t, constr["qualifier_value"])
+                            Biolink.get_descendant_qualifier_values(t, constr_value)
                             for t in applicable_types
                         )
                     )
@@ -96,42 +80,39 @@ class QualifierConstraintDictUtil(DictUtil[QualifierConstraintDict]):
         return True
 
     @staticmethod
-    def set_met_by(
-        constraints: list[QualifierConstraintDict],
+    def constraint_set_met_by(
+        constraints: list[QualifierSetConstraint],
         qualifiers: list[QualifierDict] | list[MetaQualifierDict],
     ) -> bool:
-        """Check if the given set of constraints are met by the given qualifiers."""
+        """Check if the given constraints are met by the given qualifiers (OR-ed)."""
         if len(constraints) == 0:
             return True
         elif len(qualifiers) == 0:
             return False
 
         return any(
-            QualifierConstraintDictUtil.met_by(constraint, qualifiers)
+            QualifierDictUtil.constraint_met_by(constraint, qualifiers)
             for constraint in constraints
         )
 
     @staticmethod
-    def get_inverse(constraint: QualifierConstraintDict) -> QualifierConstraintDict:
+    def get_constraint_inverse(
+        constraint: QualifierSetConstraint,
+    ) -> QualifierSetConstraint:
         """Return a (SPO) inverse of the constraint, for reversing edges."""
-        new_qualifier_set = list[QualifierDict]()
-        for qualifier in constraint["qualifier_set"]:
-            new_qualifier = cast("QualifierDict", {**qualifier})
-            type_id = qualifier["qualifier_type_id"]
-            value = qualifier["qualifier_value"]
+        inverse = dict[Biolink.Qualifier, str]()
+        for type_id, value in constraint.items():
             if OBJECT_RE.search(type_id):
-                new_qualifier["qualifier_type_id"] = OBJECT_RE.sub("subject", type_id)
+                inverse[OBJECT_RE.sub("subject", type_id)] = value
             elif SUBJECT_RE.search(type_id):
-                new_qualifier["qualifier_type_id"] = SUBJECT_RE.sub("object", type_id)
+                inverse[SUBJECT_RE.sub("object", type_id)] = value
             elif type_id == "biolink:qualified_predicate":
-                inverse = Biolink.get_inverse(value)
-                if not inverse:
+                inverse_value = Biolink.get_inverse(value)
+                if not inverse_value:
                     raise ValueError(
                         f"Cannot invert qualified_predicate: no inverse for predicate {value}"
                     )
-                new_qualifier["qualifier_value"] = inverse
+                inverse[type_id] = inverse_value
             else:
                 raise ValueError(f"Cannot invert qualifier of type {type_id}")
-            new_qualifier_set.append(new_qualifier)
-
-        return {"qualifier_set": new_qualifier_set}
+        return inverse

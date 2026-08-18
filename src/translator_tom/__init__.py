@@ -11,6 +11,10 @@ except PackageNotFoundError:  # pragma: no cover - package not installed (source
 __all__ = [
     "CURIE",
     "TRAPI_CONFIG",
+    "AgentTypeConstraint",
+    "AllowDenyConstraint",
+    "AllowDenyConstraintBehavior",
+    "AllowDenyConstraintBehaviorEnum",
     "Analysis",
     "AsyncQuery",
     "AsyncQueryResponse",
@@ -20,8 +24,6 @@ __all__ = [
     "AuxGraphID",
     "AuxiliaryGraph",
     "AuxiliaryGraphsDict",
-    "BaseAnalysis",
-    "BaseQueryGraph",
     "Biolink",
     "Curie",
     "Delta",
@@ -33,6 +35,7 @@ __all__ = [
     "HashRepEnum",
     "Infores",
     "KnowledgeGraph",
+    "KnowledgeLevelConstraint",
     "KnowledgeType",
     "KnowledgeTypeEnum",
     "LogEntry",
@@ -51,18 +54,18 @@ __all__ = [
     "OperatorEnum",
     "PathBinding",
     "PathConstraint",
-    "PathfinderAnalysis",
-    "PathfinderQueryGraph",
     "QEdge",
+    "QEdgeConstraints",
     "QEdgeID",
     "QNode",
     "QNodeID",
     "QPath",
     "QPathID",
     "Qualifier",
-    "QualifierConstraint",
+    "QualifierSetConstraint",
     "Query",
     "QueryGraph",
+    "QueryParameters",
     "ResourceRole",
     "ResourceRoleEnum",
     "Response",
@@ -70,6 +73,7 @@ __all__ = [
     "RetrievalSource",
     "SetInterpretation",
     "SetInterpretationEnum",
+    "SourceConstraint",
     "TOMBase",
     "diff",
     "infores",
@@ -81,11 +85,7 @@ __all__ = [
 ]
 
 from translator_tom.models import workflow_operations as workflow
-from translator_tom.models.analysis import (
-    Analysis,
-    BaseAnalysis,
-    PathfinderAnalysis,
-)
+from translator_tom.models.analysis import Analysis
 from translator_tom.models.asyncquery import (
     AsyncQuery,
     AsyncQueryResponse,
@@ -98,6 +98,15 @@ from translator_tom.models.attribute import (
     OperatorEnum,
 )
 from translator_tom.models.auxiliary_graph import AuxiliaryGraph, AuxiliaryGraphsDict
+from translator_tom.models.constraints import (
+    AgentTypeConstraint,
+    AllowDenyConstraint,
+    AllowDenyConstraintBehavior,
+    AllowDenyConstraintBehaviorEnum,
+    KnowledgeLevelConstraint,
+    QEdgeConstraints,
+    SourceConstraint,
+)
 from translator_tom.models.edge_binding import EdgeBinding
 from translator_tom.models.knowledge_graph import Edge, KnowledgeGraph, Node
 from translator_tom.models.log_entry import LogEntry, LogLevel, LogLevelEnum
@@ -112,11 +121,9 @@ from translator_tom.models.meta_qualifier import MetaQualifier
 from translator_tom.models.node_binding import NodeBinding
 from translator_tom.models.path_binding import PathBinding
 from translator_tom.models.path_constraint import PathConstraint
-from translator_tom.models.qualifier import Qualifier, QualifierConstraint
+from translator_tom.models.qualifier import Qualifier, QualifierSetConstraint
 from translator_tom.models.query import Query
 from translator_tom.models.query_graph import (
-    BaseQueryGraph,
-    PathfinderQueryGraph,
     QEdge,
     QNode,
     QPath,
@@ -124,6 +131,7 @@ from translator_tom.models.query_graph import (
     SetInterpretation,
     SetInterpretationEnum,
 )
+from translator_tom.models.query_parameters import QueryParameters
 from translator_tom.models.response import Response
 from translator_tom.models.result import Result
 from translator_tom.models.retrieval_source import (

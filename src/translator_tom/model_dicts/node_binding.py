@@ -1,8 +1,7 @@
 from __future__ import annotations
 
-from typing_extensions import NotRequired, TypedDict
+from typing_extensions import TypedDict
 
-from translator_tom.model_dicts.attribute import AttributeDict, AttributeDictUtil
 from translator_tom.models.node_binding import NodeBinding
 from translator_tom.models.shared import CURIE
 from translator_tom.utils.dict_util_base import DictUtil
@@ -12,9 +11,7 @@ __all__ = ["NodeBindingDict", "NodeBindingDictUtil"]
 
 
 class NodeBindingDict(TypedDict):
-    id: CURIE
-    query_id: NotRequired[CURIE | None]
-    attributes: list[AttributeDict]
+    ids: list[CURIE]
 
 
 class NodeBindingDictUtil(DictUtil[NodeBindingDict]):
@@ -24,11 +21,5 @@ class NodeBindingDictUtil(DictUtil[NodeBindingDict]):
 
     @classmethod
     def hash(cls, obj: NodeBindingDict) -> str:
-        """Hash matching `NodeBinding.hash` (bound node id, query id, attributes)."""
-        return tomhash(
-            (
-                obj["id"],
-                obj.get("query_id"),
-                frozenset(AttributeDictUtil.hash(a) for a in obj["attributes"]),
-            )
-        )
+        """Hash matching `NodeBinding.hash` (unordered bound node ids)."""
+        return tomhash(frozenset(obj["ids"]))

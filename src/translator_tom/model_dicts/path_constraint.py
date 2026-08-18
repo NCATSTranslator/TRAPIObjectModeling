@@ -10,7 +10,7 @@ __all__ = ["PathConstraintDict", "PathConstraintDictUtil"]
 
 
 class PathConstraintDict(TypedDict):
-    intermediate_categories: NotRequired[list[Biolink.Entity] | None]
+    required_intermediate_categories: NotRequired[list[Biolink.Entity] | None]
 
 
 class PathConstraintDictUtil(DictUtil[PathConstraintDict]):
@@ -19,9 +19,15 @@ class PathConstraintDictUtil(DictUtil[PathConstraintDict]):
     _model = PathConstraint
 
     @staticmethod
-    def intermediate_categories_list(
+    def required_intermediate_categories_list(
         path_constraint: PathConstraintDict,
     ) -> list[Biolink.Entity]:
-        """Get the intermediate_categories as a guaranteed list, even if they are represented as None."""
-        intermediate_categories = path_constraint.get("intermediate_categories")
-        return intermediate_categories if intermediate_categories is not None else []
+        """Get the required_intermediate_categories as a guaranteed list, even if they are represented as None."""
+        required_intermediate_categories = path_constraint.get(
+            "required_intermediate_categories"
+        )
+        return (
+            required_intermediate_categories
+            if required_intermediate_categories is not None
+            else []
+        )
