@@ -9,11 +9,8 @@ from translator_tom.validation._util import (
     SemanticValidationResult,
     always_valid,
     extend_location,
-    get_list_locations,
     semantic_validate,
     validate_keys_exist,
-    validate_many,
-    validation_pipeline,
 )
 
 
@@ -25,22 +22,12 @@ def _validate_edge_binding(
     kgraph: KnowledgeGraph | None = None,
     **_: Any,
 ) -> SemanticValidationResult:
-    return validation_pipeline(
-        (
-            validate_keys_exist(
-                [obj.id],
-                kgraph.edges.keys(),
-                "Edge",
-                "knowledge_graph",
-                extend_location(location, "id"),
-            )
-            if kgraph is not None
-            else always_valid()
-        ),
-        validate_many(
-            *obj.attributes,
-            locations=get_list_locations(
-                obj.attributes, extend_location(location, "attributes")
-            ),
-        ),
+    if kgraph is None:
+        return always_valid()
+    return validate_keys_exist(
+        obj.ids,
+        kgraph.edges_dict.keys(),
+        "Edge",
+        "knowledge_graph",
+        extend_location(location, "ids"),
     )

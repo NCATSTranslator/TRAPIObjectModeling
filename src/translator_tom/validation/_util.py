@@ -228,6 +228,23 @@ def validate_biolink_element(
     return warnings, errors
 
 
+def validate_permissible_value(
+    value: str,
+    enum_name: str,
+    location: Location | None = None,
+) -> SemanticValidationResult:
+    """Validate that `value` is a permissible value of the named biolink enum."""
+    warnings, errors = always_valid()
+    if value not in Biolink.get_permissible_values(enum_name):
+        errors.append(
+            SemanticValidationError(
+                f"`{value}` is not a valid biolink {enum_name} value.",
+                location,
+            )
+        )
+    return warnings, errors
+
+
 def validate_predicate(
     predicate: Biolink.Predicate, location: Location | None = None
 ) -> SemanticValidationResult:

@@ -6,12 +6,11 @@ from translator_tom.models.auxiliary_graph import AuxiliaryGraph
 from translator_tom.models.knowledge_graph import KnowledgeGraph
 from translator_tom.validation._util import (
     Location,
-    SemanticValidationError,
     SemanticValidationResult,
+    always_valid,
     extend_location,
-    get_list_locations,
     semantic_validate,
-    validate_many,
+    validate_keys_exist,
 )
 
 
@@ -23,23 +22,12 @@ def _validate_auxiliary_graph(
     kgraph: KnowledgeGraph | None = None,
     **_: Any,
 ) -> SemanticValidationResult:
-    warnings, errors = validate_many(
-        *obj.attributes,
-        locations=get_list_locations(
-            obj.attributes, extend_location(location, "attributes")
-        ),
-    )
-
     if kgraph is None:
-        return warnings, errors
-
-    for edge_id in obj.edges:
-        if edge_id not in kgraph.edges:
-            errors.append(
-                SemanticValidationError(
-                    f"Auxiliary references KEdge ID {edge_id} which is not present in knowledge_graph.",
-                    extend_location(location, "edges"),
-                )
-            )
-
-    return warnings, errors
+        return always_valid()
+    return validate_keys_exist(
+        obj.edges,
+        kgraph.edges_dict.keys(),
+        "KEdge",
+        "knowledge_graph",
+        extend_location(location, "edges"),
+    )

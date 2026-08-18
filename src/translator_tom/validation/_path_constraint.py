@@ -6,10 +6,10 @@ from translator_tom.models.path_constraint import PathConstraint
 from translator_tom.validation._util import (
     Location,
     SemanticValidationResult,
+    always_valid,
     extend_location,
     semantic_validate,
     validate_category,
-    validation_pipeline,
 )
 
 
@@ -19,9 +19,11 @@ def _validate_path_constraint(
     location: Location | None = None,
     **_: Any,
 ) -> SemanticValidationResult:
-    return validation_pipeline(
-        *(
-            validate_category(cat, extend_location(location, "intermediate_categories"))
-            for cat in obj.intermediate_categories_list
+    warnings, errors = always_valid()
+    for category in obj.required_intermediate_categories_list:
+        new_warnings, new_errors = validate_category(
+            category, extend_location(location, "required_intermediate_categories")
         )
-    )
+        warnings.extend(new_warnings)
+        errors.extend(new_errors)
+    return warnings, errors

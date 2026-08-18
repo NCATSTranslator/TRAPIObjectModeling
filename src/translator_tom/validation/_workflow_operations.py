@@ -5,7 +5,7 @@ from typing import Any
 from translator_tom.models.auxiliary_graph import AuxiliaryGraphsDict
 from translator_tom.models.knowledge_graph import KnowledgeGraph
 from translator_tom.models.meta_knowledge_graph import MetaKnowledgeGraph
-from translator_tom.models.query_graph import PathfinderQueryGraph, QueryGraph
+from translator_tom.models.query_graph import QueryGraph
 from translator_tom.models.workflow_operations import (
     EnrichResultsParameters,
     FillAllowListParameters,
@@ -61,7 +61,7 @@ def _validate_op_with_params(  # noqa: PLR0913
     location: Location | None = None,
     *,
     kgraph: KnowledgeGraph | None = None,
-    qgraph: QueryGraph | PathfinderQueryGraph | None = None,
+    qgraph: QueryGraph | None = None,
     aux_graphs: AuxiliaryGraphsDict | None = None,
     metakg: MetaKnowledgeGraph | None = None,
     **_: Any,
@@ -84,7 +84,7 @@ def _validate_enrich_results_params(
     obj: EnrichResultsParameters,
     location: Location | None = None,
     *,
-    qgraph: QueryGraph | PathfinderQueryGraph | None = None,
+    qgraph: QueryGraph | None = None,
     **_: Any,
 ) -> SemanticValidationResult:
     return (
@@ -105,18 +105,18 @@ def _validate_fill_allow_list_params(
     obj: FillAllowListParameters,
     location: Location | None = None,
     *,
-    qgraph: QueryGraph | PathfinderQueryGraph | None = None,
+    qgraph: QueryGraph | None = None,
     **_: Any,
 ) -> SemanticValidationResult:
     return (
         validate_keys_exist(
             obj.qedge_keys_list,
-            qgraph.edges.keys(),
+            qgraph.edges_dict.keys(),
             "QEdge",
             "query_graph",
             extend_location(location, "qedge_keys"),
         )
-        if qgraph is not None and isinstance(qgraph, QueryGraph)
+        if qgraph is not None
         else always_valid()
     )
 
@@ -126,18 +126,18 @@ def _validate_fill_deny_list_params(
     obj: FillDenyListParameters,
     location: Location | None = None,
     *,
-    qgraph: QueryGraph | PathfinderQueryGraph | None = None,
+    qgraph: QueryGraph | None = None,
     **_: Any,
 ) -> SemanticValidationResult:
     return (
         validate_keys_exist(
             obj.qedge_keys_list,
-            qgraph.edges.keys(),
+            qgraph.edges_dict.keys(),
             "QEdge",
             "query_graph",
             extend_location(location, "qedge_keys"),
         )
-        if qgraph is not None and isinstance(qgraph, QueryGraph)
+        if qgraph is not None
         else always_valid()
     )
 
@@ -147,19 +147,19 @@ def _validate_filter_kgraph_params(
     obj: FilterKgraphParametersBase,
     location: Location | None = None,
     *,
-    qgraph: QueryGraph | PathfinderQueryGraph | None = None,
+    qgraph: QueryGraph | None = None,
     **_: Any,
 ) -> SemanticValidationResult:
     return validation_pipeline(
         (
             validate_keys_exist(
                 obj.qedge_keys_list,
-                qgraph.edges.keys(),
+                qgraph.edges_dict.keys(),
                 "QEdge",
                 "query_graph",
                 extend_location(location, "qedge_keys"),
             )
-            if qgraph is not None and isinstance(qgraph, QueryGraph)
+            if qgraph is not None
             else always_valid()
         ),
         (
@@ -181,7 +181,7 @@ def _validate_overlay_jaccard_params(
     obj: OverlayComputeJaccardParameters,
     location: Location | None = None,
     *,
-    qgraph: QueryGraph | PathfinderQueryGraph | None = None,
+    qgraph: QueryGraph | None = None,
     **_: Any,
 ) -> SemanticValidationResult:
     return validation_pipeline(
@@ -216,7 +216,7 @@ def _validate_overlay_ngd_params(
     obj: OverlayComputeNgdParameters,
     location: Location | None = None,
     *,
-    qgraph: QueryGraph | PathfinderQueryGraph | None = None,
+    qgraph: QueryGraph | None = None,
     **_: Any,
 ) -> SemanticValidationResult:
     return (
@@ -237,7 +237,7 @@ def _validate_overlay_fisher_params(
     obj: OverlayFisherExactTestParameters,
     location: Location | None = None,
     *,
-    qgraph: QueryGraph | PathfinderQueryGraph | None = None,
+    qgraph: QueryGraph | None = None,
     **_: Any,
 ) -> SemanticValidationResult:
     return validation_pipeline(
@@ -266,14 +266,12 @@ def _validate_overlay_fisher_params(
         (
             validate_keys_exist(
                 [obj.rel_edge_key],
-                qgraph.edges.keys(),
+                qgraph.edges_dict.keys(),
                 "QEdge",
                 "query_graph",
                 extend_location(location, "rel_edge_key"),
             )
-            if qgraph is not None
-            and obj.rel_edge_key is not None
-            and isinstance(qgraph, QueryGraph)
+            if qgraph is not None and obj.rel_edge_key is not None
             else always_valid()
         ),
     )
@@ -284,18 +282,18 @@ def _validate_sort_edge_attr_params(
     obj: SortResultsEdgeAttributeParameters,
     location: Location | None = None,
     *,
-    qgraph: QueryGraph | PathfinderQueryGraph | None = None,
+    qgraph: QueryGraph | None = None,
     **_: Any,
 ) -> SemanticValidationResult:
     return (
         validate_keys_exist(
             obj.qedge_keys,
-            qgraph.edges.keys(),
+            qgraph.edges_dict.keys(),
             "QEdge",
             "query_graph",
             extend_location(location, "qedge_keys"),
         )
-        if qgraph is not None and isinstance(qgraph, QueryGraph)
+        if qgraph is not None
         else always_valid()
     )
 
@@ -305,7 +303,7 @@ def _validate_sort_node_attr_params(
     obj: SortResultNodeAttributeParameters,
     location: Location | None = None,
     *,
-    qgraph: QueryGraph | PathfinderQueryGraph | None = None,
+    qgraph: QueryGraph | None = None,
     **_: Any,
 ) -> SemanticValidationResult:
     return (

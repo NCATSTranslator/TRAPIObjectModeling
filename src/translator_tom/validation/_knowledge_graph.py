@@ -16,6 +16,7 @@ from translator_tom.validation._util import (
     semantic_validate,
     validate_category,
     validate_many,
+    validate_permissible_value,
     validate_predicate,
     validation_pipeline,
 )
@@ -33,8 +34,10 @@ def _validate_knowledge_graph(
             locations=get_dict_locations(obj.nodes, extend_location(location, "nodes")),
         ),
         validate_many(
-            *obj.edges.values(),
-            locations=get_dict_locations(obj.edges, extend_location(location, "edges")),
+            *obj.edges_dict.values(),
+            locations=get_dict_locations(
+                obj.edges_dict, extend_location(location, "edges")
+            ),
             kgraph=obj,
         ),
     )
@@ -47,15 +50,15 @@ def _validate_node(
     **_: Any,
 ) -> SemanticValidationResult:
     return validation_pipeline(
+        validate_many(
+            *obj.attributes_list,
+            locations=get_list_locations(
+                obj.attributes_list, extend_location(location, "attributes")
+            ),
+        ),
         *(
             validate_category(category, extend_location(location, "categories"))
             for category in obj.categories
-        ),
-        validate_many(
-            *obj.attributes,
-            locations=get_list_locations(
-                obj.attributes, extend_location(location, "attributes")
-            ),
         ),
     )
 
@@ -70,6 +73,16 @@ def _validate_edge(
 ) -> SemanticValidationResult:
     warnings, errors = validation_pipeline(
         validate_predicate(obj.predicate, extend_location(location, "predicate")),
+        validate_permissible_value(
+            obj.knowledge_level,
+            "KnowledgeLevelEnum",
+            extend_location(location, "knowledge_level"),
+        ),
+        validate_permissible_value(
+            obj.agent_type,
+            "AgentTypeEnum",
+            extend_location(location, "agent_type"),
+        ),
         validate_many(
             *obj.qualifiers_list,
             locations=get_list_locations(

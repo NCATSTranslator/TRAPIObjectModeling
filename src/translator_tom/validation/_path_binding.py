@@ -6,12 +6,11 @@ from translator_tom.models.auxiliary_graph import AuxiliaryGraphsDict
 from translator_tom.models.path_binding import PathBinding
 from translator_tom.validation._util import (
     Location,
-    SemanticValidationError,
     SemanticValidationResult,
-    SemanticValidationWarningList,
     always_valid,
     extend_location,
     semantic_validate,
+    validate_keys_exist,
 )
 
 
@@ -23,11 +22,12 @@ def _validate_path_binding(
     aux_graphs: AuxiliaryGraphsDict | None = None,
     **_: Any,
 ) -> SemanticValidationResult:
-    if aux_graphs is not None and obj.id not in aux_graphs:
-        return SemanticValidationWarningList(), [
-            SemanticValidationError(
-                f"Bound auxiliary graph `{obj.id}` is not present in auxiliary_graphs.",
-                extend_location(location, "id"),
-            )
-        ]
-    return always_valid()
+    if aux_graphs is None:
+        return always_valid()
+    return validate_keys_exist(
+        obj.ids,
+        aux_graphs.keys(),
+        "Auxiliary graph",
+        "auxiliary_graphs",
+        extend_location(location, "ids"),
+    )

@@ -1,17 +1,17 @@
 from __future__ import annotations
 
-import itertools
 from typing import Any
 
 from translator_tom.models.auxiliary_graph import AuxiliaryGraphsDict
 from translator_tom.models.knowledge_graph import KnowledgeGraph
-from translator_tom.models.query_graph import PathfinderQueryGraph, QueryGraph
+from translator_tom.models.query_graph import QueryGraph
 from translator_tom.models.result import Result
 from translator_tom.validation._util import (
     Location,
     SemanticValidationResult,
     always_valid,
     extend_location,
+    get_dict_locations,
     get_list_locations,
     semantic_validate,
     validate_keys_exist,
@@ -26,14 +26,14 @@ def _validate_result(
     location: Location | None = None,
     *,
     kgraph: KnowledgeGraph | None = None,
-    qgraph: QueryGraph | PathfinderQueryGraph | None = None,
+    qgraph: QueryGraph | None = None,
     aux_graphs: AuxiliaryGraphsDict | None = None,
     **_: Any,
 ) -> SemanticValidationResult:
     return validation_pipeline(
         (
             validate_keys_exist(
-                list(obj.node_bindings.keys()),
+                obj.node_bindings.keys(),
                 qgraph.nodes.keys(),
                 "QNode",
                 "query_graph",
@@ -43,25 +43,17 @@ def _validate_result(
             else always_valid()
         ),
         validate_many(
-            *itertools.chain(*obj.node_bindings.values()),
-            locations=list(
-                itertools.chain(
-                    *[
-                        get_list_locations(
-                            bindings,
-                            location=extend_location(location, "node_bindings", qnode),
-                        )
-                        for qnode, bindings in obj.node_bindings.items()
-                    ]
-                )
+            *obj.node_bindings.values(),
+            locations=get_dict_locations(
+                obj.node_bindings, extend_location(location, "node_bindings")
             ),
             qgraph=qgraph,
             kgraph=kgraph,
         ),
         validate_many(
-            *obj.analyses,
+            *obj.analyses_list,
             locations=get_list_locations(
-                obj.analyses, extend_location(location, "analyses")
+                obj.analyses_list, extend_location(location, "analyses")
             ),
             qgraph=qgraph,
             kgraph=kgraph,
