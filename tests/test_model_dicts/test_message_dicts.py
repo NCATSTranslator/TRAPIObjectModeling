@@ -28,6 +28,8 @@ def _edge(subject: str, obj: str) -> Edge:
                 resource_id="infores:x", resource_role="primary_knowledge_source"
             )
         ],
+        knowledge_level="knowledge_assertion",
+        agent_type="manual_agent",
     )
 
 
@@ -42,16 +44,16 @@ def _message() -> Message:
         ),
         results=[
             Result(
-                node_bindings={"n0": [NodeBinding(id="CHEBI:1", attributes=[])]},
+                node_bindings={"n0": NodeBinding(ids=["CHEBI:1"])},
                 analyses=[
                     Analysis(
                         resource_id="infores:x",
-                        edge_bindings={"e0": [EdgeBinding(id="kg0", attributes=[])]},
+                        edge_bindings={"e0": EdgeBinding(ids=["kg0"])},
                     )
                 ],
             )
         ],
-        auxiliary_graphs={"a0": AuxiliaryGraph(edges=["kg0"], attributes=[])},
+        auxiliary_graphs={"a0": AuxiliaryGraph(edges=["kg0"])},
     )
 
 
@@ -109,8 +111,8 @@ class TestUpdate:
         other = Message(
             results=[
                 Result(
-                    node_bindings={"n0": [NodeBinding(id="DRUGBANK:2", attributes=[])]},
-                    analyses=[Analysis(resource_id="infores:y", edge_bindings={})],
+                    node_bindings={"n0": NodeBinding(ids=["DRUGBANK:2"])},
+                    analyses=[Analysis(resource_id="infores:y")],
                 )
             ],
         )
@@ -123,8 +125,8 @@ class TestUpdate:
         assert len(MessageDictUtil.results_list(m_dict)) == len(m.results_list)
 
     def test_mismatched_query_graph_raises(self):
-        m: MessageDict = {"query_graph": {"nodes": {"n0": {}}, "edges": {}}}
-        other: MessageDict = {"query_graph": {"nodes": {"n1": {}}, "edges": {}}}
+        m: MessageDict = {"query_graph": {"nodes": {"n0": {}}}}
+        other: MessageDict = {"query_graph": {"nodes": {"n1": {}}}}
         with pytest.raises(NotImplementedError):
             MessageDictUtil.update(m, other)
 
@@ -145,7 +147,11 @@ class TestUpdate:
                                     "resource_role": "primary_knowledge_source",
                                 }
                             ],
-                            "attributes": [{"attribute_type_id": "biolink:a", "value": 1}],
+                            "knowledge_level": "knowledge_assertion",
+                            "agent_type": "manual_agent",
+                            "attributes": [
+                                {"attribute_type_id": "biolink:a", "value": 1}
+                            ],
                         },
                         "k2": {
                             "subject": "n0",
@@ -157,7 +163,11 @@ class TestUpdate:
                                     "resource_role": "primary_knowledge_source",
                                 }
                             ],
-                            "attributes": [{"attribute_type_id": "biolink:b", "value": 2}],
+                            "knowledge_level": "knowledge_assertion",
+                            "agent_type": "manual_agent",
+                            "attributes": [
+                                {"attribute_type_id": "biolink:b", "value": 2}
+                            ],
                         },
                     },
                 },
@@ -195,6 +205,8 @@ class TestUpdate:
                                         "resource_role": "primary_knowledge_source",
                                     }
                                 ],
+                                "knowledge_level": "knowledge_assertion",
+                                "agent_type": "manual_agent",
                                 "attributes": [
                                     {"attribute_type_id": "biolink:y", "value": val}
                                 ],
@@ -209,25 +221,23 @@ class TestUpdate:
                                         "resource_role": "primary_knowledge_source",
                                     }
                                 ],
+                                "knowledge_level": "knowledge_assertion",
+                                "agent_type": "manual_agent",
                             },
                         },
                     },
                     "results": [
                         {
-                            "node_bindings": {"n0": [{"id": "n0", "attributes": []}]},
+                            "node_bindings": {"n0": {"ids": ["n0"]}},
                             "analyses": [
                                 {
                                     "resource_id": f"ara{tag}",
-                                    "edge_bindings": {
-                                        "e0": [{"id": "shared", "attributes": []}]
-                                    },
+                                    "edge_bindings": {"e0": {"ids": ["shared"]}},
                                 }
                             ],
                         }
                     ],
-                    "auxiliary_graphs": {
-                        f"aux{tag}": {"edges": ["shared"], "attributes": []}
-                    },
+                    "auxiliary_graphs": {f"aux{tag}": {"edges": ["shared"]}},
                 }
             ).to_dict()
 
@@ -258,11 +268,13 @@ class TestUpdate:
         other = Message(
             knowledge_graph=KnowledgeGraph(
                 nodes={
-                    "CHEBI:2": Node(categories=["biolink:ChemicalEntity"], attributes=[])
+                    "CHEBI:2": Node(
+                        categories=["biolink:ChemicalEntity"], attributes=[]
+                    )
                 },
                 edges={"kg1": _edge("CHEBI:2", "MONDO:2")},
             ),
-            auxiliary_graphs={"a1": AuxiliaryGraph(edges=["kg1"], attributes=[])},
+            auxiliary_graphs={"a1": AuxiliaryGraph(edges=["kg1"])},
         )
         m_dict = m.to_dict()
         model_mapping = m.update(other)
@@ -273,8 +285,8 @@ class TestUpdate:
     def test_query_graphs_equal_but_extra_key_do_not_raise(self):
         # Query graphs equal by hash but differing by an extra key: the model ignores
         # extras (hash-based `==`), so MessageDictUtil.update must not raise either.
-        qg = QueryGraph(nodes={"n0": QNode()}, edges={})
-        qg_extra = QueryGraph(nodes={"n0": QNode()}, edges={}, foo="bar")
+        qg = QueryGraph(nodes={"n0": QNode()})
+        qg_extra = QueryGraph(nodes={"n0": QNode()}, foo="bar")
         m = Message(query_graph=qg)
         other = Message(query_graph=qg_extra)
         m_dict = m.to_dict()

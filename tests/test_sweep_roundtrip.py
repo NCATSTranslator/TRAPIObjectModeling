@@ -25,8 +25,6 @@ SKIP: dict[str, str] = {
     "LogEntry": "harness: LogEntry.timestamp requires an ISO-8601 string; dummy 'x' fails the pattern",
     # AsyncQueryStatusResponse has a required logs: list[LogEntry] -> same pattern failure.
     "AsyncQueryStatusResponse": "harness: nested required LogEntry.timestamp requires an ISO-8601 string; dummy 'x' fails the pattern",
-    # PathfinderQueryGraph.paths is Field(min_length=1); the dummy builds an empty {} dict.
-    "PathfinderQueryGraph": "harness: PathfinderQueryGraph.paths requires min_length=1; dummy builds an empty dict",
 }
 
 # Real product bugs: models that genuinely don't round-trip. None found.

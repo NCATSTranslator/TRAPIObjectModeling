@@ -5,7 +5,6 @@ from pydantic import ValidationError
 
 from translator_tom import (
     Analysis,
-    Attribute,
     AuxiliaryGraph,
     Edge,
     EdgeBinding,
@@ -38,18 +37,18 @@ def _edge(subject: str = "A:1", object_: str = "B:2") -> Edge:
         subject=subject,
         object=object_,
         sources=[_src()],
+        knowledge_level="knowledge_assertion",
+        agent_type="manual_agent",
     )
 
 
 def _result(node_id: str = "A:1", edge_id: str = "e1") -> Result:
     return Result(
-        node_bindings={"n0": [NodeBinding(id=node_id, attributes=[])]},
+        node_bindings={"n0": NodeBinding(ids=[node_id])},
         analyses=[
             Analysis(
                 resource_id="infores:test",
-                edge_bindings={
-                    "e0": [EdgeBinding(id=edge_id, attributes=[])]
-                },
+                edge_bindings={"e0": EdgeBinding(ids=[edge_id])},
             )
         ],
     )
@@ -80,7 +79,7 @@ class TestMessageProperties:
         assert Message().auxiliary_graphs_dict == {}
 
     def test_auxiliary_graphs_dict_when_set(self):
-        d = {"g1": AuxiliaryGraph(edges=["e1"], attributes=[])}
+        d = {"g1": AuxiliaryGraph(edges=["e1"])}
         assert Message(auxiliary_graphs=d).auxiliary_graphs_dict == d
 
 
@@ -96,7 +95,7 @@ class TestMessageNormalize:
         m = Message(
             knowledge_graph=kg,
             results=[_result(edge_id="old_e")],
-            auxiliary_graphs={"g1": AuxiliaryGraph(edges=["old_e"], attributes=[])},
+            auxiliary_graphs={"g1": AuxiliaryGraph(edges=["old_e"])},
         )
         mapping = m.normalize()
         new_id = edge.hash()
@@ -106,10 +105,10 @@ class TestMessageNormalize:
         assert m.auxiliary_graphs["g1"].edges == [new_id]
         # result edge bindings remapped
         assert m.results is not None
-        assert (
-            m.results[0].analyses[0].edge_bindings["e0"][0].id  # type: ignore[union-attr]
-            == new_id
-        )
+        analyses = m.results[0].analyses
+        assert analyses is not None
+        assert analyses[0].edge_bindings is not None
+        assert analyses[0].edge_bindings["e0"].ids == [new_id]
 
 
 class TestMessagePruneKg:
@@ -135,8 +134,13 @@ class TestMessagePruneKg:
 
 class TestMessageUpdate:
     def test_raises_when_query_graphs_differ(self):
-        a = Message(query_graph=QueryGraph(nodes={}, edges={"q1": QEdge(subject="n1", object="n2")}))
-        b = Message(query_graph=QueryGraph(nodes={"n1": QNode()}, edges={}))
+        a = Message(
+            query_graph=QueryGraph(
+                nodes={"n1": QNode(), "n2": QNode()},
+                edges={"q1": QEdge(subject="n1", object="n2")},
+            )
+        )
+        b = Message(query_graph=QueryGraph(nodes={"n1": QNode()}))
         with pytest.raises(NotImplementedError):
             a.update(b)
 
@@ -161,6 +165,7 @@ class TestMessageUpdate:
         )
         a.update(b, pre_normalized="both")
         assert a.knowledge_graph is not None
+        assert a.knowledge_graph.edges is not None
         assert set(a.knowledge_graph.edges) == {a_edge.hash(), b_edge.hash()}
 
     def test_assigns_results_when_self_has_none(self):
@@ -179,20 +184,14 @@ class TestMessageUpdate:
 
     def test_assigns_aux_graphs_when_self_has_none(self):
         a = Message()
-        b = Message(
-            auxiliary_graphs={"g1": AuxiliaryGraph(edges=["e1"], attributes=[])}
-        )
+        b = Message(auxiliary_graphs={"g1": AuxiliaryGraph(edges=["e1"])})
         a.update(b, pre_normalized="both")
         assert a.auxiliary_graphs is not None
         assert "g1" in a.auxiliary_graphs
 
     def test_merges_aux_graphs(self):
-        a = Message(
-            auxiliary_graphs={"g1": AuxiliaryGraph(edges=["e1"], attributes=[])}
-        )
-        b = Message(
-            auxiliary_graphs={"g2": AuxiliaryGraph(edges=["e2"], attributes=[])}
-        )
+        a = Message(auxiliary_graphs={"g1": AuxiliaryGraph(edges=["e1"])})
+        b = Message(auxiliary_graphs={"g2": AuxiliaryGraph(edges=["e2"])})
         a.update(b, pre_normalized="both")
         assert a.auxiliary_graphs is not None
         assert set(a.auxiliary_graphs) == {"g1", "g2"}
@@ -201,8 +200,8 @@ class TestMessageUpdate:
         # update deepcopies `other` before normalizing.
         edge = _edge()
         a = Message()
-        b = Message(
-            knowledge_graph=KnowledgeGraph(nodes={}, edges={"old": edge})
-        )
+        b = Message(knowledge_graph=KnowledgeGraph(nodes={}, edges={"old": edge}))
         a.update(b, pre_normalized="self")  # forces other to be normalized
-        assert "old" in b.knowledge_graph.edges  # type: ignore[union-attr]
+        assert b.knowledge_graph is not None
+        assert b.knowledge_graph.edges is not None
+        assert "old" in b.knowledge_graph.edges

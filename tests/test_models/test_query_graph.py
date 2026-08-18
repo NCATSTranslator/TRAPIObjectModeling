@@ -6,50 +6,72 @@ from pydantic import ValidationError
 from translator_tom import (
     AttributeConstraint,
     PathConstraint,
-    PathfinderQueryGraph,
     QEdge,
+    QEdgeConstraints,
     QNode,
     QPath,
-    Qualifier,
-    QualifierConstraint,
     QueryGraph,
     SetInterpretationEnum,
 )
 
-
 # ============================================================================
-# QueryGraph / PathfinderQueryGraph
+# QueryGraph (single collapsed type; edges and paths are both optional)
 # ============================================================================
 
 
 class TestQueryGraph:
-    def test_basic(self):
-        qg = QueryGraph(nodes={"n1": QNode()}, edges={})
+    def test_basic_nodes_only(self):
+        qg = QueryGraph(nodes={"n1": QNode()})
         assert "n1" in qg.nodes
-        assert qg.edges == {}
+        assert qg.edges is None
+        assert qg.paths is None
 
+    def test_with_edges(self):
+        qg = QueryGraph(
+            nodes={"n1": QNode(), "n2": QNode()},
+            edges={"e1": QEdge(subject="n1", object="n2")},
+        )
+        assert qg.edges is not None
+        assert "e1" in qg.edges
 
-class TestPathfinderQueryGraph:
-    def test_basic(self):
-        pqg = PathfinderQueryGraph(
+    def test_with_paths(self):
+        qg = QueryGraph(
             nodes={"n1": QNode(), "n2": QNode()},
             paths={"p1": QPath(subject="n1", object="n2")},
         )
-        assert "p1" in pqg.paths
+        assert qg.paths is not None
+        assert "p1" in qg.paths
 
-    def test_paths_min_length_enforced(self):
+    def test_nodes_min_length(self):
         with pytest.raises(ValidationError):
-            PathfinderQueryGraph(nodes={}, paths={})
+            QueryGraph(nodes={})
+
+    def test_edges_min_length_when_present(self):
+        with pytest.raises(ValidationError):
+            QueryGraph(nodes={"n1": QNode()}, edges={})
+
+    def test_paths_min_length_when_present(self):
+        with pytest.raises(ValidationError):
+            QueryGraph(nodes={"n1": QNode()}, paths={})
 
     def test_paths_max_length_enforced(self):
         with pytest.raises(ValidationError):
-            PathfinderQueryGraph(
+            QueryGraph(
                 nodes={"n1": QNode(), "n2": QNode()},
                 paths={
                     "p1": QPath(subject="n1", object="n2"),
                     "p2": QPath(subject="n1", object="n2"),
                 },
             )
+
+    def test_dict_properties_when_none(self):
+        qg = QueryGraph(nodes={"n1": QNode()})
+        assert qg.edges_dict == {}
+        assert qg.paths_dict == {}
+
+    def test_new_is_empty(self):
+        qg = QueryGraph.new()
+        assert qg.nodes == {}
 
 
 # ============================================================================
@@ -64,6 +86,7 @@ class TestSetInterpretationEnum:
             (SetInterpretationEnum.BATCH, "BATCH"),
             (SetInterpretationEnum.MANY, "MANY"),
             (SetInterpretationEnum.ALL, "ALL"),
+            (SetInterpretationEnum.COLLATE, "COLLATE"),
         ],
     )
     def test_values(self, member: SetInterpretationEnum, value: str):
@@ -128,6 +151,7 @@ class TestQEdge:
         assert e.subject == "n1"
         assert e.object == "n2"
         assert e.predicates is None
+        assert e.constraints is None
 
     def test_predicates_min_length(self):
         with pytest.raises(ValidationError):
@@ -137,12 +161,6 @@ class TestQEdge:
 class TestQEdgeListProperties:
     def test_predicates_list_when_none(self):
         assert _qedge().predicates_list == []
-
-    def test_attribute_constraints_list_when_none(self):
-        assert _qedge().attribute_constraints_list == []
-
-    def test_qualifier_constraints_list_when_none(self):
-        assert _qedge().qualifier_constraints_list == []
 
 
 class TestQEdgeGetInverse:
@@ -170,43 +188,47 @@ class TestQEdgeGetInverse:
 
     def test_inverts_direction_scoped_attribute_constraints(self):
         e = _qedge(
-            attribute_constraints=[
-                AttributeConstraint(
-                    id="biolink:original_subject",
-                    name="original subject",
-                    operator="==",
-                    value="X",
-                )
-            ]
+            constraints=QEdgeConstraints(
+                attributes=[
+                    AttributeConstraint(
+                        id="biolink:original_subject",
+                        name="original subject",
+                        operator="==",
+                        value="X",
+                    )
+                ]
+            )
         )
         inv = e.get_inverse()
-        assert inv.attribute_constraints is not None
-        assert inv.attribute_constraints[0].id == "biolink:original_object"
+        assert inv.constraints is not None
+        assert inv.constraints.attributes is not None
+        assert inv.constraints.attributes[0].id == "biolink:original_object"
 
     def test_direction_independent_attribute_constraints_pass_through(self):
         e = _qedge(
-            attribute_constraints=[
-                AttributeConstraint(
-                    id="biolink:foo", name="foo", operator="==", value=1
-                )
-            ]
+            constraints=QEdgeConstraints(
+                attributes=[
+                    AttributeConstraint(
+                        id="biolink:foo", name="foo", operator="==", value=1
+                    )
+                ]
+            )
         )
         inv = e.get_inverse()
-        assert inv.attribute_constraints is not None
-        assert inv.attribute_constraints[0].id == "biolink:foo"
+        assert inv.constraints is not None
+        assert inv.constraints.attributes is not None
+        assert inv.constraints.attributes[0].id == "biolink:foo"
 
     def test_inverts_qualifier_constraints(self):
-        q = Qualifier(
-            qualifier_type_id="biolink:subject_aspect_qualifier",
-            qualifier_value="activity",
+        e = _qedge(
+            constraints=QEdgeConstraints(
+                qualifiers=[{"biolink:subject_aspect_qualifier": "activity"}]
+            )
         )
-        e = _qedge(qualifier_constraints=[QualifierConstraint(qualifier_set=[q])])
         inv = e.get_inverse()
-        assert inv.qualifier_constraints is not None
-        assert (
-            inv.qualifier_constraints[0].qualifier_set[0].qualifier_type_id
-            == "biolink:object_aspect_qualifier"
-        )
+        assert inv.constraints is not None
+        assert inv.constraints.qualifiers is not None
+        assert "biolink:object_aspect_qualifier" in inv.constraints.qualifiers[0]
 
     def test_preserves_knowledge_type(self):
         e = _qedge(predicates=["biolink:treats"], knowledge_type="inferred")
@@ -242,6 +264,6 @@ class TestQPathListProperties:
         assert QPath(subject="a", object="b").constraints_list == []
 
     def test_constraints_list_when_set(self):
-        c = PathConstraint(intermediate_categories=["biolink:Gene"])
+        c = PathConstraint(required_intermediate_categories=["biolink:Gene"])
         p = QPath(subject="a", object="b", constraints=[c])
         assert p.constraints_list == [c]

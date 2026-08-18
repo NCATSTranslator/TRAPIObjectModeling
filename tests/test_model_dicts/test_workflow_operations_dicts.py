@@ -101,11 +101,15 @@ class TestOperationHashParity:
         assert OperationScoreDictUtil.hash(op.to_dict()) == op.hash()
 
     def test_runner_parameters_allowlist_union(self):
-        op = OperationBind(id="bind", runner_parameters=AllowList(allowlist=["infores:a"]))
+        op = OperationBind(
+            id="bind", runner_parameters=AllowList(allowlist=["infores:a"])
+        )
         assert OperationBindDictUtil.hash(op.to_dict()) == op.hash()
 
     def test_runner_parameters_denylist_union(self):
-        op = OperationBind(id="bind", runner_parameters=DenyList(denylist=["infores:a"]))
+        op = OperationBind(
+            id="bind", runner_parameters=DenyList(denylist=["infores:a"])
+        )
         assert OperationBindDictUtil.hash(op.to_dict()) == op.hash()
 
     def test_fill_allowlist_parameters_union(self):
@@ -133,12 +137,16 @@ class TestFilterKgraphParamHashParity:
 
     def test_percentile_threshold(self):
         # default 95.0 (dropped by exclude_defaults) + an explicit non-default value
-        default = FilterKgraphPercentileParameters(qedge_keys=["e0"], edge_attribute="a")
+        default = FilterKgraphPercentileParameters(
+            qedge_keys=["e0"], edge_attribute="a"
+        )
         explicit = FilterKgraphPercentileParameters(
             qedge_keys=["e0"], edge_attribute="a", threshold=50.0
         )
         for m in (default, explicit):
-            assert FilterKgraphPercentileParametersDictUtil.hash(m.to_dict()) == m.hash()
+            assert (
+                FilterKgraphPercentileParametersDictUtil.hash(m.to_dict()) == m.hash()
+            )
 
     def test_stddev_num_sigma(self):
         default = FilterKgraphStdDevParameters(qedge_keys=["e0"], edge_attribute="a")
@@ -191,5 +199,7 @@ class TestOptionalParamOmittedParity:
     def test_filter_kgraph_percentile_qedge_keys_omitted(self):
         p = FilterKgraphPercentileParameters(edge_attribute="ngd")
         assert p.qedge_keys is None
-        assert FilterKgraphPercentileParametersDictUtil.qedge_keys_list(p.to_dict()) == []
+        assert (
+            FilterKgraphPercentileParametersDictUtil.qedge_keys_list(p.to_dict()) == []
+        )
         assert FilterKgraphPercentileParametersDictUtil.hash(p.to_dict()) == p.hash()

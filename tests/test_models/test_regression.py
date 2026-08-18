@@ -4,24 +4,14 @@ from translator_tom import Result
 
 EXAMPLE_RESULT: dict[str, Any] = {
     "node_bindings": {
-        "n1": [{"id": "CHEBI:6801", "attributes": []}],
-        "n2": [{"id": "MONDO:5148", "attributes": []}],
+        "n1": {"ids": ["CHEBI:6801"]},
+        "n2": {"ids": ["MONDO:5148"]},
     },
     "analyses": [
         {
             "resource_id": "infores:test",
             "edge_bindings": {
-                "n1n2": [
-                    {
-                        "id": "CHEBI:6801-biolink:treats-MONDO:5148",
-                        "attributes": [
-                            {
-                                "attribute_type_id": "biolink:knowledge_source",
-                                "value": {"sources": ["a", "b", "c"]},
-                            }
-                        ],
-                    },
-                ],
+                "n1n2": {"ids": ["CHEBI:6801-biolink:treats-MONDO:5148"]},
             },
         },
     ],

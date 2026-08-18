@@ -151,16 +151,14 @@ class TestHashAndEquality:
 
     def test_dunder_hash_matches_string_hash_int_for_override(self):
         # holds for models that customize the hash input via _hash_repr
-        eb = EdgeBinding(
-            id="kg0", attributes=[Attribute(attribute_type_id="biolink:foo", value=1)]
-        )
+        eb = EdgeBinding(ids=["kg0"])
         assert eb.__hash__() == tomhash_to_int(eb.hash())
 
     def test_hash_and_dunder_share_hash_repr(self):
         # both string hash() and int __hash__ derive from the same _hash_repr()
         for m in (
             Attribute(attribute_type_id="biolink:foo", value=1),
-            EdgeBinding(id="kg0", attributes=[]),
+            EdgeBinding(ids=["kg0"]),
         ):
             assert m.hash() == tomhash(m._hash_repr())
             assert m.__hash__() == tomhash_int(m._hash_repr())

@@ -13,7 +13,7 @@ import types
 from typing import Any, Literal, Union, get_args, get_origin
 
 import translator_tom
-import translator_tom.model_dicts  # noqa: F401  (import populates the DictUtil registry)
+import translator_tom.model_dicts  # imported for its DictUtil-registry side effect
 from translator_tom import TOMBase
 from translator_tom.utils.dict_util_base import DictUtil
 
@@ -37,8 +37,9 @@ def dummy(ann: Any) -> Any:
         return [dummy(elems[0])] if elems else []
     if origin in (set, frozenset, tuple):
         return []
-    if origin is dict:
-        return {}
+    if origin is dict:  # one entry, to satisfy min_length dicts (e.g. Result nodes)
+        args = get_args(ann)
+        return {dummy(args[0]): dummy(args[1])} if args else {}
     if origin is Literal:
         return get_args(ann)[0]
     if isinstance(ann, type):
@@ -48,7 +49,9 @@ def dummy(ann: Any) -> Any:
             return next(iter(ann))
         if issubclass(ann, bool):
             return False
-        if issubclass(ann, int):  # bool handled above; float below (int is not a float subclass)
+        if issubclass(
+            ann, int
+        ):  # bool handled above; float below (int is not a float subclass)
             return 0
         if issubclass(ann, float):
             return 0.0

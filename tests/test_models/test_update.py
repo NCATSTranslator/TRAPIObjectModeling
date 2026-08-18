@@ -4,10 +4,9 @@ from translator_tom import (
     Analysis,
     Attribute,
     Edge,
-    KnowledgeGraph,
     Message,
-    RetrievalSource,
     Result,
+    RetrievalSource,
 )
 
 # Some sample attributes
@@ -33,6 +32,21 @@ ATTRIBUTE_B = Attribute.from_dict(
 )
 
 
+def _kedge(subject: str, object_: str, resource_id: str) -> dict[str, Any]:
+    """A minimal 2.0 KG edge (KL/AT are required top-level fields)."""
+    return {
+        "subject": subject,
+        "object": object_,
+        "predicate": "biolink:ameliorates",
+        "knowledge_level": "knowledge_assertion",
+        "agent_type": "manual_agent",
+        "sources": [
+            {"resource_id": resource_id, "resource_role": "primary_knowledge_source"}
+        ],
+        "attributes": [],
+    }
+
+
 def test_result_merging():
     """Test that duplicate results and analyses are merged correctly"""
 
@@ -40,54 +54,32 @@ def test_result_merging():
         "knowledge_graph": {
             "nodes": {},
             "edges": {
-                "ke0": {
-                    "subject": "kn0",
-                    "object": "kn1",
-                    "predicate": "biolink:ameliorates",
-                    "sources": [
-                        {
-                            "resource_id": "kp0",
-                            "resource_role": "primary_knowledge_source",
-                        }
-                    ],
-                    "attributes": [],
-                },
-                "ke1": {
-                    "subject": "kn0",
-                    "object": "kn1",
-                    "predicate": "biolink:ameliorates",
-                    "sources": [
-                        {
-                            "resource_id": "kp1",
-                            "resource_role": "primary_knowledge_source",
-                        }
-                    ],
-                    "attributes": [],
-                },
+                "ke0": _kedge("kn0", "kn1", "kp0"),
+                "ke1": _kedge("kn0", "kn1", "kp1"),
             },
         },
         "results": [
             {
-                "node_bindings": {"n0": [{"id": "kn0", "attributes": []}]},
+                "node_bindings": {"n0": {"ids": ["kn0"]}},
                 "analyses": [
                     {
                         "resource_id": "ara0",
-                        "edge_bindings": {"e0": [{"id": "ke0", "attributes": []}]},
+                        "edge_bindings": {"e0": {"ids": ["ke0"]}},
                         "attributes": [],
                     }
                 ],
             },
             {
-                "node_bindings": {"n0": [{"id": "kn0", "attributes": []}]},
+                "node_bindings": {"n0": {"ids": ["kn0"]}},
                 "analyses": [
                     {
                         "resource_id": "ara0",
-                        "edge_bindings": {"e0": [{"id": "ke0", "attributes": []}]},
+                        "edge_bindings": {"e0": {"ids": ["ke0"]}},
                         "attributes": [],
                     },
                     {
                         "resource_id": "ara1",
-                        "edge_bindings": {"e0": [{"id": "ke0", "attributes": []}]},
+                        "edge_bindings": {"e0": {"ids": ["ke0"]}},
                         "attributes": [],
                     },
                 ],
@@ -99,7 +91,9 @@ def test_result_merging():
     assert m.results is not None
     Result.merge_results(m.results)
     assert len(m.results) == 1
-    assert len(next(iter(m.results)).analyses) == 2
+    analyses = next(iter(m.results)).analyses
+    assert analyses is not None
+    assert len(analyses) == 2
 
 
 def test_different_result_merging():
@@ -109,54 +103,32 @@ def test_different_result_merging():
         "knowledge_graph": {
             "nodes": {},
             "edges": {
-                "ke0": {
-                    "subject": "kn0",
-                    "object": "kn1",
-                    "predicate": "biolink:ameliorates",
-                    "sources": [
-                        {
-                            "resource_id": "kp0",
-                            "resource_role": "primary_knowledge_source",
-                        }
-                    ],
-                    "attributes": [],
-                },
-                "ke1": {
-                    "subject": "kn0",
-                    "object": "kn1",
-                    "predicate": "biolink:ameliorates",
-                    "sources": [
-                        {
-                            "resource_id": "kp1",
-                            "resource_role": "primary_knowledge_source",
-                        }
-                    ],
-                    "attributes": [],
-                },
+                "ke0": _kedge("kn0", "kn1", "kp0"),
+                "ke1": _kedge("kn0", "kn1", "kp1"),
             },
         },
         "results": [
             {
-                "node_bindings": {"n0": [{"id": "kn0", "attributes": []}]},
+                "node_bindings": {"n0": {"ids": ["kn0"]}},
                 "analyses": [
                     {
                         "resource_id": "ara0",
-                        "edge_bindings": {"e0": [{"id": "ke0", "attributes": []}]},
+                        "edge_bindings": {"e0": {"ids": ["ke0"]}},
                         "attributes": [],
                     }
                 ],
             },
             {
-                "node_bindings": {"n0": [{"id": "kn1", "attributes": []}]},
+                "node_bindings": {"n0": {"ids": ["kn1"]}},
                 "analyses": [
                     {
                         "resource_id": "ara0",
-                        "edge_bindings": {"e0": [{"id": "ke0", "attributes": []}]},
+                        "edge_bindings": {"e0": {"ids": ["ke0"]}},
                         "attributes": [],
                     },
                     {
                         "resource_id": "ara1",
-                        "edge_bindings": {"e0": [{"id": "ke0", "attributes": []}]},
+                        "edge_bindings": {"e0": {"ids": ["ke0"]}},
                         "attributes": [],
                     },
                 ],
@@ -178,64 +150,32 @@ def test_deduplicate_results_out_of_order():
         "knowledge_graph": {
             "nodes": {},
             "edges": {
-                "ke0": {
-                    "subject": "kn0",
-                    "object": "kn1",
-                    "predicate": "biolink:ameliorates",
-                    "sources": [
-                        {
-                            "resource_id": "kp0",
-                            "resource_role": "primary_knowledge_source",
-                        }
-                    ],
-                    "attributes": [],
-                },
-                "ke1": {
-                    "subject": "kn0",
-                    "object": "kn1",
-                    "predicate": "biolink:ameliorates",
-                    "sources": [
-                        {
-                            "resource_id": "kp1",
-                            "resource_role": "primary_knowledge_source",
-                        }
-                    ],
-                    "attributes": [],
-                },
+                "ke0": _kedge("kn0", "kn1", "kp0"),
+                "ke1": _kedge("kn0", "kn1", "kp1"),
             },
         },
         "results": [
             {
-                "node_bindings": {
-                    "a": [
-                        {"id": "MONDO:0011122", "attributes": []},
-                        {"id": "CHEBI:88916", "attributes": []},
-                    ]
-                },
+                "node_bindings": {"a": {"ids": ["MONDO:0011122", "CHEBI:88916"]}},
                 "analyses": [
                     {
                         "resource_id": "ara0",
-                        "edge_bindings": {"e0": [{"id": "ke0", "attributes": []}]},
+                        "edge_bindings": {"e0": {"ids": ["ke0"]}},
                         "attributes": [],
                     }
                 ],
             },
             {
-                "node_bindings": {
-                    "a": [
-                        {"id": "CHEBI:88916", "attributes": []},
-                        {"id": "MONDO:0011122", "attributes": []},
-                    ],
-                },
+                "node_bindings": {"a": {"ids": ["CHEBI:88916", "MONDO:0011122"]}},
                 "analyses": [
                     {
                         "resource_id": "ara0",
-                        "edge_bindings": {"e0": [{"id": "ke0", "attributes": []}]},
+                        "edge_bindings": {"e0": {"ids": ["ke0"]}},
                         "attributes": [],
                     },
                     {
                         "resource_id": "ara1",
-                        "edge_bindings": {"e0": [{"id": "ke0", "attributes": []}]},
+                        "edge_bindings": {"e0": {"ids": ["ke0"]}},
                         "attributes": [],
                     },
                 ],
@@ -259,22 +199,10 @@ def test_deduplicate_results_different():
         "knowledge_graph": {"nodes": {}, "edges": {}},
         "results": [
             {
-                "node_bindings": {
-                    "b": [
-                        {"id": "CHEBI:88916", "attributes": []},
-                        {"id": "MONDO:0011122", "attributes": []},
-                    ],
-                },
-                "analyses": [],
+                "node_bindings": {"b": {"ids": ["CHEBI:88916", "MONDO:0011122"]}},
             },
             {
-                "node_bindings": {
-                    "a": [
-                        {"id": "MONDO:0011122", "attributes": []},
-                        {"id": "CHEBI:88916", "attributes": []},
-                    ],
-                },
-                "analyses": [],
+                "node_bindings": {"a": {"ids": ["MONDO:0011122", "CHEBI:88916"]}},
             },
         ],
     }
@@ -329,6 +257,7 @@ def test_merge_knowledge_graph_nodes():
     assert len(nodes) == 1
     node = next(iter(nodes.values()))
 
+    assert node.attributes is not None
     assert ATTRIBUTE_A in node.attributes
     assert ATTRIBUTE_B in node.attributes
 
@@ -350,6 +279,8 @@ def test_normalize_knowledge_graph_edges():
                     "subject": "MONDO:1",
                     "object": "CHEBI:1",
                     "predicate": "biolink:treated_by",
+                    "knowledge_level": "knowledge_assertion",
+                    "agent_type": "manual_agent",
                     "attributes": [ATTRIBUTE_A],
                     "sources": [
                         {
@@ -363,13 +294,13 @@ def test_normalize_knowledge_graph_edges():
         "results": [
             {
                 "node_bindings": {
-                    "a": [{"id": "MONDO:1", "attributes": []}],
-                    "b": [{"id": "CHEBI:1", "attributes": []}],
+                    "a": {"ids": ["MONDO:1"]},
+                    "b": {"ids": ["CHEBI:1"]},
                 },
                 "analyses": [
                     {
                         "resource_id": "ara0",
-                        "edge_bindings": {"qe0": [{"id": "n0n1", "attributes": []}]},
+                        "edge_bindings": {"qe0": {"ids": ["n0n1"]}},
                     }
                 ],
             }
@@ -387,6 +318,8 @@ def test_normalize_knowledge_graph_edges():
                     "subject": "MONDO:1",
                     "object": "CHEBI:1",
                     "predicate": "biolink:treated_by",
+                    "knowledge_level": "knowledge_assertion",
+                    "agent_type": "manual_agent",
                     "attributes": [ATTRIBUTE_B],
                     "sources": [
                         {
@@ -411,15 +344,18 @@ def test_normalize_knowledge_graph_edges():
     # Check that we didn't combine edges
     assert m.knowledge_graph is not None
     edges = m.knowledge_graph.edges
+    assert edges is not None
     assert len(edges) == 2
 
     # Check that the result was updated to point to the correct edge
     edge_id, _ = next(iter(edges.items()))
     assert m.results is not None
     result = next(iter(m.results))
+    assert result.analyses is not None
     analysis = next(iter(result.analyses))
     assert isinstance(analysis, Analysis)
-    assert next(iter(analysis.edge_bindings["qe0"])).id == edge_id
+    assert analysis.edge_bindings is not None
+    assert analysis.edge_bindings["qe0"].ids == [edge_id]
 
 
 def test_merge_identical_attributes():
@@ -458,19 +394,15 @@ def test_merge_identical_attributes():
     m = Message()
 
     m.update(Message.from_dict(message_a))
-
-    print(m)
-    print()
-
     m.update(Message.from_dict(message_b))
 
-    print(m)
     # Validate output
     assert m.knowledge_graph is not None
     nodes = m.knowledge_graph.nodes
     assert len(nodes) == 1
     node = next(iter(nodes.values()))
 
+    assert node.attributes is not None
     assert ATTRIBUTE_A in node.attributes
     assert len(node.attributes) == 1
 
@@ -480,75 +412,35 @@ def test_merge_knowledge_graph_edges():
     Test that knowledge graph edges are merged properly
     """
 
+    def _agg_edge(kp: str) -> dict[str, Any]:
+        return {
+            "subject": "kn0",
+            "object": "kn1",
+            "predicate": "biolink:ameliorates",
+            "knowledge_level": "knowledge_assertion",
+            "agent_type": "automated_agent",
+            "sources": [
+                {"resource_id": "ks0", "resource_role": "primary_knowledge_source"},
+                {
+                    "resource_id": kp,
+                    "resource_role": "aggregator_knowledge_source",
+                    "upstream_resource_ids": ["ks0"],
+                },
+                {
+                    "resource_id": "ara0",
+                    "resource_role": "aggregator_knowledge_source",
+                    "upstream_resource_ids": [kp],
+                },
+            ],
+            "attributes": [],
+        }
+
     message_a: dict[str, Any] = {
-        "knowledge_graph": {
-            "nodes": {},
-            "edges": {
-                "ke0": {
-                    "subject": "kn0",
-                    "object": "kn1",
-                    "predicate": "biolink:ameliorates",
-                    "sources": [
-                        {
-                            "resource_id": "ks0",
-                            "resource_role": "primary_knowledge_source",
-                        },
-                        {
-                            "resource_id": "kp0",
-                            "resource_role": "aggregator_knowledge_source",
-                            "upstream_resource_ids": ["ks0"],
-                        },
-                        {
-                            "resource_id": "ara0",
-                            "resource_role": "aggregator_knowledge_source",
-                            "upstream_resource_ids": ["kp0"],
-                        },
-                    ],
-                    "attributes": [
-                        {
-                            "attribute_type_id": "biolink:agent_type",
-                            "value": "automated_agent",
-                        }
-                    ],
-                }
-            },
-        },
+        "knowledge_graph": {"nodes": {}, "edges": {"ke0": _agg_edge("kp0")}},
         "results": [],
     }
-
     message_b: dict[str, Any] = {
-        "knowledge_graph": {
-            "nodes": {},
-            "edges": {
-                "ke0": {
-                    "subject": "kn0",
-                    "object": "kn1",
-                    "predicate": "biolink:ameliorates",
-                    "sources": [
-                        {
-                            "resource_id": "ks0",
-                            "resource_role": "primary_knowledge_source",
-                        },
-                        {
-                            "resource_id": "kp1",
-                            "resource_role": "aggregator_knowledge_source",
-                            "upstream_resource_ids": ["ks0"],
-                        },
-                        {
-                            "resource_id": "ara0",
-                            "resource_role": "aggregator_knowledge_source",
-                            "upstream_resource_ids": ["kp1"],
-                        },
-                    ],
-                    "attributes": [
-                        {
-                            "attribute_type_id": "biolink:agent_type",
-                            "value": "automated_agent",
-                        }
-                    ],
-                }
-            },
-        },
+        "knowledge_graph": {"nodes": {}, "edges": {"ke0": _agg_edge("kp1")}},
         "results": [],
     }
 
@@ -559,6 +451,7 @@ def test_merge_knowledge_graph_edges():
 
     assert m.knowledge_graph is not None
     edges = m.knowledge_graph.edges
+    assert edges is not None
     assert len(edges) == 1
     edge = next(iter(edges.values()))
 
@@ -586,8 +479,13 @@ def _isolation_message(tag: str, val: int) -> dict[str, Any]:
                     "subject": "n0",
                     "object": "n0",
                     "predicate": "biolink:related_to",
+                    "knowledge_level": "knowledge_assertion",
+                    "agent_type": "manual_agent",
                     "sources": [
-                        {"resource_id": "ks", "resource_role": "primary_knowledge_source"}
+                        {
+                            "resource_id": "ks",
+                            "resource_role": "primary_knowledge_source",
+                        }
                     ],
                     "attributes": [{"attribute_type_id": "biolink:y", "value": val}],
                 },
@@ -595,6 +493,8 @@ def _isolation_message(tag: str, val: int) -> dict[str, Any]:
                     "subject": "n0",
                     "object": "n0",
                     "predicate": "biolink:related_to",
+                    "knowledge_level": "knowledge_assertion",
+                    "agent_type": "manual_agent",
                     "sources": [
                         {
                             "resource_id": f"ks{tag}",
@@ -607,17 +507,17 @@ def _isolation_message(tag: str, val: int) -> dict[str, Any]:
         },
         "results": [
             {
-                "node_bindings": {"n0": [{"id": "n0", "attributes": []}]},
+                "node_bindings": {"n0": {"ids": ["n0"]}},
                 "analyses": [
                     {
                         "resource_id": f"ara{tag}",
-                        "edge_bindings": {"e0": [{"id": "shared", "attributes": []}]},
+                        "edge_bindings": {"e0": {"ids": ["shared"]}},
                         "attributes": [],
                     }
                 ],
             }
         ],
-        "auxiliary_graphs": {f"aux{tag}": {"edges": ["shared"], "attributes": []}},
+        "auxiliary_graphs": {f"aux{tag}": {"edges": ["shared"]}},
     }
 
 
@@ -684,8 +584,13 @@ def test_message_update_isolates_denormalized_other():
                     "subject": "n0",
                     "object": "n1",
                     "predicate": "biolink:related_to",
+                    "knowledge_level": "knowledge_assertion",
+                    "agent_type": "manual_agent",
                     "sources": [
-                        {"resource_id": "ks", "resource_role": "primary_knowledge_source"}
+                        {
+                            "resource_id": "ks",
+                            "resource_role": "primary_knowledge_source",
+                        }
                     ],
                     "attributes": [{"attribute_type_id": "biolink:a", "value": 1}],
                 },
@@ -693,8 +598,13 @@ def test_message_update_isolates_denormalized_other():
                     "subject": "n0",
                     "object": "n1",
                     "predicate": "biolink:related_to",
+                    "knowledge_level": "knowledge_assertion",
+                    "agent_type": "manual_agent",
                     "sources": [
-                        {"resource_id": "ks", "resource_role": "primary_knowledge_source"}
+                        {
+                            "resource_id": "ks",
+                            "resource_role": "primary_knowledge_source",
+                        }
                     ],
                     "attributes": [{"attribute_type_id": "biolink:b", "value": 2}],
                 },
@@ -734,6 +644,8 @@ def test_edge_update_does_not_mutate_or_alias_other():
             subject="n0",
             object="n1",
             predicate="biolink:related_to",
+            knowledge_level="knowledge_assertion",
+            agent_type="manual_agent",
             attributes=[Attribute(attribute_type_id="biolink:y", value=attr_val)],
             sources=[
                 RetrievalSource(

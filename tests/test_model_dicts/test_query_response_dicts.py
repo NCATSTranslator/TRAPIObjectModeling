@@ -2,7 +2,7 @@
 
 The hash-parity tests here exercise the full base-hash recursion chain: the tagged
 `workflow` Operation union, the structural runner/fill-parameter unions, the
-`query_graph` union, and every nested model's hash override.
+nested `query_graph`, and every nested model's hash override.
 """
 
 from __future__ import annotations
@@ -36,7 +36,9 @@ def _full_message() -> Message:
             },
         ),
         knowledge_graph=KnowledgeGraph(
-            nodes={"CHEBI:1": Node(categories=["biolink:ChemicalEntity"], attributes=[])},
+            nodes={
+                "CHEBI:1": Node(categories=["biolink:ChemicalEntity"], attributes=[])
+            },
             edges={
                 "kg0": Edge(
                     predicate="biolink:treats",
@@ -48,16 +50,18 @@ def _full_message() -> Message:
                             resource_role="primary_knowledge_source",
                         )
                     ],
+                    knowledge_level="knowledge_assertion",
+                    agent_type="manual_agent",
                 )
             },
         ),
         results=[
             Result(
-                node_bindings={"n0": [NodeBinding(id="CHEBI:1", attributes=[])]},
+                node_bindings={"n0": NodeBinding(ids=["CHEBI:1"])},
                 analyses=[
                     Analysis(
                         resource_id="infores:x",
-                        edge_bindings={"e0": [EdgeBinding(id="kg0", attributes=[])]},
+                        edge_bindings={"e0": EdgeBinding(ids=["kg0"])},
                     )
                 ],
             )

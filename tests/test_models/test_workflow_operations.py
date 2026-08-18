@@ -13,13 +13,13 @@ from translator_tom.models.workflow_operations import (
     AllowList,
     AnnotateEdgesParameters,
     AnnotateNodesParameters,
-    Operation,
     AscendingOrDescendingEnum,
     DenyList,
     EnrichResultsParameters,
     FillAllowListParameters,
     FillDenyListParameters,
     FilterKgraphContinuousKedgeAttributeParameters,
+    Operation,
     OperationAnnotate,
     OperationAnnotateEdges,
     OperationAnnotateNodes,
@@ -34,7 +34,6 @@ from translator_tom.models.workflow_operations import (
     SortResultNodeAttributeParameters,
     TopOrBottomEnum,
 )
-
 
 # ============================================================================
 # Enums
@@ -151,9 +150,7 @@ class TestFillAllowListParameters:
         assert p.qedge_keys_list == []
 
     def test_qedge_keys_list_when_set(self):
-        p = FillAllowListParameters(
-            allowlist=["infores:foo"], qedge_keys=["e00"]
-        )
+        p = FillAllowListParameters(allowlist=["infores:foo"], qedge_keys=["e00"])
         assert p.qedge_keys_list == ["e00"]
 
 
@@ -163,9 +160,7 @@ class TestFillDenyListParameters:
         assert p.qedge_keys_list == []
 
     def test_qedge_keys_list_when_set(self):
-        p = FillDenyListParameters(
-            denylist=["infores:foo"], qedge_keys=["e00"]
-        )
+        p = FillDenyListParameters(denylist=["infores:foo"], qedge_keys=["e00"])
         assert p.qedge_keys_list == ["e00"]
 
 

@@ -61,6 +61,8 @@ EXAMPLE_MESSAGE: dict[str, Any] = {
                 "subject": "CHEBI:6801",
                 "object": "MONDO:5148",
                 "predicate": "biolink:treats",
+                "knowledge_level": "knowledge_assertion",
+                "agent_type": "manual_agent",
                 "sources": [
                     {
                         "resource_id": "kp0",
@@ -96,6 +98,8 @@ EXAMPLE_MESSAGE: dict[str, Any] = {
                 "subject": "CHEBI:6802",
                 "object": "MONDO:5148",
                 "predicate": "biolink:treats",
+                "knowledge_level": "knowledge_assertion",
+                "agent_type": "manual_agent",
                 "sources": [
                     {
                         "resource_id": "kp0",
@@ -109,48 +113,28 @@ EXAMPLE_MESSAGE: dict[str, Any] = {
     "results": [
         {
             "node_bindings": {
-                "n1": [{"id": "CHEBI:6801", "attributes": []}],
-                "n2": [{"id": "MONDO:5148", "attributes": []}],
+                "n1": {"ids": ["CHEBI:6801"]},
+                "n2": {"ids": ["MONDO:5148"]},
             },
             "analyses": [
                 {
                     "resource_id": "ara0",
                     "edge_bindings": {
-                        "n1n2": [
-                            {
-                                "id": "CHEBI:6801-biolink:treats-MONDO:5148",
-                                "attributes": [
-                                    {
-                                        "attribute_type_id": "biolink:knowledge_source",
-                                        "value": {"sources": ["a", "b", "c"]},
-                                    }
-                                ],
-                            }
-                        ]
+                        "n1n2": {"ids": ["CHEBI:6801-biolink:treats-MONDO:5148"]}
                     },
                     "attributes": [],
                 },
                 {
                     "resource_id": "ara0",
                     "edge_bindings": {
-                        "n1n2": [
-                            {
-                                "id": "CHEBI:6802-biolink:treats-MONDO:5148",
-                                "attributes": [],
-                            }
-                        ]
+                        "n1n2": {"ids": ["CHEBI:6802-biolink:treats-MONDO:5148"]}
                     },
                     "attributes": [],
                 },
                 {
                     "resource_id": "ara1",
                     "edge_bindings": {
-                        "n1n2": [
-                            {
-                                "id": "CHEBI:6801-biolink:treats-MONDO:5148",
-                                "attributes": [],
-                            }
-                        ]
+                        "n1n2": {"ids": ["CHEBI:6801-biolink:treats-MONDO:5148"]}
                     },
                     "attributes": [],
                 },
@@ -158,7 +142,7 @@ EXAMPLE_MESSAGE: dict[str, Any] = {
         }
     ],
     "auxiliary_graphs": {
-        "a1": {"edges": ["CHEBI:6801-biolink:treats-MONDO:5148"], "attributes": []}
+        "a1": {"edges": ["CHEBI:6801-biolink:treats-MONDO:5148"]}
     },
 }
 
@@ -194,6 +178,8 @@ EXAMPLE_MESSAGE_MULT: dict[str, Any] = {
                 "subject": "CHEBI:6801",
                 "object": "MONDO:5148",
                 "predicate": "biolink:related_to",
+                "knowledge_level": "knowledge_assertion",
+                "agent_type": "manual_agent",
                 "sources": [
                     {
                         "resource_id": "kp0",
@@ -206,6 +192,8 @@ EXAMPLE_MESSAGE_MULT: dict[str, Any] = {
                 "subject": "CHEBI:6802",
                 "object": "MONDO:5148",
                 "predicate": "biolink:related_to",
+                "knowledge_level": "knowledge_assertion",
+                "agent_type": "manual_agent",
                 "sources": [
                     {
                         "resource_id": "kp0",
@@ -218,6 +206,8 @@ EXAMPLE_MESSAGE_MULT: dict[str, Any] = {
                 "subject": "CHEBI:6803",
                 "object": "MONDO:5148",
                 "predicate": "biolink:related_to",
+                "knowledge_level": "knowledge_assertion",
+                "agent_type": "manual_agent",
                 "sources": [
                     {
                         "resource_id": "kp0",
@@ -231,61 +221,33 @@ EXAMPLE_MESSAGE_MULT: dict[str, Any] = {
     "results": [
         {
             "node_bindings": {
-                "n0": [{"id": "CHEBI:6803", "attributes": []}],
-                "n1": [
-                    {"id": "CHEBI:6801", "attributes": []},
-                    {"id": "CHEBI:6802", "attributes": []},
-                ],
-                "n2": [{"id": "MONDO:5148", "attributes": []}],
+                "n0": {"ids": ["CHEBI:6803"]},
+                "n1": {"ids": ["CHEBI:6801", "CHEBI:6802"]},
+                "n2": {"ids": ["MONDO:5148"]},
             },
             "analyses": [
                 {
                     "resource_id": "ara0",
                     "edge_bindings": {
-                        "n1n2": [
-                            {
-                                "id": "CHEBI:6801-biolink:treats-MONDO:5148",
-                                "attributes": [
-                                    {
-                                        "attribute_type_id": "biolink:knowledge_source",
-                                        "value": {"sources": ["a", "b", "c"]},
-                                    }
-                                ],
-                            }
-                        ]
+                        "n1n2": {"ids": ["CHEBI:6801-biolink:treats-MONDO:5148"]}
                     },
                 },
                 {
                     "resource_id": "ara0",
                     "edge_bindings": {
-                        "n1n2": [
-                            {
-                                "id": "CHEBI:6802-biolink:treats-MONDO:5148",
-                                "attributes": [],
-                            }
-                        ]
+                        "n1n2": {"ids": ["CHEBI:6802-biolink:treats-MONDO:5148"]}
                     },
                 },
                 {
                     "resource_id": "ara1",
                     "edge_bindings": {
-                        "n1n2": [
-                            {
-                                "id": "CHEBI:6801-biolink:treats-MONDO:5148",
-                                "attributes": [],
-                            }
-                        ]
+                        "n1n2": {"ids": ["CHEBI:6801-biolink:treats-MONDO:5148"]}
                     },
                 },
                 {
                     "resource_id": "ara0",
                     "edge_bindings": {
-                        "n0n1": [
-                            {
-                                "id": "CHEBI:6803-biolink:treats-MONDO:5148",
-                                "attributes": [],
-                            }
-                        ]
+                        "n0n1": {"ids": ["CHEBI:6803-biolink:treats-MONDO:5148"]}
                     },
                 },
             ],
@@ -304,7 +266,9 @@ PATHFINDER_MESSAGE: dict[str, Any] = {
             "p0": {
                 "subject": "n0",
                 "object": "n1",
-                "constraints": [{"intermediate_categories": ["biolink:Gene"]}],
+                "constraints": [
+                    {"required_intermediate_categories": ["biolink:Gene"]}
+                ],
             }
         },
     },
@@ -319,6 +283,8 @@ PATHFINDER_MESSAGE: dict[str, Any] = {
                 "subject": "MONDO:0005011",
                 "object": "NCBIGene:120892",
                 "predicate": "biolink:condition_associated_with_gene",
+                "knowledge_level": "knowledge_assertion",
+                "agent_type": "manual_agent",
                 "sources": [
                     {
                         "resource_id": "kp0",
@@ -337,6 +303,8 @@ PATHFINDER_MESSAGE: dict[str, Any] = {
                 "subject": "NCBIGene:120892",
                 "object": "MONDO:0005180",
                 "predicate": "biolink:biomarker_for",
+                "knowledge_level": "knowledge_assertion",
+                "agent_type": "manual_agent",
                 "sources": [
                     {
                         "resource_id": "kp0",
@@ -350,18 +318,18 @@ PATHFINDER_MESSAGE: dict[str, Any] = {
     "results": [
         {
             "node_bindings": {
-                "n1": [{"id": "MONDO:0005011", "attributes": []}],
-                "n2": [{"id": "MONDO:0005180", "attributes": []}],
+                "n1": {"ids": ["MONDO:0005011"]},
+                "n2": {"ids": ["MONDO:0005180"]},
             },
             "analyses": [
                 {
                     "resource_id": "ara0",
-                    "path_bindings": {"p0": [{"id": "a0", "attributes": []}]},
+                    "path_bindings": {"p0": {"ids": ["a0"]}},
                 }
             ],
         }
     ],
-    "auxiliary_graphs": {"a0": {"edges": ["e0", "e1"], "attributes": []}},
+    "auxiliary_graphs": {"a0": {"edges": ["e0", "e1"]}},
 }
 
 INVALID_PATHFINDER_QUERY: dict[str, Any] = {
@@ -374,7 +342,7 @@ INVALID_PATHFINDER_QUERY: dict[str, Any] = {
             "p0": {
                 "subject": "n0",
                 "object": "n1",
-                "constraints": [{"intermediate_categories": []}],
+                "constraints": [{"required_intermediate_categories": []}],
             }
         },
     }
@@ -492,8 +460,9 @@ def test_merge_analyses():
     assert len(r["analyses"]) == 2
     for analysis in r["analyses"]:
         if analysis["resource_id"] == "ara0":
-            assert len(analysis["edge_bindings"]["n1n2"]) == 2
-            assert len(analysis["edge_bindings"]["n0n1"]) == 1
+            # A single EdgeBinding per QEdge; merged ids are unioned.
+            assert len(analysis["edge_bindings"]["n1n2"]["ids"]) == 2
+            assert len(analysis["edge_bindings"]["n0n1"]["ids"]) == 1
 
 
 def test_response():

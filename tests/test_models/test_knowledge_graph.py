@@ -14,9 +14,7 @@ from translator_tom import (
     Node,
     NodeBinding,
     PathBinding,
-    PathfinderAnalysis,
     Qualifier,
-    QualifierConstraint,
     Result,
     RetrievalSource,
 )
@@ -42,13 +40,15 @@ def _node(name: str = "Alice", categories: list[str] | None = None) -> Node:
     )
 
 
-def _edge(
+def _edge(  # noqa: PLR0913  (test helper: all edge fields need to be overridable)
     subject: str = "A:1",
     object_: str = "B:2",
     predicate: str = "biolink:related_to",
     sources: list[RetrievalSource] | None = None,
     attributes: list[Attribute] | None = None,
     qualifiers: list[Qualifier] | None = None,
+    knowledge_level: str = "knowledge_assertion",
+    agent_type: str = "manual_agent",
 ) -> Edge:
     return Edge(
         predicate=predicate,
@@ -57,6 +57,8 @@ def _edge(
         sources=sources or [_src()],
         attributes=attributes,
         qualifiers=qualifiers,
+        knowledge_level=knowledge_level,
+        agent_type=agent_type,
     )
 
 
@@ -71,6 +73,11 @@ class TestKnowledgeGraphNew:
         assert kg.nodes == {}
         assert kg.edges == {}
 
+    def test_new_without_edges(self):
+        kg = KnowledgeGraph.new(edges=False)
+        assert kg.nodes == {}
+        assert kg.edges is None
+
 
 class TestKnowledgeGraphNormalize:
     def test_rekeys_edges_by_hash(self):
@@ -79,6 +86,7 @@ class TestKnowledgeGraphNormalize:
         mapping = kg.normalize()
         assert "old_id" in mapping
         assert mapping["old_id"] == edge.hash()
+        assert kg.edges is not None
         assert edge.hash() in kg.edges
         assert "old_id" not in kg.edges
 
@@ -93,6 +101,7 @@ class TestKnowledgeGraphUpdate:
         assert "old_a" in self_mapping
         assert "old_b" in other_mapping
         # kg_a should now have both edges keyed by hash
+        assert kg_a.edges is not None
         assert edge_a.hash() in kg_a.edges
         assert edge_b.hash() in kg_a.edges
 
@@ -104,6 +113,7 @@ class TestKnowledgeGraphUpdate:
         self_mapping, other_mapping = kg_a.update(kg_b, pre_normalized="both")
         assert self_mapping == {}
         assert other_mapping == {}
+        assert kg_a.edges is not None
         assert "keep_a" in kg_a.edges
         assert "keep_b" in kg_a.edges
 
@@ -115,6 +125,7 @@ class TestKnowledgeGraphUpdate:
         self_mapping, other_mapping = kg_a.update(kg_b, pre_normalized="self")
         assert self_mapping == {}
         assert "old_b" in other_mapping
+        assert kg_a.edges is not None
         assert "keep_a" in kg_a.edges
         assert edge_b.hash() in kg_a.edges
 
@@ -126,6 +137,7 @@ class TestKnowledgeGraphUpdate:
         self_mapping, other_mapping = kg_a.update(kg_b, pre_normalized="other")
         assert "old_a" in self_mapping
         assert other_mapping == {}
+        assert kg_a.edges is not None
         assert edge_a.hash() in kg_a.edges
         assert "keep_b" in kg_a.edges
 
@@ -149,6 +161,7 @@ class TestKnowledgeGraphUpdate:
         kg_b = KnowledgeGraph(nodes={}, edges={"old_b": edge_b})
         kg_a.update(kg_b)
         # other should retain its original key
+        assert kg_b.edges is not None
         assert "old_b" in kg_b.edges
 
     def test_merges_existing_nodes(self):
@@ -172,21 +185,13 @@ class TestKnowledgeGraphUpdate:
 
 
 class TestKnowledgeGraphPrune:
-    def _build_result(
-        self, node_ids: list[str], edge_ids: list[str]
-    ) -> Result:
+    def _build_result(self, node_ids: list[str], edge_ids: list[str]) -> Result:
         return Result(
-            node_bindings={
-                "n0": [NodeBinding(id=nid, attributes=[]) for nid in node_ids]
-            },
+            node_bindings={"n0": NodeBinding(ids=node_ids)},
             analyses=[
                 Analysis(
                     resource_id="infores:test",
-                    edge_bindings={
-                        "e0": [
-                            EdgeBinding(id=eid, attributes=[]) for eid in edge_ids
-                        ]
-                    },
+                    edge_bindings={"e0": EdgeBinding(ids=edge_ids)},
                 )
             ],
         )
@@ -202,6 +207,7 @@ class TestKnowledgeGraphPrune:
         result = self._build_result(["A:1"], ["e1"])
         kg.prune({}, [result])
         # e1 keeps A:1 and A:2 bound; A:3 and e2 are pruned.
+        assert kg.edges is not None
         assert set(kg.edges) == {"e1"}
         assert set(kg.nodes) == {"A:1", "A:2"}
 
@@ -212,9 +218,7 @@ class TestKnowledgeGraphPrune:
             subject="A:1",
             object_="A:2",
             attributes=[
-                Attribute(
-                    attribute_type_id="biolink:support_graphs", value=["aux-1"]
-                )
+                Attribute(attribute_type_id="biolink:support_graphs", value=["aux-1"])
             ],
         )
         e2 = _edge(subject="A:3", object_="A:4")
@@ -227,9 +231,10 @@ class TestKnowledgeGraphPrune:
             },
             edges={"e1": e1, "e2": e2},
         )
-        aux = {"aux-1": AuxiliaryGraph(edges=["e2"], attributes=[])}
+        aux = {"aux-1": AuxiliaryGraph(edges=["e2"])}
         result = self._build_result(["A:1"], ["e1"])
         kg.prune(aux, [result])
+        assert kg.edges is not None
         assert set(kg.edges) == {"e1", "e2"}
 
     def test_cycle_prevention_in_support_graphs(self):
@@ -238,39 +243,39 @@ class TestKnowledgeGraphPrune:
             subject="A:1",
             object_="A:2",
             attributes=[
-                Attribute(
-                    attribute_type_id="biolink:support_graphs", value=["aux-1"]
-                )
+                Attribute(attribute_type_id="biolink:support_graphs", value=["aux-1"])
             ],
         )
         kg = KnowledgeGraph(
             nodes={"A:1": _node(), "A:2": _node()},
             edges={"e1": e1},
         )
-        aux = {"aux-1": AuxiliaryGraph(edges=["e1"], attributes=[])}
+        aux = {"aux-1": AuxiliaryGraph(edges=["e1"])}
         result = self._build_result(["A:1"], ["e1"])
         kg.prune(aux, [result])  # would hang if cycle prevention failed
+        assert kg.edges is not None
         assert "e1" in kg.edges
 
     def test_pathfinder_analysis_paths_keep_edges(self):
-        # PathfinderAnalysis path_bindings reference an aux graph whose edges
+        # A path-binding analysis references an aux graph whose edges
         # should be kept.
         e1 = _edge(subject="A:1", object_="A:2")
         kg = KnowledgeGraph(
             nodes={"A:1": _node(), "A:2": _node()},
             edges={"e1": e1, "unused": _edge(subject="X:1", object_="X:2")},
         )
-        aux = {"aux-p": AuxiliaryGraph(edges=["e1"], attributes=[])}
+        aux = {"aux-p": AuxiliaryGraph(edges=["e1"])}
         result = Result(
-            node_bindings={"n0": [NodeBinding(id="A:1", attributes=[])]},
+            node_bindings={"n0": NodeBinding(ids=["A:1"])},
             analyses=[
-                PathfinderAnalysis(
+                Analysis(
                     resource_id="infores:test",
-                    path_bindings={"p0": [PathBinding(id="aux-p")]},
+                    path_bindings={"p0": PathBinding(ids=["aux-p"])},
                 )
             ],
         )
         kg.prune(aux, [result])
+        assert kg.edges is not None
         assert "e1" in kg.edges
         assert "unused" not in kg.edges
 
@@ -284,9 +289,7 @@ class TestKnowledgeGraphPrune:
             subject="A:3",
             object_="A:4",
             attributes=[
-                Attribute(
-                    attribute_type_id="biolink:support_graphs", value=["aux-2"]
-                )
+                Attribute(attribute_type_id="biolink:support_graphs", value=["aux-2"])
             ],
         )
         e_nested = _edge(subject="A:5", object_="A:6")
@@ -310,32 +313,30 @@ class TestKnowledgeGraphPrune:
             },
         )
         aux = {
-            "aux-1": AuxiliaryGraph(edges=["e_supporting"], attributes=[]),
-            "aux-2": AuxiliaryGraph(edges=["e_nested"], attributes=[]),
+            "aux-1": AuxiliaryGraph(edges=["e_supporting"]),
+            "aux-2": AuxiliaryGraph(edges=["e_nested"]),
         }
         result = Result(
-            node_bindings={"n0": [NodeBinding(id="A:1", attributes=[])]},
+            node_bindings={"n0": NodeBinding(ids=["A:1"])},
             analyses=[
                 Analysis(
                     resource_id="infores:test",
-                    edge_bindings={
-                        "e0": [EdgeBinding(id="e_bound", attributes=[])]
-                    },
+                    edge_bindings={"e0": EdgeBinding(ids=["e_bound"])},
                     support_graphs=["aux-1"],
                 )
             ],
         )
         kg.prune(aux, [result])
+        assert kg.edges is not None
         assert set(kg.edges) == {"e_bound", "e_supporting", "e_nested"}
         assert set(kg.nodes) == {"A:1", "A:2", "A:3", "A:4", "A:5", "A:6"}
 
     def test_prune_with_empty_results_keeps_nothing(self):
-        kg = KnowledgeGraph(
-            nodes={"A:1": _node()}, edges={"e1": _edge()}
-        )
+        kg = KnowledgeGraph(nodes={"A:1": _node()}, edges={"e1": _edge()})
         kg.prune({}, [])
         assert kg.nodes == {}
-        assert kg.edges == {}
+        # No bound edges: the empty edge dict collapses to None (empties omitted).
+        assert kg.edges is None
 
 
 # ============================================================================
@@ -366,9 +367,7 @@ class TestNodeBasics:
 class TestNodeHash:
     def test_only_depends_on_name_and_is_set(self):
         # categories and attributes are explicitly excluded from hash().
-        a = Node(
-            name="Alice", categories=["biolink:NamedThing"], attributes=[]
-        )
+        a = Node(name="Alice", categories=["biolink:NamedThing"], attributes=[])
         b = Node(
             name="Alice",
             categories=["biolink:Gene"],
@@ -409,9 +408,7 @@ class TestNodeMeetsConstraints:
             categories=["biolink:NamedThing"],
             attributes=[Attribute(attribute_type_id="biolink:foo", value=1)],
         )
-        c = AttributeConstraint(
-            id="biolink:foo", name="foo", operator="==", value=1
-        )
+        c = AttributeConstraint(id="biolink:foo", name="foo", operator="==", value=1)
         assert n.meets_constraints([c]) is True
 
     def test_constraint_unsatisfied(self):
@@ -420,9 +417,7 @@ class TestNodeMeetsConstraints:
             categories=["biolink:NamedThing"],
             attributes=[Attribute(attribute_type_id="biolink:foo", value=1)],
         )
-        c = AttributeConstraint(
-            id="biolink:foo", name="foo", operator="==", value=99
-        )
+        c = AttributeConstraint(id="biolink:foo", name="foo", operator="==", value=99)
         assert n.meets_constraints([c]) is False
 
 
@@ -435,9 +430,7 @@ class TestNodeUpdate:
 
     def test_keeps_name_when_other_has_none(self):
         a = _node(name="Alice")
-        b = Node(
-            name=None, categories=["biolink:NamedThing"], attributes=[]
-        )
+        b = Node(name=None, categories=["biolink:NamedThing"], attributes=[])
         a.update(b)
         assert a.name == "Alice"
 
@@ -449,9 +442,7 @@ class TestNodeUpdate:
 
     def test_dedupes_attributes_by_hash(self):
         attr = Attribute(attribute_type_id="biolink:foo", value=1)
-        a = Node(
-            name="x", categories=["biolink:NamedThing"], attributes=[attr]
-        )
+        a = Node(name="x", categories=["biolink:NamedThing"], attributes=[attr])
         b = Node(
             name="x",
             categories=["biolink:NamedThing"],
@@ -462,6 +453,7 @@ class TestNodeUpdate:
         )
         a.update(b)
         # one new biolink:foo (replaces existing) + biolink:bar
+        assert a.attributes is not None
         assert len(a.attributes) == 2
 
 
@@ -476,6 +468,8 @@ class TestEdgeBasics:
         assert e.subject == "A:1"
         assert e.object == "B:2"
         assert e.predicate == "biolink:related_to"
+        assert e.knowledge_level == "knowledge_assertion"
+        assert e.agent_type == "manual_agent"
 
     def test_sources_min_length_enforced(self):
         with pytest.raises(ValidationError):
@@ -484,6 +478,28 @@ class TestEdgeBasics:
                 subject="A:1",
                 object="B:2",
                 sources=[],
+                knowledge_level="knowledge_assertion",
+                agent_type="manual_agent",
+            )
+
+    def test_knowledge_level_required(self):
+        with pytest.raises(ValidationError):
+            Edge(
+                predicate="biolink:related_to",
+                subject="A:1",
+                object="B:2",
+                sources=[_src()],
+                agent_type="manual_agent",  # type: ignore[call-arg]
+            )
+
+    def test_agent_type_required(self):
+        with pytest.raises(ValidationError):
+            Edge(
+                predicate="biolink:related_to",
+                subject="A:1",
+                object="B:2",
+                sources=[_src()],
+                knowledge_level="knowledge_assertion",  # type: ignore[call-arg]
             )
 
     def test_extra_field_forbidden(self):
@@ -493,6 +509,8 @@ class TestEdgeBasics:
                 subject="A:1",
                 object="B:2",
                 sources=[_src()],
+                knowledge_level="knowledge_assertion",
+                agent_type="manual_agent",
                 bogus="x",  # type: ignore[call-arg]
             )
 
@@ -514,9 +532,7 @@ class TestEdgeProperties:
         assert e.primary_knowledge_source.resource_id == "infores:primary"
 
     def test_primary_knowledge_source_missing_raises(self):
-        e = _edge(
-            sources=[_src("infores:agg", "aggregator_knowledge_source")]
-        )
+        e = _edge(sources=[_src("infores:agg", "aggregator_knowledge_source")])
         with pytest.raises(ValueError, match="primary_knowledge_source"):
             _ = e.primary_knowledge_source
 
@@ -564,6 +580,11 @@ class TestEdgeHash:
         b = _edge(attributes=[Attribute(attribute_type_id="biolink:x", value=2)])
         assert a.hash() == b.hash()
 
+    def test_knowledge_level_and_agent_type_excluded_from_hash(self):
+        a = _edge(knowledge_level="knowledge_assertion", agent_type="manual_agent")
+        b = _edge(knowledge_level="prediction", agent_type="automated_agent")
+        assert a.hash() == b.hash()
+
     def test_changes_with_subject(self):
         a = _edge(subject="A:1")
         b = _edge(subject="A:9")
@@ -603,51 +624,13 @@ class TestEdgeUpdate:
         assert a.attributes is not None
         assert len(a.attributes) == 2
 
-    def test_skips_knowledge_level_dup(self):
-        # A second knowledge_level attribute from `other` is dropped.
-        a = _edge(
-            attributes=[
-                Attribute(
-                    attribute_type_id="biolink:knowledge_level",
-                    value="knowledge_assertion",
-                )
-            ]
-        )
-        b = _edge(
-            attributes=[
-                Attribute(
-                    attribute_type_id="biolink:knowledge_level",
-                    value="prediction",
-                )
-            ]
-        )
+    def test_knowledge_level_and_agent_type_new_wins(self):
+        # In 2.0 KL/AT are top-level fields; update takes the other's values.
+        a = _edge(knowledge_level="knowledge_assertion", agent_type="manual_agent")
+        b = _edge(knowledge_level="prediction", agent_type="automated_agent")
         a.update(b)
-        assert a.attributes is not None
-        # Only the original KL is kept
-        assert len(a.attributes) == 1
-        assert a.attributes[0].value == "knowledge_assertion"
-
-    def test_skips_agent_type_dup(self):
-        a = _edge(
-            attributes=[
-                Attribute(
-                    attribute_type_id="biolink:agent_type",
-                    value="manual_agent",
-                )
-            ]
-        )
-        b = _edge(
-            attributes=[
-                Attribute(
-                    attribute_type_id="biolink:agent_type",
-                    value="automated_agent",
-                )
-            ]
-        )
-        a.update(b)
-        assert a.attributes is not None
-        assert len(a.attributes) == 1
-        assert a.attributes[0].value == "manual_agent"
+        assert a.knowledge_level == "prediction"
+        assert a.agent_type == "automated_agent"
 
     def test_merges_sources_with_upstream_union(self):
         a_src = _src(
@@ -663,9 +646,7 @@ class TestEdgeUpdate:
         a = _edge(sources=[_src(), a_src])
         b = _edge(sources=[_src(), b_src])
         a.update(b)
-        agg_sources = [
-            s for s in a.sources if s.resource_id == "infores:agg"
-        ]
+        agg_sources = [s for s in a.sources if s.resource_id == "infores:agg"]
         assert len(agg_sources) == 1
         assert agg_sources[0].upstream_resource_ids is not None
         assert set(agg_sources[0].upstream_resource_ids) == {
@@ -676,12 +657,8 @@ class TestEdgeUpdate:
 
 class TestEdgeMeetsConstraints:
     def test_attribute_constraints(self):
-        e = _edge(
-            attributes=[Attribute(attribute_type_id="biolink:foo", value=1)]
-        )
-        c = AttributeConstraint(
-            id="biolink:foo", name="foo", operator="==", value=1
-        )
+        e = _edge(attributes=[Attribute(attribute_type_id="biolink:foo", value=1)])
+        c = AttributeConstraint(id="biolink:foo", name="foo", operator="==", value=1)
         assert e.meets_attribute_constraints([c]) is True
 
     def test_empty_qualifier_constraints_returns_true(self):
@@ -690,14 +667,8 @@ class TestEdgeMeetsConstraints:
 
     def test_qualifier_constraints_with_no_qualifiers_returns_false(self):
         e = _edge()
-        c = QualifierConstraint(
-            qualifier_set=[
-                Qualifier(
-                    qualifier_type_id="biolink:subject_aspect_qualifier",
-                    qualifier_value="activity",
-                )
-            ]
-        )
+        # A QualifierSetConstraint is a {type_id: value} mapping.
+        c = {"biolink:subject_aspect_qualifier": "activity"}
         assert e.meets_qualifier_constraints([c]) is False
 
     def test_qualifier_constraint_satisfied(self):
@@ -706,7 +677,7 @@ class TestEdgeMeetsConstraints:
             qualifier_value="activity",
         )
         e = _edge(qualifiers=[q])
-        c = QualifierConstraint(qualifier_set=[q])
+        c = {"biolink:subject_aspect_qualifier": "activity"}
         assert e.meets_qualifier_constraints([c]) is True
 
 
@@ -739,6 +710,8 @@ class TestAppendAggregator:
                     upstream=["infores:a"],
                 ),
             ],
+            knowledge_level="knowledge_assertion",
+            agent_type="manual_agent",
         )
         with pytest.raises(ValueError, match="Provenance chain is invalid"):
             e.append_aggregator("infores:new")

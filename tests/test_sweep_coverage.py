@@ -14,17 +14,13 @@ import pytest
 from _sweep_helpers import DICTUTILS, MODELS
 
 from translator_tom import TOMBase
-from translator_tom.models.query_graph import BaseQueryGraph
 from translator_tom.utils.dict_util_base import DictUtil
 
 # Models that legitimately have no DictUtil sibling. Each entry MUST be justified: a
 # normal serializable model missing its DictUtil is a BUG to fix, not to allow-list.
-EXPECTED_NO_DICTUTIL: set[type] = {
-    # Abstract base for QueryGraph/PathfinderQueryGraph; never serialized on its own
-    # (a query graph always carries `edges` or `paths`). Both concrete subclasses have
-    # registered DictUtils, so the base intentionally has none.
-    BaseQueryGraph,
-}
+# TRAPI 2.0 collapsed Base/PathfinderQueryGraph into a single concrete QueryGraph, so the
+# former abstract-base exemption no longer applies; every public model now has a DictUtil.
+EXPECTED_NO_DICTUTIL: set[type] = set()
 
 
 def test_forward_coverage() -> None:

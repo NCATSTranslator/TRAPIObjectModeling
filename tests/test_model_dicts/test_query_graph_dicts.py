@@ -13,9 +13,8 @@ import pytest
 from pydantic import Field
 
 from translator_tom.model_dicts.attribute import AttributeConstraintDictUtil
-from translator_tom.model_dicts.qualifier import QualifierConstraintDictUtil
+from translator_tom.model_dicts.constraints import QEdgeConstraintsDictUtil
 from translator_tom.model_dicts.query_graph import (
-    PathfinderQueryGraphDictUtil,
     QEdgeDict,
     QEdgeDictUtil,
     QNodeDict,
@@ -25,10 +24,9 @@ from translator_tom.model_dicts.query_graph import (
     QueryGraphDictUtil,
 )
 from translator_tom.models.attribute import AttributeConstraint
+from translator_tom.models.constraints import QEdgeConstraints
 from translator_tom.models.path_constraint import PathConstraint
-from translator_tom.models.qualifier import Qualifier, QualifierConstraint
 from translator_tom.models.query_graph import (
-    PathfinderQueryGraph,
     QEdge,
     QNode,
     QPath,
@@ -73,8 +71,6 @@ class TestQEdgeDictUtilListAccessors:
     def test_missing_keys_return_empty(self):
         qedge: QEdgeDict = {"subject": "n0", "object": "n1"}
         assert QEdgeDictUtil.predicates_list(qedge) == []
-        assert QEdgeDictUtil.attribute_constraints_list(qedge) == []
-        assert QEdgeDictUtil.qualifier_constraints_list(qedge) == []
 
     def test_populated_returns_value(self):
         qedge: QEdgeDict = {
@@ -144,14 +140,16 @@ class TestQEdgeDictUtilGetInverse:
             QEdge(
                 subject="n0",
                 object="n1",
-                attribute_constraints=[
-                    AttributeConstraint(
-                        id="biolink:original_subject",
-                        name="original subject",
-                        operator="==",
-                        value="X",
-                    )
-                ],
+                constraints=QEdgeConstraints(
+                    attributes=[
+                        AttributeConstraint(
+                            id="biolink:original_subject",
+                            name="original subject",
+                            operator="==",
+                            value="X",
+                        )
+                    ]
+                ),
             )
         )
 
@@ -160,16 +158,9 @@ class TestQEdgeDictUtilGetInverse:
             QEdge(
                 subject="n0",
                 object="n1",
-                qualifier_constraints=[
-                    QualifierConstraint(
-                        qualifier_set=[
-                            Qualifier(
-                                qualifier_type_id="biolink:subject_aspect_qualifier",
-                                qualifier_value="activity",
-                            )
-                        ]
-                    )
-                ],
+                constraints=QEdgeConstraints(
+                    qualifiers=[{"biolink:subject_aspect_qualifier": "activity"}]
+                ),
             )
         )
 
@@ -224,19 +215,14 @@ class TestHashParity:
             subject="n0",
             object="n1",
             predicates=["biolink:treats"],
-            attribute_constraints=[
-                AttributeConstraint(id="biolink:x", name="x", operator="==", value=1)
-            ],
-            qualifier_constraints=[
-                QualifierConstraint(
-                    qualifier_set=[
-                        Qualifier(
-                            qualifier_type_id="biolink:subject_aspect_qualifier",
-                            qualifier_value="activity",
-                        )
-                    ]
-                )
-            ],
+            constraints=QEdgeConstraints(
+                attributes=[
+                    AttributeConstraint(
+                        id="biolink:x", name="x", operator="==", value=1
+                    )
+                ],
+                qualifiers=[{"biolink:subject_aspect_qualifier": "activity"}],
+            ),
         )
         assert QEdgeDictUtil.hash(edge.to_dict()) == edge.hash()
 
@@ -245,7 +231,7 @@ class TestHashParity:
             subject="n0",
             object="n1",
             constraints=[
-                PathConstraint(intermediate_categories=["biolink:Gene"]),
+                PathConstraint(required_intermediate_categories=["biolink:Gene"]),
             ],
         )
         assert QPathDictUtil.hash(path.to_dict()) == path.hash()
@@ -312,14 +298,16 @@ class TestNestedDerivation:
         # Each entry is a value-hasher mirroring the field's container shape and
         # routing element dicts through the resolved member util.
         ac = {"id": "biolink:x", "name": "n", "operator": "==", "value": 1}
-        qc = {"qualifier_set": [{"qualifier_type_id": "biolink:x", "qualifier_value": "y"}]}
+        qc = {"biolink:subject_aspect_qualifier": "activity"}
         qnode = QNodeDictUtil._nested_fields()
         assert set(qnode) == {"constraints"}
         assert qnode["constraints"]([ac]) == [AttributeConstraintDictUtil.hash(ac)]
+        # QEdge now holds a single `constraints` QEdgeConstraints submodel (scalar), so
+        # its hasher routes the whole dict through QEdgeConstraintsDictUtil.
+        qec = {"attributes": [ac], "qualifiers": [qc]}
         qedge = QEdgeDictUtil._nested_fields()
-        assert set(qedge) == {"attribute_constraints", "qualifier_constraints"}
-        assert qedge["attribute_constraints"]([ac]) == [AttributeConstraintDictUtil.hash(ac)]
-        assert qedge["qualifier_constraints"]([qc]) == [QualifierConstraintDictUtil.hash(qc)]
+        assert set(qedge) == {"constraints"}
+        assert qedge["constraints"](qec) == QEdgeConstraintsDictUtil.hash(qec)
 
     def test_scalar_only_model_has_empty_mapping(self):
         # AttributeConstraintDictUtil overrides hash, but base derivation still
@@ -376,12 +364,14 @@ class TestDeeplyNestedContainerHashing:
 # Union nested fields (discriminator-aware resolution)
 # ============================================================================
 
-# A model with a structural (non-tagged) union field: `QueryGraph | PathfinderQueryGraph`
-# mirrors `Message.query_graph`, resolved via the registered structural discriminator.
+# In TRAPI 2.0 `Message.query_graph` is a single collapsed QueryGraph (there is no
+# PathfinderQueryGraph union anymore), so this holder exercises single-model nested
+# recursion. Tagged- and structural-union resolution are still covered below by the
+# `_Pet` and `_Unregistered*` holders.
 
 
 class _QGHolder(TOMBase):
-    query_graph: QueryGraph | PathfinderQueryGraph | None = None
+    query_graph: QueryGraph | None = None
 
 
 class _QGHolderDictUtil(DictUtil[dict[str, object]]):
@@ -426,22 +416,30 @@ class _PetHolderDictUtil(DictUtil[dict[str, object]]):
 class TestUnionHashParity:
     def test_query_graph_members_hash(self):
         qg = QueryGraph(
-            nodes={"n0": QNode(ids=["CHEBI:1"])},
-            edges={"e0": QEdge(subject="n0", object="n1", predicates=["biolink:treats"])},
+            nodes={"n0": QNode(ids=["CHEBI:1"]), "n1": QNode()},
+            edges={
+                "e0": QEdge(subject="n0", object="n1", predicates=["biolink:treats"])
+            },
         )
         assert QueryGraphDictUtil.hash(qg.to_dict()) == qg.hash()
-        pqg = PathfinderQueryGraph(
-            nodes={"n0": QNode(ids=["CHEBI:1"])},
+        # Same single QueryGraph type, exercised through its optional `paths` key.
+        pqg = QueryGraph(
+            nodes={"n0": QNode(ids=["CHEBI:1"]), "n1": QNode()},
             paths={"p0": QPath(subject="n0", object="n1")},
         )
-        assert PathfinderQueryGraphDictUtil.hash(pqg.to_dict()) == pqg.hash()
+        assert QueryGraphDictUtil.hash(pqg.to_dict()) == pqg.hash()
 
-    def test_structural_union_end_to_end(self):
-        # Uses the real registered `QueryGraph | PathfinderQueryGraph` discriminator.
+    def test_single_query_graph_nested_field(self):
+        # `_QGHolder.query_graph` is a single QueryGraph; hashing recurses into it via
+        # the const resolver, for both the edges- and paths-shaped forms.
         for qg in (
-            QueryGraph(nodes={"n0": QNode()}, edges={}),
-            PathfinderQueryGraph(
-                nodes={"n0": QNode()}, paths={"p0": QPath(subject="n0", object="n1")}
+            QueryGraph(
+                nodes={"n0": QNode(), "n1": QNode()},
+                edges={"e0": QEdge(subject="n0", object="n1")},
+            ),
+            QueryGraph(
+                nodes={"n0": QNode(), "n1": QNode()},
+                paths={"p0": QPath(subject="n0", object="n1")},
             ),
         ):
             holder = _QGHolder(query_graph=qg)

@@ -10,10 +10,7 @@ from translator_tom import (
     MetaKnowledgeGraph,
     MetaNode,
     MetaQualifier,
-    Qualifier,
-    QualifierConstraint,
 )
-
 
 # ============================================================================
 # MetaKnowledgeGraph
@@ -66,7 +63,8 @@ class TestMetaNodeUpdate:
     def test_assigns_attributes_when_self_empty(self):
         a = MetaNode(id_prefixes=["X"])
         b = MetaNode(
-            id_prefixes=["X"], attributes=[MetaAttribute(attribute_type_id="biolink:foo")]
+            id_prefixes=["X"],
+            attributes=[MetaAttribute(attribute_type_id="biolink:foo")],
         )
         a.update(b)
         assert a.attributes is not None
@@ -145,12 +143,8 @@ class TestMetaEdgeUpdate:
         assert set(a.knowledge_types) == {"lookup", "inferred"}
 
     def test_merges_attributes(self):
-        a = _meta_edge(
-            attributes=[MetaAttribute(attribute_type_id="biolink:a")]
-        )
-        b = _meta_edge(
-            attributes=[MetaAttribute(attribute_type_id="biolink:b")]
-        )
+        a = _meta_edge(attributes=[MetaAttribute(attribute_type_id="biolink:a")])
+        b = _meta_edge(attributes=[MetaAttribute(attribute_type_id="biolink:b")])
         a.update(b)
         assert a.attributes is not None
         assert len(a.attributes) == 2
@@ -264,9 +258,7 @@ class TestMetaEdgeMeetsAttributeConstraints:
         assert _meta_edge().meets_attribute_constraints([]) is True
 
     def test_with_no_attributes_returns_false(self):
-        c = AttributeConstraint(
-            id="biolink:foo", name="foo", operator="==", value=1
-        )
+        c = AttributeConstraint(id="biolink:foo", name="foo", operator="==", value=1)
         assert _meta_edge().meets_attribute_constraints([c]) is False
 
     def test_satisfied_when_id_matches_and_constraint_use_true(self):
@@ -275,9 +267,7 @@ class TestMetaEdgeMeetsAttributeConstraints:
                 MetaAttribute(attribute_type_id="biolink:foo", constraint_use=True)
             ]
         )
-        c = AttributeConstraint(
-            id="biolink:foo", name="foo", operator="==", value=1
-        )
+        c = AttributeConstraint(id="biolink:foo", name="foo", operator="==", value=1)
         assert e.meets_attribute_constraints([c]) is True
 
     def test_unsatisfied_when_id_mismatch(self):
@@ -286,9 +276,7 @@ class TestMetaEdgeMeetsAttributeConstraints:
                 MetaAttribute(attribute_type_id="biolink:foo", constraint_use=True)
             ]
         )
-        c = AttributeConstraint(
-            id="biolink:bar", name="bar", operator="==", value=1
-        )
+        c = AttributeConstraint(id="biolink:bar", name="bar", operator="==", value=1)
         assert e.meets_attribute_constraints([c]) is False
 
 
@@ -297,14 +285,8 @@ class TestMetaEdgeMeetsQualifierConstraints:
         assert _meta_edge().meets_qualifier_constraints([]) is True
 
     def test_with_no_qualifiers_returns_false(self):
-        c = QualifierConstraint(
-            qualifier_set=[
-                Qualifier(
-                    qualifier_type_id="biolink:subject_aspect_qualifier",
-                    qualifier_value="activity",
-                )
-            ]
-        )
+        # A QualifierSetConstraint is a {type_id: value} mapping.
+        c = {"biolink:subject_aspect_qualifier": "activity"}
         assert _meta_edge().meets_qualifier_constraints([c]) is False
 
     def test_satisfied(self):
@@ -316,12 +298,5 @@ class TestMetaEdgeMeetsQualifierConstraints:
                 )
             ]
         )
-        c = QualifierConstraint(
-            qualifier_set=[
-                Qualifier(
-                    qualifier_type_id="biolink:subject_aspect_qualifier",
-                    qualifier_value="activity",
-                )
-            ]
-        )
+        c = {"biolink:subject_aspect_qualifier": "activity"}
         assert e.meets_qualifier_constraints([c]) is True

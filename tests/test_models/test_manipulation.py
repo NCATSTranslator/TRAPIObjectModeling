@@ -19,7 +19,6 @@ def test_manipulation():
             "message": {
                 "query_graph": {
                     "nodes": {"x": {}},
-                    "edges": {},
                 }
             }
         }
@@ -40,11 +39,10 @@ def test_manipulation():
     message.knowledge_graph.nodes[knode_id] = knode
 
     # add result
-    node_binding: NodeBinding = NodeBinding.from_dict(dict(id=knode_id, attributes=[]))
+    node_binding: NodeBinding = NodeBinding.from_dict(dict(ids=[knode_id]))
     result: Result = Result.from_dict(
         dict(
-            node_bindings={qnode_id: [node_binding]},
-            analyses=[],
+            node_bindings={qnode_id: node_binding},
             foo="bar",
         )
     )

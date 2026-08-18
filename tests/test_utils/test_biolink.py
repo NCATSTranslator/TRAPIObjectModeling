@@ -162,7 +162,7 @@ class TestGetDescendantValues:
     def test_predicate_qualifier_branch(self):
         # When qualifier_type contains "predicate", expand() is used and the
         # biolink: prefix is stripped from each result.
-        result = Biolink.get_descendant_values(
+        result = Biolink.get_descendant_qualifier_values(
             "biolink:qualified_predicate", "biolink:causes"
         )
         assert "causes" in result
@@ -170,7 +170,7 @@ class TestGetDescendantValues:
 
     def test_non_predicate_qualifier_returns_value_set(self):
         # An unknown value with a non-predicate qualifier just returns {value}.
-        result = Biolink.get_descendant_values(
+        result = Biolink.get_descendant_qualifier_values(
             "biolink:subject_aspect_qualifier", "not_a_real_value_xyz"
         )
         assert result == {"not_a_real_value_xyz"}
@@ -178,7 +178,7 @@ class TestGetDescendantValues:
     def test_non_predicate_qualifier_with_known_enum_value(self):
         # `therapeutic_response` is a permissible value of ResponseEnum, so the
         # permissible-values branch is exercised.
-        result = Biolink.get_descendant_values(
+        result = Biolink.get_descendant_qualifier_values(
             "biolink:object_aspect_qualifier", "therapeutic_response"
         )
         assert "therapeutic_response" in result

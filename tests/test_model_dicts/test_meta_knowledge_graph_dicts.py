@@ -15,7 +15,6 @@ from translator_tom.models.meta_knowledge_graph import (
     MetaNode,
 )
 from translator_tom.models.meta_qualifier import MetaQualifier
-from translator_tom.models.qualifier import Qualifier, QualifierConstraint
 
 # ============================================================================
 # MetaNode
@@ -27,9 +26,10 @@ class TestMetaNode:
         node = MetaNode(
             id_prefixes=["CHEBI"], attributes=[MetaAttribute(attribute_type_id="x")]
         )
-        assert MetaNodeDictUtil.attributes_list(node.to_dict()) == node.to_dict()[
-            "attributes"
-        ]
+        assert (
+            MetaNodeDictUtil.attributes_list(node.to_dict())
+            == node.to_dict()["attributes"]
+        )
 
     def test_hash_parity(self):
         node = MetaNode(
@@ -170,18 +170,11 @@ class TestMetaEdge:
                 )
             ]
         )
-        constraints = [
-            QualifierConstraint(
-                qualifier_set=[
-                    Qualifier(
-                        qualifier_type_id="biolink:subject_aspect_qualifier",
-                        qualifier_value="activity",
-                    )
-                ]
-            )
-        ]
+        # A QualifierSetConstraint is a plain {type_id: value} mapping (no model), so
+        # both the dict-util and model sides take the same list of mappings.
+        constraints = [{"biolink:subject_aspect_qualifier": "activity"}]
         assert MetaEdgeDictUtil.meets_qualifier_constraints(
-            edge.to_dict(), [c.to_dict() for c in constraints]
+            edge.to_dict(), constraints
         ) == edge.meets_qualifier_constraints(constraints)
 
 

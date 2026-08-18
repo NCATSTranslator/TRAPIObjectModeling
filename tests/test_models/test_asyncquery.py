@@ -25,7 +25,8 @@ class TestAsyncQuery:
 
     def test_inherits_query_defaults(self):
         a = AsyncQuery(message=Message(), callback="https://example.org/cb")
-        assert a.bypass_cache is False
+        # bypass_cache moved into QueryParameters in 2.0.
+        assert a.parameters is None
         assert a.workflow is None
 
 

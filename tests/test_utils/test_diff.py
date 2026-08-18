@@ -31,6 +31,8 @@ def _edge(subject: str = "A:1", object_: str = "B:2") -> Edge:
         subject=subject,
         object=object_,
         sources=[_src()],
+        knowledge_level="knowledge_assertion",
+        agent_type="manual_agent",
     )
 
 
@@ -165,7 +167,9 @@ def test_dict_key_only_in_one():
 def test_dict_value_difference():
     kg_a = KnowledgeGraph(nodes={}, edges={"e1": _edge(subject="A:1")})
     kg_b = KnowledgeGraph(nodes={}, edges={"e1": _edge(subject="A:9")})
-    assert diff(kg_a, kg_b) == [Delta(("edges", "e1", "subject"), "changed", "A:1", "A:9")]
+    assert diff(kg_a, kg_b) == [
+        Delta(("edges", "e1", "subject"), "changed", "A:1", "A:9")
+    ]
 
 
 def test_deeply_nested_path():
@@ -207,6 +211,8 @@ def _edge_with_attr(value: int) -> Edge:
         subject="A:1",
         object="B:2",
         sources=[_src()],
+        knowledge_level="knowledge_assertion",
+        agent_type="manual_agent",
         attributes=[Attribute(attribute_type_id="biolink:foo", value=value)],
     )
 
@@ -240,7 +246,12 @@ def test_extra_field_differing_values_reported():
     a = QNode(categories=["biolink:Gene"], foo=1)
     b = QNode(categories=["biolink:Gene"], foo=2)
     (delta,) = diff(a, b)
-    assert (delta.path, delta.kind, delta.left, delta.right) == (("foo",), "changed", 1, 2)
+    assert (delta.path, delta.kind, delta.left, delta.right) == (
+        ("foo",),
+        "changed",
+        1,
+        2,
+    )
 
 
 def test_extra_field_identical_values_still_reported():
@@ -268,17 +279,17 @@ def test_forbid_extra_models_unaffected():
 
 
 def _binding(edge_id: str) -> EdgeBinding:
-    return EdgeBinding(id=edge_id, attributes=[])
+    return EdgeBinding(ids=[edge_id])
 
 
 def _result(node_id: str, edge_id: str, *, score: float = 0.9) -> Result:
     return Result(
-        node_bindings={"n0": [NodeBinding(id=node_id, attributes=[])]},
+        node_bindings={"n0": NodeBinding(ids=[node_id])},
         analyses=[
             Analysis(
                 resource_id="infores:ara",
                 score=score,
-                edge_bindings={"e0": [_binding(edge_id)]},
+                edge_bindings={"e0": _binding(edge_id)},
             )
         ],
     )
@@ -325,17 +336,12 @@ def test_arbitrary_edge_keys_matched_after_normalize():
     assert diff(left, right, normalize=True) == []
 
 
-def _aux_message(edge_key: str, aux_key: str, attr_value: int = 1) -> Message:
+def _aux_message(edge_key: str, aux_key: str) -> Message:
     return Message(
         knowledge_graph=KnowledgeGraph(
             nodes={"A:1": _node()}, edges={edge_key: _edge()}
         ),
-        auxiliary_graphs={
-            aux_key: AuxiliaryGraph(
-                edges=[edge_key],
-                attributes=[Attribute(attribute_type_id="biolink:foo", value=attr_value)],
-            )
-        },
+        auxiliary_graphs={aux_key: AuxiliaryGraph(edges=[edge_key])},
     )
 
 
@@ -344,14 +350,6 @@ def test_aux_graphs_matched_by_content_after_normalize():
     right = _aux_message("svcB:99", "auxX")
     # Equivalent aux graphs under different dict keys align by content after normalize.
     assert diff(left, right, normalize=True) == []
-
-
-def test_aux_graph_attribute_only_change_is_changed():
-    left = _aux_message("svcA:e1", "aux1", attr_value=1)
-    right = _aux_message("svcB:99", "auxX", attr_value=2)
-    deltas = diff(left, right, normalize=True)
-    assert [d.kind for d in deltas] == ["changed"]
-    assert deltas[0].path[-1] == "value"
 
 
 def test_dropped_result_has_locator():

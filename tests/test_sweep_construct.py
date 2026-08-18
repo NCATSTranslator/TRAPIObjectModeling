@@ -33,8 +33,15 @@ SKIP: dict[str, str] = {
     "LogEntry": "harness: LogEntry.timestamp requires an ISO-8601 string; dummy 'x' fails the pattern",
     # AsyncQueryStatusResponse has a required logs: list[LogEntry] -> same pattern failure.
     "AsyncQueryStatusResponse": "harness: nested required LogEntry.timestamp requires an ISO-8601 string; dummy 'x' fails the pattern",
-    # PathfinderQueryGraph.paths is Field(min_length=1); the dummy builds an empty {} dict.
-    "PathfinderQueryGraph": "harness: PathfinderQueryGraph.paths requires min_length=1; dummy builds an empty dict",
+}
+
+# `.new()` builders that intentionally return an empty skeleton to be populated
+# incrementally (docstring: "Return an empty instance, without having to pass required
+# containers"). Under TRAPI 2.0 their `nodes` container is Field(min_length=1), so the
+# un-populated skeleton is deliberately not yet schema-valid. Behavior change, not a bug.
+NEW_VALID_SKIP: dict[str, str] = {
+    "QueryGraph": "new() yields an empty {nodes: {}} skeleton; QueryGraph.nodes is min_length=1, so the un-populated builder skeleton is intentionally not re-validatable",
+    "MetaKnowledgeGraph": "new() yields an empty {nodes: {}, edges: []} skeleton; MetaKnowledgeGraph.nodes is min_length=1, so the un-populated builder skeleton is intentionally not re-validatable",
 }
 
 # Real product bugs: validation silently changes the identity hash. None found.
@@ -80,9 +87,20 @@ def _new_required_params(model: type[TOMBase]) -> list[inspect.Parameter] | None
 
 
 NEW_MODELS = [m for m in MODELS if _new_required_params(m) is not None]
+NEW_PARAMS = [
+    pytest.param(
+        m,
+        marks=(
+            [pytest.mark.skip(reason=NEW_VALID_SKIP[m.__name__])]
+            if m.__name__ in NEW_VALID_SKIP
+            else []
+        ),
+    )
+    for m in NEW_MODELS
+]
 
 
-@pytest.mark.parametrize("model", NEW_MODELS, ids=[m.__name__ for m in NEW_MODELS])
+@pytest.mark.parametrize("model", NEW_PARAMS, ids=[m.__name__ for m in NEW_MODELS])
 def test_new_yields_valid_instance(model: type[TOMBase]) -> None:
     """`.new()` produces a schema-valid, re-validatable instance with a stable hash.
 

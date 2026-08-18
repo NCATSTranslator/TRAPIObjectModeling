@@ -33,10 +33,14 @@ def _source(
 
 def _edge(subject: str, obj: str, **kw: object) -> Edge:
     kw.setdefault("sources", [_source()])
+    kw.setdefault("knowledge_level", "knowledge_assertion")
+    kw.setdefault("agent_type", "manual_agent")
     return Edge(predicate="biolink:related_to", subject=subject, object=obj, **kw)  # type: ignore[arg-type]
 
 
-def _node(*categories: str, attributes: list[Attribute] | None = None, **kw: object) -> Node:
+def _node(
+    *categories: str, attributes: list[Attribute] | None = None, **kw: object
+) -> Node:
     return Node(
         categories=list(categories) or ["biolink:NamedThing"],
         attributes=attributes or [],
@@ -122,10 +126,8 @@ class TestEdge:
         )
 
     def test_primary_knowledge_source_raises(self):
-        edge = _edge(
-            "n0", "n1", sources=[_source(role="aggregator_knowledge_source")]
-        )
-        with pytest.raises(ValueError, match="no .*primary_knowledge_source"):
+        edge = _edge("n0", "n1", sources=[_source(role="aggregator_knowledge_source")])
+        with pytest.raises(ValueError, match=r"no .*primary_knowledge_source"):
             EdgeDictUtil.primary_knowledge_source(edge.to_dict())
 
     def test_last_downstream_source_parity(self):
@@ -248,11 +250,11 @@ class TestKnowledgeGraph:
             },
         )
         result = Result(
-            node_bindings={"qn0": [NodeBinding(id="n0", attributes=[])]},
+            node_bindings={"qn0": NodeBinding(ids=["n0"])},
             analyses=[
                 Analysis(
                     resource_id="infores:x",
-                    edge_bindings={"qe0": [EdgeBinding(id="e0", attributes=[])]},
+                    edge_bindings={"qe0": EdgeBinding(ids=["e0"])},
                 )
             ],
         )
@@ -264,7 +266,7 @@ class TestKnowledgeGraph:
 
 
 class TestEdgeUpdateBranches:
-    """The subtle Edge.update branches: overlapping-source upstream roll-up + KL/AT skip."""
+    """The subtle Edge.update branches: overlapping-source upstream roll-up + KL/AT new-wins."""
 
     def test_merges_overlapping_source_upstreams(self):
         # same (resource_id, role) -> same source hash -> upstreams rolled up (set union)
@@ -287,26 +289,27 @@ class TestEdgeUpdateBranches:
         assert dict_up == model_up
         assert dict_up["infores:p"] == {"infores:a", "infores:b"}
 
-    def test_update_skips_knowledge_level_and_agent_type(self):
+    def test_update_knowledge_level_and_agent_type_new_wins(self):
+        # In 2.0 KL/AT are top-level Edge fields (not attributes); update takes the
+        # other's values, matching Edge.update.
         edge = _edge(
-            "n0", "n1", attributes=[Attribute(attribute_type_id="biolink:a", value=1)]
+            "n0",
+            "n1",
+            knowledge_level="knowledge_assertion",
+            agent_type="manual_agent",
         )
         other = _edge(
             "n0",
             "n1",
-            attributes=[
-                Attribute(attribute_type_id="biolink:knowledge_level", value="ka"),
-                Attribute(attribute_type_id="biolink:agent_type", value="manual"),
-                Attribute(attribute_type_id="biolink:b", value=2),
-            ],
+            knowledge_level="prediction",
+            agent_type="automated_agent",
         )
         edge_dict = edge.to_dict()
         edge.update(other)
         EdgeDictUtil.update(edge_dict, other.to_dict())
         assert edge_dict == edge.to_dict()
-        types = {a["attribute_type_id"] for a in edge_dict.get("attributes", [])}
-        assert "biolink:knowledge_level" not in types
-        assert "biolink:agent_type" not in types
+        assert edge_dict["knowledge_level"] == "prediction"
+        assert edge_dict["agent_type"] == "automated_agent"
 
 
 class TestPruneSupportGraphWalk:
@@ -332,15 +335,15 @@ class TestPruneSupportGraphWalk:
             },
         )
         result = Result(
-            node_bindings={"qn0": [NodeBinding(id="n0", attributes=[])]},
+            node_bindings={"qn0": NodeBinding(ids=["n0"])},
             analyses=[
                 Analysis(
                     resource_id="infores:x",
-                    edge_bindings={"qe0": [EdgeBinding(id="e0", attributes=[])]},
+                    edge_bindings={"qe0": EdgeBinding(ids=["e0"])},
                 )
             ],
         )
-        aux = {"aux0": AuxiliaryGraph(edges=["e1"], attributes=[])}
+        aux = {"aux0": AuxiliaryGraph(edges=["e1"])}
         kg_dict = kg.to_dict()
         kg.prune(aux, [result])
         KnowledgeGraphDictUtil.prune(

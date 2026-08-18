@@ -1,13 +1,12 @@
-"""Parity tests for `ResultDictUtil`."""
+"""Parity tests for `ResultDictUtil`.
+
+In TRAPI 2.0 `node_bindings` maps each QNode to a single `NodeBinding` (an `ids`
+list), `analyses` is optional, and an empty `analyses` list is invalid (omit it).
+"""
 
 from __future__ import annotations
 
-from typing import Any
-
-from translator_tom.model_dicts.analysis import (
-    AnalysisDictUtil,
-    PathfinderAnalysisDictUtil,
-)
+from translator_tom.model_dicts.analysis import AnalysisDictUtil
 from translator_tom.model_dicts.result import ResultDict, ResultDictUtil
 from translator_tom.models.analysis import Analysis
 from translator_tom.models.attribute import Attribute
@@ -16,41 +15,39 @@ from translator_tom.models.node_binding import NodeBinding
 from translator_tom.models.result import Result
 
 
-def _eb(edge_id: str) -> EdgeBinding:
-    return EdgeBinding(id=edge_id, attributes=[])
+def _eb(*edge_ids: str) -> EdgeBinding:
+    return EdgeBinding(ids=list(edge_ids) or ["e1"])
+
+
+def _nb(*node_ids: str) -> NodeBinding:
+    return NodeBinding(ids=list(node_ids) or ["A:1"])
 
 
 def _result(qnode: str, node_id: str, analyses: list[Analysis]) -> Result:
-    return Result(
-        node_bindings={qnode: [NodeBinding(id=node_id, attributes=[])]},
-        analyses=analyses,
-    )
-
-
-def _dict_analysis_hash(analysis: dict[str, Any]) -> str:
-    if "path_bindings" in analysis:
-        return PathfinderAnalysisDictUtil.hash(analysis)  # type: ignore[arg-type]
-    return AnalysisDictUtil.hash(analysis)  # type: ignore[arg-type]
+    # An empty analyses list is invalid in 2.0; omit the field instead.
+    if analyses:
+        return Result(node_bindings={qnode: _nb(node_id)}, analyses=analyses)
+    return Result(node_bindings={qnode: _nb(node_id)})
 
 
 def _dict_analysis_hashes(result: ResultDict) -> list[str]:
-    return sorted(_dict_analysis_hash(a) for a in result["analyses"])
+    return sorted(
+        AnalysisDictUtil.hash(a) for a in ResultDictUtil.analyses_list(result)
+    )
 
 
 def _model_analysis_hashes(result: Result) -> list[str]:
-    return sorted(a.hash() for a in result.analyses)
+    return sorted(a.hash() for a in result.analyses_list)
 
 
 class TestHashParity:
     def test_parity(self):
-        r = _result(
-            "n0", "CHEBI:1", [Analysis(resource_id="infores:x", edge_bindings={})]
-        )
+        r = _result("n0", "CHEBI:1", [Analysis(resource_id="infores:x")])
         assert ResultDictUtil.hash(r.to_dict()) == r.hash()
 
     def test_hash_ignores_analyses(self):
         # Result.hash keys only on node_bindings.
-        a = _result("n0", "CHEBI:1", [Analysis(resource_id="infores:x", edge_bindings={})])
+        a = _result("n0", "CHEBI:1", [Analysis(resource_id="infores:x")])
         b = _result("n0", "CHEBI:1", [])
         assert ResultDictUtil.hash(a.to_dict()) == ResultDictUtil.hash(b.to_dict())
 
@@ -60,7 +57,7 @@ class TestNormalize:
         r = _result(
             "n0",
             "CHEBI:1",
-            [Analysis(resource_id="infores:x", edge_bindings={"e0": [_eb("old")]})],
+            [Analysis(resource_id="infores:x", edge_bindings={"e0": _eb("old")})],
         )
         r_dict = r.to_dict()
         mapping = {"old": "new"}
@@ -73,7 +70,7 @@ class TestNormalize:
             _result(
                 "n0",
                 "CHEBI:1",
-                [Analysis(resource_id="infores:x", edge_bindings={"e0": [_eb("old")]})],
+                [Analysis(resource_id="infores:x", edge_bindings={"e0": _eb("old")})],
             )
         ]
         dicts = [r.to_dict() for r in results]
@@ -88,14 +85,14 @@ class TestUpdate:
         r = _result(
             "n0",
             "CHEBI:1",
-            [Analysis(resource_id="infores:x", edge_bindings={"e0": [_eb("kg0")]})],
+            [Analysis(resource_id="infores:x", edge_bindings={"e0": _eb("kg0")})],
         )
         other = _result(
             "n0",
             "CHEBI:1",
             [
-                Analysis(resource_id="infores:x", edge_bindings={"e0": [_eb("kg1")]}),
-                Analysis(resource_id="infores:y", edge_bindings={}),
+                Analysis(resource_id="infores:x", edge_bindings={"e0": _eb("kg1")}),
+                Analysis(resource_id="infores:y"),
             ],
         )
         r_dict = r.to_dict()
@@ -104,7 +101,7 @@ class TestUpdate:
         assert _dict_analysis_hashes(r_dict) == _model_analysis_hashes(r)
 
     def test_empty_other_is_noop(self):
-        r = _result("n0", "CHEBI:1", [Analysis(resource_id="infores:x", edge_bindings={})])
+        r = _result("n0", "CHEBI:1", [Analysis(resource_id="infores:x")])
         r_dict = r.to_dict()
         ResultDictUtil.update(r_dict, {"node_bindings": {}, "analyses": []})
         assert _dict_analysis_hashes(r_dict) == _model_analysis_hashes(r)
@@ -112,15 +109,15 @@ class TestUpdate:
     def test_dedupes_internal_duplicate_analyses_in_other(self):
         # `other` carries two equal-hash analyses absent from self; assert the absolute
         # dedup (count), not just parity, since the bug was identical on both sides.
-        r = _result(
-            "n0", "CHEBI:1", [Analysis(resource_id="infores:x", edge_bindings={})]
-        )
+        # An empty edge_bindings is invalid in 2.0 (min_length=1); omit it. The two
+        # infores:y analyses still share a hash, so the dedup assertion is preserved.
+        r = _result("n0", "CHEBI:1", [Analysis(resource_id="infores:x")])
         other = _result(
             "n0",
             "CHEBI:1",
             [
-                Analysis(resource_id="infores:y", edge_bindings={}),
-                Analysis(resource_id="infores:y", edge_bindings={}),
+                Analysis(resource_id="infores:y"),
+                Analysis(resource_id="infores:y"),
             ],
         )
         r_dict = r.to_dict()
@@ -134,12 +131,12 @@ class TestUpdate:
 class TestMergeResults:
     def test_parity(self):
         results = [
-            _result("n0", "CHEBI:1", [Analysis(resource_id="infores:x", edge_bindings={})]),
+            _result("n0", "CHEBI:1", [Analysis(resource_id="infores:x")]),
             _result("n0", "CHEBI:2", []),
         ]
         new = [
             # Same node bindings as results[0] -> merges analyses.
-            _result("n0", "CHEBI:1", [Analysis(resource_id="infores:y", edge_bindings={})]),
+            _result("n0", "CHEBI:1", [Analysis(resource_id="infores:y")]),
         ]
         dicts = [r.to_dict() for r in results]
         new_dicts = [r.to_dict() for r in new]
@@ -156,9 +153,9 @@ class TestMergeAnalysesByResourceId:
             "n0",
             "CHEBI:1",
             [
-                Analysis(resource_id="infores:x", edge_bindings={"e0": [_eb("kg0")]}),
-                Analysis(resource_id="infores:x", edge_bindings={"e1": [_eb("kg1")]}),
-                Analysis(resource_id="infores:y", edge_bindings={}),
+                Analysis(resource_id="infores:x", edge_bindings={"e0": _eb("kg0")}),
+                Analysis(resource_id="infores:x", edge_bindings={"e1": _eb("kg1")}),
+                Analysis(resource_id="infores:y"),
             ],
         )
         r_dict = r.to_dict()
@@ -177,7 +174,6 @@ class TestUpdateExistingAnalysisMerge:
             [
                 Analysis(
                     resource_id="infores:x",
-                    edge_bindings={},
                     attributes=[Attribute(attribute_type_id="biolink:a", value=1)],
                 )
             ],
@@ -188,7 +184,6 @@ class TestUpdateExistingAnalysisMerge:
             [
                 Analysis(
                     resource_id="infores:x",
-                    edge_bindings={},
                     attributes=[Attribute(attribute_type_id="biolink:b", value=2)],
                 )
             ],

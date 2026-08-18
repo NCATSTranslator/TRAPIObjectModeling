@@ -1,4 +1,9 @@
-"""Tests for translator_tom.models.qualifier."""
+"""Tests for translator_tom.models.qualifier.
+
+In TRAPI 2.0 a qualifier constraint is a plain ``QualifierSetConstraint`` mapping
+(``dict[qualifier_type_id, qualifier_value]``); the matching/inversion helpers
+live as static methods on ``Qualifier``.
+"""
 
 import pytest
 from pydantic import ValidationError
@@ -6,8 +11,8 @@ from pydantic import ValidationError
 from translator_tom import (
     MetaQualifier,
     Qualifier,
-    QualifierConstraint,
 )
+from translator_tom.models.qualifier import QualifierSetConstraint
 
 
 class TestQualifierBasics:
@@ -28,95 +33,63 @@ class TestQualifierBasics:
             )
 
 
-class TestQualifierConstraintBasics:
-    def test_required_field(self):
-        c = QualifierConstraint(qualifier_set=[])
-        assert c.qualifier_set == []
-
-    def test_extra_field_forbidden(self):
-        with pytest.raises(ValidationError):
-            QualifierConstraint(qualifier_set=[], bogus="x")  # type: ignore[call-arg]
-
-    def test_new_returns_empty(self):
-        c = QualifierConstraint.new()
-        assert c.qualifier_set == []
-
-
-class TestQualifierConstraintMetBy:
-    def test_empty_constraint_set_satisfied_trivially(self):
-        # No constraints to violate.
-        c = QualifierConstraint(qualifier_set=[])
-        assert c.met_by([]) is True
+class TestConstraintMetBy:
+    def test_empty_constraint_satisfied_trivially(self):
+        # No type/value pairs to violate.
+        assert Qualifier.constraint_met_by({}, []) is True
 
     def test_satisfied_by_matching_qualifier(self):
         q = Qualifier(
             qualifier_type_id="biolink:subject_aspect_qualifier",
             qualifier_value="activity",
         )
-        c = QualifierConstraint(qualifier_set=[q])
-        assert c.met_by([q]) is True
+        constraint: QualifierSetConstraint = {
+            "biolink:subject_aspect_qualifier": "activity"
+        }
+        assert Qualifier.constraint_met_by(constraint, [q]) is True
 
     def test_unsatisfied_when_no_matching_type(self):
-        constraint = Qualifier(
-            qualifier_type_id="biolink:subject_aspect_qualifier",
-            qualifier_value="activity",
-        )
-        # Different type id => never matches.
         provided = Qualifier(
             qualifier_type_id="biolink:object_aspect_qualifier",
             qualifier_value="activity",
         )
-        c = QualifierConstraint(qualifier_set=[constraint])
-        assert c.met_by([provided]) is False
+        constraint: QualifierSetConstraint = {
+            "biolink:subject_aspect_qualifier": "activity"
+        }
+        assert Qualifier.constraint_met_by(constraint, [provided]) is False
 
     def test_unsatisfied_when_value_disjoint(self):
-        constraint = Qualifier(
-            qualifier_type_id="biolink:subject_aspect_qualifier",
-            qualifier_value="activity",
-        )
         provided = Qualifier(
             qualifier_type_id="biolink:subject_aspect_qualifier",
             qualifier_value="abundance",
         )
-        c = QualifierConstraint(qualifier_set=[constraint])
+        constraint: QualifierSetConstraint = {
+            "biolink:subject_aspect_qualifier": "activity"
+        }
         # `activity` and `abundance` are sibling enum values; neither has the
         # other as a descendant, so the constraint is unmet.
-        assert c.met_by([provided]) is False
+        assert Qualifier.constraint_met_by(constraint, [provided]) is False
 
     def test_meta_qualifier_applicable_values(self):
         # When fed MetaQualifiers, the constraint checks against
-        # applicable_values_list for value membership.
-        constraint = Qualifier(
-            qualifier_type_id="biolink:subject_aspect_qualifier",
-            qualifier_value="activity",
-        )
+        # applicable_values for value membership.
         meta = MetaQualifier(
             qualifier_type_id="biolink:subject_aspect_qualifier",
             applicable_values=["activity", "abundance"],
         )
-        c = QualifierConstraint(qualifier_set=[constraint])
-        assert c.met_by([meta]) is True
+        constraint: QualifierSetConstraint = {
+            "biolink:subject_aspect_qualifier": "activity"
+        }
+        assert Qualifier.constraint_met_by(constraint, [meta]) is True
 
     def test_meta_qualifier_applicable_values_none_is_wildcard(self):
         # MetaQualifier.applicable_values=None means "any value allowed".
-        constraint = QualifierConstraint(
-            qualifier_set=[
-                Qualifier(
-                    qualifier_type_id="biolink:object_aspect_qualifier",
-                    qualifier_value="secretion",
-                ),
-                Qualifier(
-                    qualifier_type_id="biolink:object_direction_qualifier",
-                    qualifier_value="increased",
-                ),
-            ]
-        )
+        constraint: QualifierSetConstraint = {
+            "biolink:object_aspect_qualifier": "secretion",
+            "biolink:object_direction_qualifier": "increased",
+        }
         op_qualifiers_wildcard = [
             MetaQualifier(
-                qualifier_type_id="biolink:qualified_predicate",
-                applicable_values=None,
-            ),
-            MetaQualifier(
                 qualifier_type_id="biolink:object_aspect_qualifier",
                 applicable_values=None,
             ),
@@ -124,141 +97,85 @@ class TestQualifierConstraintMetBy:
                 qualifier_type_id="biolink:object_direction_qualifier",
                 applicable_values=None,
             ),
-            MetaQualifier(
-                qualifier_type_id="biolink:species_context_qualifier",
-                applicable_values=None,
-            ),
-            MetaQualifier(
-                qualifier_type_id="biolink:causal_mechanism_qualifier",
-                applicable_values=None,
-            ),
-            MetaQualifier(
-                qualifier_type_id="biolink:anatomical_context_qualifier",
-                applicable_values=None,
-            ),
         ]
-        assert constraint.met_by(op_qualifiers_wildcard) is True
+        assert Qualifier.constraint_met_by(constraint, op_qualifiers_wildcard) is True
 
-    def test_meta_qualifier_applicable_values_empty_list_is_not_wildcard(self):
-        # Explicit empty list means "type advertised, no values supported".
-        # Must remain distinct from the None (wildcard) case.
-        constraint = QualifierConstraint(
-            qualifier_set=[
-                Qualifier(
-                    qualifier_type_id="biolink:object_aspect_qualifier",
-                    qualifier_value="secretion",
-                ),
-                Qualifier(
-                    qualifier_type_id="biolink:object_direction_qualifier",
-                    qualifier_value="increased",
-                ),
-            ]
-        )
-        op_qualifiers_empty = [
-            MetaQualifier(
-                qualifier_type_id="biolink:qualified_predicate",
-                applicable_values=[],
-            ),
-            MetaQualifier(
-                qualifier_type_id="biolink:object_aspect_qualifier",
-                applicable_values=[],
-            ),
-            MetaQualifier(
-                qualifier_type_id="biolink:object_direction_qualifier",
-                applicable_values=[],
-            ),
-            MetaQualifier(
-                qualifier_type_id="biolink:species_context_qualifier",
-                applicable_values=[],
-            ),
-            MetaQualifier(
-                qualifier_type_id="biolink:causal_mechanism_qualifier",
-                applicable_values=[],
-            ),
-            MetaQualifier(
-                qualifier_type_id="biolink:anatomical_context_qualifier",
-                applicable_values=[],
-            ),
-        ]
-        assert constraint.met_by(op_qualifiers_empty) is False
+    # NOTE: the 1.6 "explicit empty applicable_values is not a wildcard" case is
+    # gone in 2.0 — the schema now requires `applicable_values` minItems:1, so an
+    # empty list is unconstructible. `constraint_met_by` still distinguishes
+    # None (wildcard) from a populated list (covered by the two tests above).
 
     def test_meta_qualifier_missing_type_fails_even_with_wildcard_values(self):
         # Wildcard applicable_values must not bypass the type-id check.
-        constraint = QualifierConstraint(
-            qualifier_set=[
-                Qualifier(
-                    qualifier_type_id="biolink:object_aspect_qualifier",
-                    qualifier_value="secretion",
-                ),
-            ]
-        )
+        constraint: QualifierSetConstraint = {
+            "biolink:object_aspect_qualifier": "secretion",
+        }
         op_qualifiers_wrong_type = [
             MetaQualifier(
                 qualifier_type_id="biolink:species_context_qualifier",
                 applicable_values=None,
             ),
         ]
-        assert constraint.met_by(op_qualifiers_wrong_type) is False
+        assert (
+            Qualifier.constraint_met_by(constraint, op_qualifiers_wrong_type) is False
+        )
 
 
-class TestQualifierConstraintGetInverse:
-    def test_subject_to_object(self):
+class TestConstraintSetMetBy:
+    def test_empty_constraint_list_satisfied_trivially(self):
+        assert Qualifier.constraint_set_met_by([], []) is True
+
+    def test_non_empty_constraints_but_no_qualifiers_fails(self):
+        constraint: QualifierSetConstraint = {
+            "biolink:subject_aspect_qualifier": "activity"
+        }
+        assert Qualifier.constraint_set_met_by([constraint], []) is False
+
+    def test_or_relationship_across_constraints(self):
         q = Qualifier(
             qualifier_type_id="biolink:subject_aspect_qualifier",
             qualifier_value="activity",
         )
-        c = QualifierConstraint(qualifier_set=[q])
-        inverse = c.get_inverse()
-        assert (
-            inverse.qualifier_set[0].qualifier_type_id
-            == "biolink:object_aspect_qualifier"
-        )
-        assert inverse.qualifier_set[0].qualifier_value == "activity"
+        # Only the second constraint matches; OR means the set is satisfied.
+        unmet: QualifierSetConstraint = {"biolink:object_aspect_qualifier": "activity"}
+        met: QualifierSetConstraint = {"biolink:subject_aspect_qualifier": "activity"}
+        assert Qualifier.constraint_set_met_by([unmet, met], [q]) is True
+
+
+class TestGetConstraintInverse:
+    def test_subject_to_object(self):
+        constraint: QualifierSetConstraint = {
+            "biolink:subject_aspect_qualifier": "activity"
+        }
+        inverse = Qualifier.get_constraint_inverse(constraint)
+        assert inverse == {"biolink:object_aspect_qualifier": "activity"}
 
     def test_object_to_subject(self):
-        q = Qualifier(
-            qualifier_type_id="biolink:object_aspect_qualifier",
-            qualifier_value="activity",
-        )
-        c = QualifierConstraint(qualifier_set=[q])
-        inverse = c.get_inverse()
-        assert (
-            inverse.qualifier_set[0].qualifier_type_id
-            == "biolink:subject_aspect_qualifier"
-        )
+        constraint: QualifierSetConstraint = {
+            "biolink:object_aspect_qualifier": "activity"
+        }
+        inverse = Qualifier.get_constraint_inverse(constraint)
+        assert "biolink:subject_aspect_qualifier" in inverse
 
     def test_qualified_predicate_uses_predicate_inverse(self):
         # `treats` and `treated_by` are inverse predicates in biolink.
-        q = Qualifier(
-            qualifier_type_id="biolink:qualified_predicate",
-            qualifier_value="biolink:treats",
-        )
-        c = QualifierConstraint(qualifier_set=[q])
-        inverse = c.get_inverse()
-        assert (
-            inverse.qualifier_set[0].qualifier_type_id
-            == "biolink:qualified_predicate"
-        )
-        assert inverse.qualifier_set[0].qualifier_value == "biolink:treated_by"
+        constraint: QualifierSetConstraint = {
+            "biolink:qualified_predicate": "biolink:treats"
+        }
+        inverse = Qualifier.get_constraint_inverse(constraint)
+        assert inverse == {"biolink:qualified_predicate": "biolink:treated_by"}
 
     def test_does_not_mutate_original(self):
-        q = Qualifier(
-            qualifier_type_id="biolink:subject_aspect_qualifier",
-            qualifier_value="activity",
-        )
-        c = QualifierConstraint(qualifier_set=[q])
-        c.get_inverse()
-        assert (
-            c.qualifier_set[0].qualifier_type_id
-            == "biolink:subject_aspect_qualifier"
-        )
+        constraint: QualifierSetConstraint = {
+            "biolink:subject_aspect_qualifier": "activity"
+        }
+        Qualifier.get_constraint_inverse(constraint)
+        assert constraint == {"biolink:subject_aspect_qualifier": "activity"}
 
     def test_raises_when_uninvertible(self):
         # Not subject/object/qualified_predicate => no rule for inverse.
-        q = Qualifier(
-            qualifier_type_id="biolink:anatomical_context_qualifier",
-            qualifier_value="x",
-        )
-        c = QualifierConstraint(qualifier_set=[q])
+        constraint: QualifierSetConstraint = {
+            "biolink:anatomical_context_qualifier": "x"
+        }
         with pytest.raises(ValueError, match="Cannot invert qualifier of type"):
-            c.get_inverse()
+            Qualifier.get_constraint_inverse(constraint)

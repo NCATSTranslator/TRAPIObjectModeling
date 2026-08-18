@@ -1,28 +1,26 @@
-"""Tests for translator_tom.models.auxiliary_graph."""
+"""Tests for translator_tom.models.auxiliary_graph.
+
+In TRAPI 2.0 AuxiliaryGraph carries only `edges` (its `attributes` field was removed).
+"""
 
 import pytest
 from pydantic import ValidationError
 
-from translator_tom import Attribute, AuxiliaryGraph
+from translator_tom import AuxiliaryGraph
 
 
-def _attr(value: int = 1, type_id: str = "biolink:foo") -> Attribute:
-    return Attribute(attribute_type_id=type_id, value=value)
-
-
-def _aux(edges: list[str] | None = None, attrs: list[Attribute] | None = None) -> AuxiliaryGraph:
-    return AuxiliaryGraph(edges=edges or ["e1"], attributes=attrs or [])
+def _aux(edges: list[str] | None = None) -> AuxiliaryGraph:
+    return AuxiliaryGraph(edges=edges or ["e1"])
 
 
 class TestAuxiliaryGraphConstruction:
     def test_required_fields(self):
         a = _aux()
         assert a.edges == ["e1"]
-        assert a.attributes == []
 
     def test_edges_min_length_enforced(self):
         with pytest.raises(ValidationError):
-            AuxiliaryGraph(edges=[], attributes=[])
+            AuxiliaryGraph(edges=[])
 
 
 class TestAuxiliaryGraphHash:
@@ -36,9 +34,9 @@ class TestAuxiliaryGraphHash:
         b = _aux(["e2", "e1"])
         assert a.hash() == b.hash()
 
-    def test_changes_with_attributes(self):
-        a = _aux(attrs=[_attr(1)])
-        b = _aux(attrs=[_attr(2)])
+    def test_changes_with_edges(self):
+        a = _aux(["e1"])
+        b = _aux(["e2"])
         assert a.hash() != b.hash()
 
 
@@ -63,23 +61,11 @@ class TestNormalizeAuxDict:
 
 
 class TestUpdate:
-    def test_assigns_attributes_when_self_empty(self):
-        a = _aux(attrs=[])
-        b = _aux(attrs=[_attr(1)])
+    def test_unions_edges(self):
+        a = _aux(["e1", "e2"])
+        b = _aux(["e2", "e3"])
         a.update(b)
-        assert len(a.attributes) == 1
-
-    def test_merges_attributes_when_both_present(self):
-        a = _aux(attrs=[_attr(1, "biolink:a")])
-        b = _aux(attrs=[_attr(2, "biolink:b")])
-        a.update(b)
-        assert len(a.attributes) == 2
-
-    def test_does_not_overwrite_when_other_empty(self):
-        a = _aux(attrs=[_attr(1)])
-        b = _aux(attrs=[])
-        a.update(b)
-        assert len(a.attributes) == 1
+        assert set(a.edges) == {"e1", "e2", "e3"}
 
 
 class TestMergeDictionaries:
@@ -90,7 +76,7 @@ class TestMergeDictionaries:
         assert set(old) == {"g1", "g2"}
 
     def test_updates_existing_keys(self):
-        old = {"g1": _aux(["e1"], [_attr(1, "biolink:a")])}
-        new = {"g1": _aux(["e1"], [_attr(2, "biolink:b")])}
+        old = {"g1": _aux(["e1"])}
+        new = {"g1": _aux(["e2"])}
         AuxiliaryGraph.merge_dictionaries(old, new)
-        assert len(old["g1"].attributes) == 2
+        assert set(old["g1"].edges) == {"e1", "e2"}

@@ -3,7 +3,7 @@
 import pytest
 from pydantic import ValidationError
 
-from translator_tom import Message, Response, workflow
+from translator_tom import LogEntry, Message, Response, workflow
 from translator_tom.utils.config import TRAPI_CONFIG
 
 
@@ -13,7 +13,9 @@ class TestResponseBasics:
         assert isinstance(r.message, Message)
         assert r.status is None
         assert r.description is None
+        assert r.parameters is None
         assert r.logs is None
+        assert r.logs_list == []
         assert r.workflow is None
         assert r.schema_version is None
         assert r.biolink_version is None
@@ -26,6 +28,25 @@ class TestResponseBasics:
         r = Response(message=Message())
         assert r.logs is None
         assert r.logs_list == []
+
+    def test_logs_min_length_when_present(self):
+        # logs is optional but an empty list is invalid (omit instead).
+        with pytest.raises(ValidationError):
+            Response(message=Message(), logs=[])
+
+
+class TestResponseAddLog:
+    def test_initializes_logs_when_absent(self):
+        r = Response(message=Message())
+        r.add_log(LogEntry.new("hello", level="INFO"))
+        assert r.logs is not None
+        assert len(r.logs) == 1
+
+    def test_appends_to_existing_logs(self):
+        r = Response(message=Message(), logs=[LogEntry.new("first")])
+        r.add_log(LogEntry.new("second"))
+        assert r.logs is not None
+        assert len(r.logs) == 2
 
 
 class TestResponseWorkflowList:

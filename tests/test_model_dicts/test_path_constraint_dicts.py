@@ -2,6 +2,9 @@
 
 `PathConstraintDictUtil` reimplements `PathConstraint`'s utility methods for its
 `TypedDict` equivalent; tests assert parity with the Pydantic behaviour.
+
+In TRAPI 2.0 the field is `required_intermediate_categories` (accessor
+`required_intermediate_categories_list`) and, when present, must be non-empty.
 """
 
 from __future__ import annotations
@@ -13,29 +16,36 @@ from translator_tom.model_dicts.path_constraint import (
 from translator_tom.models.path_constraint import PathConstraint
 
 # ============================================================================
-# PathConstraintDictUtil.intermediate_categories_list
+# PathConstraintDictUtil.required_intermediate_categories_list
 # ============================================================================
 
 
-class TestIntermediateCategoriesList:
+class TestRequiredIntermediateCategoriesList:
     def test_missing_key_returns_empty(self):
-        assert PathConstraintDictUtil.intermediate_categories_list({}) == []
+        assert PathConstraintDictUtil.required_intermediate_categories_list({}) == []
 
     def test_explicit_none_returns_empty(self):
-        constraint: PathConstraintDict = {"intermediate_categories": None}
-        assert PathConstraintDictUtil.intermediate_categories_list(constraint) == []
+        constraint: PathConstraintDict = {"required_intermediate_categories": None}
+        assert (
+            PathConstraintDictUtil.required_intermediate_categories_list(constraint)
+            == []
+        )
 
     def test_populated_returns_value(self):
-        constraint: PathConstraintDict = {"intermediate_categories": ["biolink:Gene"]}
-        assert PathConstraintDictUtil.intermediate_categories_list(constraint) == [
-            "biolink:Gene"
-        ]
+        constraint: PathConstraintDict = {
+            "required_intermediate_categories": ["biolink:Gene"]
+        }
+        assert PathConstraintDictUtil.required_intermediate_categories_list(
+            constraint
+        ) == ["biolink:Gene"]
 
     def test_parity_with_model(self):
-        model = PathConstraint(intermediate_categories=["biolink:Gene"])
+        model = PathConstraint(required_intermediate_categories=["biolink:Gene"])
         assert (
-            PathConstraintDictUtil.intermediate_categories_list(model.to_dict())
-            == model.intermediate_categories_list
+            PathConstraintDictUtil.required_intermediate_categories_list(
+                model.to_dict()
+            )
+            == model.required_intermediate_categories_list
         )
 
 
@@ -50,5 +60,7 @@ class TestHashParity:
         assert PathConstraintDictUtil.hash(model.to_dict()) == model.hash()
 
     def test_populated(self):
-        model = PathConstraint(intermediate_categories=["biolink:Gene", "biolink:Drug"])
+        model = PathConstraint(
+            required_intermediate_categories=["biolink:Gene", "biolink:Drug"]
+        )
         assert PathConstraintDictUtil.hash(model.to_dict()) == model.hash()
