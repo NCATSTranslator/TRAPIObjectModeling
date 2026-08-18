@@ -24,6 +24,7 @@ __all__ = [
     "BaseQueryGraph",
     "Biolink",
     "Curie",
+    "Delta",
     "DictUtil",
     "Edge",
     "EdgeBinding",
@@ -156,4 +157,4 @@ from translator_tom.utils.object_base import TOMBase
 # `diff` imports `TOMBase` from the top-level package, so it must load after
 # `TOMBase` is bound above (isort would otherwise reorder it and cause a
 # partially-initialized-module circular import).
-from translator_tom.utils.diff import diff  # isort: skip
+from translator_tom.utils.diff import Delta, diff  # isort: skip
