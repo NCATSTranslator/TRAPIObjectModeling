@@ -11,20 +11,18 @@ from translator_tom import (
     Analysis,
     Attribute,
     AuxiliaryGraph,
-    BaseAnalysis,
     Edge,
     EdgeBinding,
     Message,
     NodeBinding,
     PathBinding,
-    PathfinderAnalysis,
     Qualifier,
     Response,
     Result,
     RetrievalSource,
-    TOMBase,
-    tomhash,
 )
+from translator_tom.utils.hash import tomhash
+from translator_tom.utils.object_base import TOMBase
 
 T = TypeVar("T", bound=TOMBase)
 
@@ -54,25 +52,17 @@ class Delta:
 
 
 def _analysis_identity(analysis: Analysis) -> object:
-    """Coarse identity for an Analysis: resource + edge bindings, but not score/attributes."""
+    """Coarse identity for an Analysis: resource + edge/path bindings, but not score/attributes."""
     return (
         "Analysis",
         analysis.resource_id,
         frozenset(
-            (qedge, frozenset(b.hash() for b in bindings))
-            for qedge, bindings in analysis.edge_bindings.items()
+            (qedge, binding.hash())
+            for qedge, binding in analysis.edge_bindings_dict.items()
         ),
-    )
-
-
-def _pathfinder_identity(analysis: PathfinderAnalysis) -> object:
-    """Coarse identity for a PathfinderAnalysis: resource + path bindings, not score."""
-    return (
-        "PathfinderAnalysis",
-        analysis.resource_id,
         frozenset(
-            (qpath, frozenset(b.hash() for b in bindings))
-            for qpath, bindings in analysis.path_bindings.items()
+            (qpath, binding.hash())
+            for qpath, binding in analysis.path_bindings_dict.items()
         ),
     )
 
@@ -92,7 +82,6 @@ def _auxgraph_identity(aux: AuxiliaryGraph) -> object:
 # instead of an add+remove pair. Unregistered types fall back to .hash() (see _identity_key).
 _IDENTITY: dict[type, Callable[[Any], object]] = {
     Analysis: _analysis_identity,
-    PathfinderAnalysis: _pathfinder_identity,
     Attribute: _attribute_identity,
     AuxiliaryGraph: _auxgraph_identity,
 }
@@ -123,13 +112,13 @@ def _describe(value: object) -> str:  # noqa: PLR0911
         return f"{value.subject} --{value.predicate}--> {value.object}"
     if isinstance(value, Result):
         return ",".join(
-            f"{qnode}={'|'.join(b.id for b in value.node_bindings[qnode])}"
+            f"{qnode}={'|'.join(value.node_bindings[qnode].ids)}"
             for qnode in sorted(value.node_bindings)
         )
-    if isinstance(value, BaseAnalysis):
+    if isinstance(value, Analysis):
         return f"{value.resource_id}@{value.score}"
     if isinstance(value, (NodeBinding, EdgeBinding, PathBinding)):
-        return str(value.id)
+        return str(value.ids)
     if isinstance(value, Attribute):
         return str(value.attribute_type_id)
     if isinstance(value, RetrievalSource):
