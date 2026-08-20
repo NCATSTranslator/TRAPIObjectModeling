@@ -15,7 +15,7 @@ import argparse
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from translator_tom.scripts.parse import load_parse_or_report
+from translator_tom.scripts._common import load_parse_or_report
 from translator_tom.validation import semantic_validate
 
 if TYPE_CHECKING:
