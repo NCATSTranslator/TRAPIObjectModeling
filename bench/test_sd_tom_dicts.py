@@ -12,7 +12,16 @@ row's is the cost of opting into validation.
 
 import time
 
-from utils import CORPUS_ROOT, discover_files, read_corpus_file
+from utils import (
+    corpus_root,
+    discover_files,
+    import_version,
+    parse_version,
+    read_corpus_file,
+)
+
+VERSION = parse_version(__doc__)
+CORPUS_ROOT = corpus_root(VERSION)
 
 LABEL_WIDTH = 12
 VALUE_FMT = "{:>8.4f}s"
@@ -42,12 +51,11 @@ def section(title: str) -> None:
 # --- Import ---
 
 t0 = time.perf_counter()
-from translator_tom.model_dicts import ResponseDictUtil  # noqa: E402
-
+ResponseDictUtil = import_version(VERSION, "model_dicts").ResponseDictUtil
 t_tom = time.perf_counter() - t0
 
 section("Imports")
-print(f"  model_dicts ResponseDictUtil  {VALUE_FMT.format(t_tom)}")
+print(f"  {VERSION}.model_dicts ResponseDictUtil  {VALUE_FMT.format(t_tom)}")
 
 
 TEST_FILES = discover_files(CORPUS_ROOT)

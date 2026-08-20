@@ -1,5 +1,6 @@
 """Quick serdes benchmark: one file per size bucket, comparing TOM vs reasoner-pydantic.
 
+Runs against `data/example_trapi/<version>/` (default `v2_0`; pass `--version v1_6`).
 Streams per-file timings in an aligned format as they complete, then prints a
 summary table across files at the end.
 """
@@ -9,7 +10,10 @@ import time
 import orjson
 from pydantic import TypeAdapter
 
-from utils import CORPUS_ROOT, read_corpus_file
+from utils import corpus_root, import_version, parse_version, read_corpus_file
+
+VERSION = parse_version(__doc__)
+CORPUS_ROOT = corpus_root(VERSION)
 
 LABEL_WIDTH = 23
 VALUE_FMT = "{:>8.4f}s"
@@ -45,8 +49,7 @@ def section(title: str) -> None:
 # --- Imports ---
 
 t0 = time.perf_counter()
-from translator_tom import Response  # noqa: E402
-
+Response = import_version(VERSION).Response
 t_tom = time.perf_counter() - t0
 
 t0 = time.perf_counter()
@@ -55,7 +58,7 @@ from reasoner_pydantic import Response as RPResponse  # noqa: E402
 t_rp = time.perf_counter() - t0
 
 section("Imports")
-print(f"  {'translator_tom':<{LABEL_WIDTH}} {VALUE_FMT.format(t_tom)}")
+print(f"  {f'translator_tom.{VERSION}':<{LABEL_WIDTH}} {VALUE_FMT.format(t_tom)}")
 print(f"  {'reasoner-pydantic':<{LABEL_WIDTH}} {VALUE_FMT.format(t_rp)}")
 
 

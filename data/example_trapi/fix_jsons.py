@@ -16,11 +16,11 @@ t1 = timeit.default_timer()
 datetime_now = str(datetime.datetime.now())
 
 files_to_test = [
-    "./10mb/pathfinder.json",
-    "./10mb/log-heavy.json",
-    "./50mb/lookup.json",
-    "./50mb/result-heavy.json",
-    "./250mb/attribute-heavy.json.gz",
+    "./v1_6/10mb/pathfinder.json",
+    "./v1_6/10mb/log-heavy.json",
+    "./v1_6/50mb/lookup.json",
+    "./v1_6/50mb/result-heavy.json",
+    "./v1_6/250mb/attribute-heavy.json.gz",
 ]
 
 for response_file_name in files_to_test:

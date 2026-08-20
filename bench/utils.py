@@ -2,16 +2,55 @@
 
 Kept stdlib-only on purpose: the scripts time the `translator_tom` import, so
 importing this module must not pull in `translator_tom` (or any heavy dep) and
-perturb that measurement.
+perturb that measurement. `import_version` imports it lazily, only when a script
+calls it inside its timed section.
+
+Every bench takes a ``--version`` arg (``v1_6``/``v2_0``) selecting both the corpus
+directory and the model set, so a bench can run against any supported TRAPI version.
 """
 
+import argparse
 import gzip
+import importlib
 from pathlib import Path
+from types import ModuleType
 
-CORPUS_ROOT = Path("data/example_trapi")
+VERSIONS = ("v1_6", "v2_0")
+DEFAULT_VERSION = "v2_0"
+CORPUS_BASE = Path("data/example_trapi")
 
 
-def discover_files(root: Path = CORPUS_ROOT) -> list[Path]:
+def parse_version(description: str | None = None) -> str:
+    """Parse the shared ``--version`` CLI arg, returning the selected version dir name."""
+    parser = argparse.ArgumentParser(description=description)
+    parser.add_argument(
+        "-v",
+        "--version",
+        choices=VERSIONS,
+        default=DEFAULT_VERSION,
+        help=f"TRAPI version to bench: corpus dir + models (default: {DEFAULT_VERSION})",
+    )
+    return parser.parse_args().version
+
+
+def corpus_root(version: str) -> Path:
+    """The example-corpus directory for `version`."""
+    return CORPUS_BASE / version
+
+
+def import_version(version: str, submodule: str = "") -> ModuleType:
+    """Import and return a `translator_tom` version subpackage, or a submodule of it.
+
+    Imported lazily (only when a script calls this, inside its timed section) so that
+    importing `utils` never pulls in `translator_tom`.
+    """
+    name = f"translator_tom.{version}"
+    if submodule:
+        name = f"{name}.{submodule}"
+    return importlib.import_module(name)
+
+
+def discover_files(root: Path) -> list[Path]:
     """Return every `.json` and `.json.gz` under `root`, sorted by bucket size.
 
     Buckets are the immediate-parent directory name (`<N>mb`); we sort by N
