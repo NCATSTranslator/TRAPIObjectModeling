@@ -9,9 +9,9 @@ from typing import TYPE_CHECKING, TypeVar, cast, final
 
 from typing_extensions import override
 
-from translator_tom.models.shared import CURIE, Curie
 from translator_tom.utils.cache import lru_copy_cache
 from translator_tom.utils.config import TRAPI_CONFIG
+from translator_tom.utils.shared import CURIE, Curie
 
 if TYPE_CHECKING:
     import bmt

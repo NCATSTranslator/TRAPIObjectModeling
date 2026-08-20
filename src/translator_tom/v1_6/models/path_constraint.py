@@ -1,0 +1,33 @@
+from __future__ import annotations
+
+from typing import Annotated
+
+from pydantic import Field
+
+from translator_tom.utils.biolink import Biolink
+from translator_tom.utils.object_base import TOMBase
+
+__all__ = ["PathConstraint"]
+
+
+class PathConstraint(TOMBase):
+    """A constraint for paths. ARAs must comply with constraints when finding paths."""
+
+    intermediate_categories: (
+        Annotated[list[Biolink.Entity], Field(min_length=1)] | None
+    ) = None
+    """A list of Biolink model categories by which to constrain paths returned.
+
+    If multiple categories are listed, it should be interpreted as an AND
+    relationship. Each path returned by ARAs MUST contain at least one node
+    of each category listed.
+    """
+
+    @property
+    def intermediate_categories_list(self) -> list[Biolink.Entity]:
+        """Get the intermediate_categories as a guaranteed list, even if they are represented as None."""
+        return (
+            self.intermediate_categories
+            if self.intermediate_categories is not None
+            else []
+        )

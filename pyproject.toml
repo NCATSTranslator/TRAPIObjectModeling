@@ -100,7 +100,7 @@ indent-width = 4
 [tool.ruff.lint.per-file-ignores]
 "tests/*" = ["D", "PLR2004", "ANN201"]
 # TypedDict mirrors of the models: intentionally docstring-free (docs live on the models).
-"src/translator_tom/model_dicts/*" = ["D101", "D106"]
+"src/translator_tom/*/model_dicts/*" = ["D101", "D106"]
 
 [tool.ruff.lint]
 select = [
@@ -169,8 +169,11 @@ DEP002 = [
 [tool.pytest.ini_options]
 # bench uses standalone benchmark scripts
 norecursedirs = ["bench"]
-# so the sweep suites can import the shared `_sweep_helpers` harness
-pythonpath = ["tests"]
+# importlib mode lets the per-version suites (tests/v1_6, tests/v2_0) share test-file
+# basenames without collision
+addopts = "--import-mode=importlib"
+# so the version-parametrized sweep suite can import the shared `_sweep_helpers` harness
+pythonpath = ["tests/sweeps"]
 # log_cli = true
 # log_cli_level = "INFO"
 
