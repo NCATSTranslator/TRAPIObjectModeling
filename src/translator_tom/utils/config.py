@@ -27,8 +27,7 @@ class HashRepEnum(int, Enum):
 class TRAPIConfig(BaseSettings):
     """Settings used for TRAPI handling."""
 
-    biolink_version: str = "4.4.3"
-    schema_version: str = "2.0.0"
+    biolink_version: str = "4.4.4"
     hash_bytes: int = (
         15  # 120 bits, fairly safe for collision, exactly 20 chars in base64
     )
