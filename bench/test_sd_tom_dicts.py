@@ -55,7 +55,7 @@ ResponseDictUtil = import_version(VERSION, "model_dicts").ResponseDictUtil
 t_tom = time.perf_counter() - t0
 
 section("Imports")
-print(f"  {VERSION}.model_dicts ResponseDictUtil  {VALUE_FMT.format(t_tom)}")
+print(f"  translator_tom {VERSION} model_dicts ResponseDictUtil  {VALUE_FMT.format(t_tom)}")
 
 
 TEST_FILES = discover_files(CORPUS_ROOT)

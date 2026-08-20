@@ -1,6 +1,6 @@
 """TOM-only serdes benchmark across every example response.
 
-Walks `data/example_trapi/<version>/**` (default `v2_0`; pass `--version v1_6`) and
+Walks `data/example_trapi/<version>/**` (default `2.0`; pass `--version 1.6`) and
 runs the core (de)serialization paths for each file. Streams per-file timings in an
 aligned format as they complete, then prints a summary table across files at the end.
 
@@ -53,7 +53,7 @@ Response = import_version(VERSION).Response
 t_tom = time.perf_counter() - t0
 
 section("Imports")
-print(f"  translator_tom.{VERSION} Response  {VALUE_FMT.format(t_tom)}")
+print(f"  translator_tom {VERSION} Response  {VALUE_FMT.format(t_tom)}")
 
 
 TEST_FILES = discover_files(CORPUS_ROOT)

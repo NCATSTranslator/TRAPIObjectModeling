@@ -1,6 +1,6 @@
 """Quick serdes benchmark: one file per size bucket, comparing TOM vs reasoner-pydantic.
 
-Runs against `data/example_trapi/<version>/` (default `v2_0`; pass `--version v1_6`).
+Runs against `data/example_trapi/<version>/` (default `2.0`; pass `--version 1.6`).
 Streams per-file timings in an aligned format as they complete, then prints a
 summary table across files at the end.
 """
@@ -58,7 +58,7 @@ from reasoner_pydantic import Response as RPResponse  # noqa: E402
 t_rp = time.perf_counter() - t0
 
 section("Imports")
-print(f"  {f'translator_tom.{VERSION}':<{LABEL_WIDTH}} {VALUE_FMT.format(t_tom)}")
+print(f"  {f'translator_tom {VERSION}':<{LABEL_WIDTH}} {VALUE_FMT.format(t_tom)}")
 print(f"  {'reasoner-pydantic':<{LABEL_WIDTH}} {VALUE_FMT.format(t_rp)}")
 
 

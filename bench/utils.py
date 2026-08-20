@@ -5,7 +5,7 @@ importing this module must not pull in `translator_tom` (or any heavy dep) and
 perturb that measurement. `import_version` imports it lazily, only when a script
 calls it inside its timed section.
 
-Every bench takes a ``--version`` arg (``v1_6``/``v2_0``) selecting both the corpus
+Every bench takes a ``--version`` arg (``1.6``/``2.0``) selecting both the corpus
 directory and the model set, so a bench can run against any supported TRAPI version.
 """
 
@@ -15,13 +15,18 @@ import importlib
 from pathlib import Path
 from types import ModuleType
 
-VERSIONS = ("v1_6", "v2_0")
-DEFAULT_VERSION = "v2_0"
+VERSIONS = ("1.6", "2.0")  # user-facing TRAPI versions
+DEFAULT_VERSION = "2.0"
 CORPUS_BASE = Path("data/example_trapi")
 
 
+def _package(version: str) -> str:
+    """Map a user-facing TRAPI version to its package/dir name (e.g. `2.0` -> `v2_0`)."""
+    return f"v{version.replace('.', '_')}"
+
+
 def parse_version(description: str | None = None) -> str:
-    """Parse the shared ``--version`` CLI arg, returning the selected version dir name."""
+    """Parse the shared ``--version`` CLI arg, returning the selected TRAPI version."""
     parser = argparse.ArgumentParser(description=description)
     parser.add_argument(
         "-v",
@@ -35,7 +40,7 @@ def parse_version(description: str | None = None) -> str:
 
 def corpus_root(version: str) -> Path:
     """The example-corpus directory for `version`."""
-    return CORPUS_BASE / version
+    return CORPUS_BASE / _package(version)
 
 
 def import_version(version: str, submodule: str = "") -> ModuleType:
@@ -44,7 +49,7 @@ def import_version(version: str, submodule: str = "") -> ModuleType:
     Imported lazily (only when a script calls this, inside its timed section) so that
     importing `utils` never pulls in `translator_tom`.
     """
-    name = f"translator_tom.{version}"
+    name = f"translator_tom.{_package(version)}"
     if submodule:
         name = f"{name}.{submodule}"
     return importlib.import_module(name)

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import importlib
 import sys
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -14,6 +15,14 @@ from translator_tom.utils.object_base import TOMBase
 
 if TYPE_CHECKING:
     from types import ModuleType
+
+VERSIONS = ("1.6", "2.0")  # user-facing TRAPI versions
+DEFAULT_VERSION = "2.0"
+
+
+def import_version(version: str) -> ModuleType:
+    """Import the `translator_tom` subpackage for a TRAPI version (e.g. `2.0` -> `v2_0`)."""
+    return importlib.import_module(f"translator_tom.v{version.replace('.', '_')}")
 
 
 def exported_models(namespace: ModuleType = translator_tom) -> dict[str, type[TOMBase]]:

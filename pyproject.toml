@@ -36,6 +36,8 @@ Issues = "https://github.com/NCATSTranslator/TRAPIObjectModeling/issues"
 [project.scripts]
 tom-parse = "translator_tom.scripts.parse:main"
 tom-validate = "translator_tom.scripts.validate:main"
+tom-up-version = "translator_tom.scripts.up_version:main"
+tom-diff = "translator_tom.scripts.diff:main"
 
 [dependency-groups]
 dev = [

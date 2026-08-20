@@ -1,6 +1,6 @@
 """Semantic-validation benchmark across every example response.
 
-Walks `data/example_trapi/<version>/**` (default `v2_0`; pass `--version v1_6`),
+Walks `data/example_trapi/<version>/**` (default `2.0`; pass `--version 1.6`),
 deserializes each file, and runs `semantic_validate` on the resulting `Response`.
 Streams per-file timings and the error/warning counts as they complete, then prints
 a summary table across files at the end.
@@ -40,7 +40,7 @@ Response = _ttom.Response
 semantic_validate = _validation.semantic_validate
 
 section("Imports")
-print(f"  translator_tom.{VERSION} + validation  {VALUE_FMT.format(t_tom)}")
+print(f"  translator_tom {VERSION} + validation  {VALUE_FMT.format(t_tom)}")
 
 
 TEST_FILES = discover_files(CORPUS_ROOT)
