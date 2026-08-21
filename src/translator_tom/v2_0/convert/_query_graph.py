@@ -1,4 +1,4 @@
-"""Converters for the QueryGraph family (Base/Pathfinder collapse) and QEdge/QPath."""
+"""Transforms for the QueryGraph family (Base/Pathfinder collapse) and QEdge/QPath."""
 
 from __future__ import annotations
 
@@ -11,68 +11,32 @@ from translator_tom.v1_6.models.query_graph import (
 from translator_tom.v1_6.models.query_graph import QEdge as V16QEdge
 from translator_tom.v1_6.models.query_graph import QPath as V16QPath
 from translator_tom.v1_6.models.query_graph import QueryGraph as V16QueryGraph
-from translator_tom.v2_0.convert._util import _build, up_version
+from translator_tom.v2_0.convert._path_constraint import _upgrade_path_constraint
+from translator_tom.v2_0.convert._qualifier import _upgrade_qualifier_constraint
+from translator_tom.v2_0.convert._util import register
 from translator_tom.v2_0.models.query_graph import QEdge, QPath, QueryGraph
 
 
-@up_version.register(V16BaseQueryGraph)
-def _convert_base_query_graph(obj: V16BaseQueryGraph, **_: Any) -> QueryGraph:
-    """A nodes-only QueryGraph (no edges or paths)."""
-    return _build(QueryGraph, obj.to_dict())
-
-
-@up_version.register(V16QueryGraph)
-def _convert_query_graph(obj: V16QueryGraph, **kwargs: Any) -> QueryGraph:
-    """A non-Pathfinder QueryGraph: convert each QEdge onto the unified class."""
-    data = obj.to_dict()
-
-    if obj.edges:
-        data["edges"] = {
-            qedge_id: up_version(qedge, **kwargs).to_dict()
-            for qedge_id, qedge in obj.edges.items()
-        }
-    else:
-        data.pop("edges", None)
-
-    return _build(QueryGraph, data)
-
-
-@up_version.register(V16PathfinderQueryGraph)
-def _convert_pathfinder_query_graph(
-    obj: V16PathfinderQueryGraph, **kwargs: Any
-) -> QueryGraph:
-    """A Pathfinder QueryGraph: convert each QPath onto the unified class."""
-    data = obj.to_dict()
-
-    data["paths"] = {
-        qpath_id: up_version(qpath, **kwargs).to_dict()
-        for qpath_id, qpath in obj.paths.items()
-    }
-
-    return _build(QueryGraph, data)
-
-
-@up_version.register(V16QEdge)
-def _convert_qedge(obj: V16QEdge, **kwargs: Any) -> QEdge:
+@register(V16QEdge, QEdge)
+def _upgrade_qedge(data: dict[str, Any], **kwargs: Any) -> dict[str, Any]:
     """Fold attribute_constraints/qualifier_constraints into a QEdgeConstraints object.
 
     Each 1.6 QualifierConstraint (`qualifier_set` list) becomes a
     `{qualifier_type_id: qualifier_value}` mapping (a QualifierSetConstraint).
     """
-    data = obj.to_dict()
-    data.pop("attribute_constraints", None)
-    data.pop("qualifier_constraints", None)
+    data = dict(data)
+
+    attribute_constraints = data.pop("attribute_constraints", None)
+    qualifier_constraints = data.pop("qualifier_constraints", None)
 
     constraints: dict[str, Any] = {}
-    if obj.attribute_constraints:
-        constraints["attributes"] = [
-            constraint.to_dict() for constraint in obj.attribute_constraints
-        ]
+    if attribute_constraints:
+        constraints["attributes"] = attribute_constraints
 
     qualifier_sets = [
-        up_version(constraint, **kwargs)
-        for constraint in obj.qualifier_constraints_list
-        if constraint.qualifier_set
+        _upgrade_qualifier_constraint(constraint, **kwargs)
+        for constraint in (qualifier_constraints or [])
+        if constraint.get("qualifier_set")
     ]
     if qualifier_sets:
         constraints["qualifiers"] = qualifier_sets
@@ -80,19 +44,48 @@ def _convert_qedge(obj: V16QEdge, **kwargs: Any) -> QEdge:
     if constraints:
         data["constraints"] = constraints
 
-    return _build(QEdge, data)
+    return data
 
 
-@up_version.register(V16QPath)
-def _convert_qpath(obj: V16QPath, **kwargs: Any) -> QPath:
+@register(V16QPath, QPath)
+def _upgrade_qpath(data: dict[str, Any], **kwargs: Any) -> dict[str, Any]:
     """Convert each PathConstraint (intermediate_categories rename)."""
-    data = obj.to_dict()
+    data = dict(data)
 
-    if obj.constraints:
+    constraints = data.get("constraints")
+    if constraints:
         data["constraints"] = [
-            up_version(constraint, **kwargs).to_dict() for constraint in obj.constraints
+            _upgrade_path_constraint(constraint, **kwargs) for constraint in constraints
         ]
     else:
         data.pop("constraints", None)
 
-    return _build(QPath, data)
+    return data
+
+
+@register(V16BaseQueryGraph, QueryGraph)
+@register(V16QueryGraph, QueryGraph)
+@register(V16PathfinderQueryGraph, QueryGraph)
+def _upgrade_query_graph(data: dict[str, Any], **kwargs: Any) -> dict[str, Any]:
+    """Base/regular/pathfinder → the unified QueryGraph; convert QEdges and/or QPaths."""
+    data = dict(data)
+
+    edges = data.get("edges")
+    if edges:
+        data["edges"] = {
+            qedge_id: _upgrade_qedge(qedge, **kwargs)
+            for qedge_id, qedge in edges.items()
+        }
+    else:
+        data.pop("edges", None)
+
+    paths = data.get("paths")
+    if paths:
+        data["paths"] = {
+            qpath_id: _upgrade_qpath(qpath, **kwargs)
+            for qpath_id, qpath in paths.items()
+        }
+    else:
+        data.pop("paths", None)
+
+    return data

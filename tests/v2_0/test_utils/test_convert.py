@@ -1,8 +1,10 @@
 import inspect
 
 from translator_tom import up_version, v1_6, v2_0
+from translator_tom.model_dicts import dict_up_version
 from translator_tom.utils.object_base import TOMBase
 from translator_tom.v2_0._version import SCHEMA_VERSION
+from translator_tom.v2_0.convert._util import _TRANSFORMS
 from translator_tom.v2_0.validation import passes_semantic_validation
 
 # --- 1.6 factory helpers -----------------------------------------------------------
@@ -317,8 +319,147 @@ def test_every_v1_6_model_is_convertible():
     for name in v1_6.__all__:
         obj = getattr(v1_6, name)
         if inspect.isclass(obj) and issubclass(obj, TOMBase):
-            registered = obj in up_version.registry
+            registered = obj in _TRANSFORMS
             has_twin = getattr(v2_0, name, None) is not None
             if not (registered or has_twin):
                 gaps.append(name)
     assert gaps == []
+
+
+# --- dict-layer up_version (shared transform; parity with the model layer) ---------
+
+
+def _upgraded_dict(model: TOMBase) -> object:
+    """The model layer's upgrade as a dict (QualifierConstraint upgrades to a mapping)."""
+    result = up_version(model)
+    return result.to_dict() if isinstance(result, TOMBase) else result
+
+
+def _pathfinder_query_graph() -> v1_6.PathfinderQueryGraph:
+    return v1_6.PathfinderQueryGraph(
+        nodes={"a": v1_6.QNode(ids=["CHEBI:1"]), "b": v1_6.QNode(ids=["MONDO:1"])},
+        paths={
+            "p0": v1_6.QPath(
+                subject="a",
+                object="b",
+                constraints=[
+                    v1_6.PathConstraint(intermediate_categories=["biolink:Gene"])
+                ],
+            )
+        },
+    )
+
+
+def _qedge() -> v1_6.QEdge:
+    return v1_6.QEdge(
+        subject="a",
+        object="b",
+        attribute_constraints=[
+            v1_6.AttributeConstraint(id="biolink:x", name="x", operator="==", value=1)
+        ],
+        qualifier_constraints=[
+            v1_6.QualifierConstraint(
+                qualifier_set=[
+                    v1_6.Qualifier(
+                        qualifier_type_id="biolink:object_aspect_qualifier",
+                        qualifier_value="expression",
+                    )
+                ]
+            )
+        ],
+    )
+
+
+def test_dict_matches_model_layer_across_shapes():
+    # Each layer shares the same transform, so the dict path must equal the model path.
+    models: list[TOMBase] = [
+        _edge(),
+        _edge(with_kl_at=False),
+        _kg(),
+        _result(),
+        _qedge(),
+        _pathfinder_query_graph(),
+        v1_6.AuxiliaryGraph(
+            edges=["e0"],
+            attributes=[v1_6.Attribute(attribute_type_id="biolink:x", value=1)],
+        ),
+        v1_6.Query(message=v1_6.Message(), log_level="DEBUG", bypass_cache=True),
+        v1_6.AsyncQuery(
+            message=v1_6.Message(), callback="http://cb", log_level="ERROR"
+        ),
+        v1_6.Response(
+            message=v1_6.Message(knowledge_graph=_kg(), results=[_result()]),
+            logs=[],
+            schema_version="1.6.0",
+        ),
+    ]
+    for model in models:
+        assert dict_up_version(model.to_dict(), type(model)) == _upgraded_dict(model), (
+            type(model).__name__
+        )
+
+
+def test_dict_result_is_valid_2_0():
+    resp = v1_6.Response(
+        message=v1_6.Message(knowledge_graph=_kg(), results=[_result()]),
+        schema_version="1.6.0",
+    )
+    result = dict_up_version(resp.to_dict(), v1_6.Response)
+    assert passes_semantic_validation(v2_0.Response.from_dict(result))
+
+
+def _has_null(obj: object) -> bool:
+    if isinstance(obj, dict):
+        return any(value is None or _has_null(value) for value in obj.values())
+    if isinstance(obj, list):
+        return any(_has_null(item) for item in obj)
+    return False
+
+
+def test_dict_strips_nulls_from_raw_input():
+    # A raw 1.6 dict (unlike model.to_dict()) still carries null-valued optional fields;
+    # 2.0 forbids null, so dict_up_version must drop them (like to_dict's exclude_none).
+    raw = v1_6.Response(message=v1_6.Message(knowledge_graph=_kg())).to_dict()
+    attribute = raw["message"]["knowledge_graph"]["edges"]["e0"]["attributes"][-1]
+    attribute["value_type_id"] = None
+    attribute["description"] = None
+    assert _has_null(raw)  # the input now carries nulls
+
+    assert not _has_null(dict_up_version(raw, v1_6.Response))
+
+
+def _raw_edge(attributes: object) -> dict:
+    return {
+        "predicate": "biolink:related_to",
+        "subject": "A:1",
+        "object": "B:2",
+        "sources": [
+            {"resource_id": "infores:foo", "resource_role": "primary_knowledge_source"}
+        ],
+        "attributes": attributes,
+    }
+
+
+def test_dict_edge_tolerates_null_attributes():
+    # A raw 1.6 edge may carry `attributes: null` (valid 1.6); the transform must not
+    # choke on it, and KL/AT fall back to the default.
+    out = dict_up_version(_raw_edge(None), v1_6.Edge)
+    assert out["knowledge_level"] == "not_provided"
+    assert out["agent_type"] == "not_provided"
+
+
+def test_dict_edge_null_kl_value_falls_back_to_default():
+    # A KL attribute whose value is null must default (not become a pruned-away null,
+    # which would leave the required 2.0 field missing).
+    out = dict_up_version(
+        _raw_edge(
+            [
+                {"attribute_type_id": "biolink:knowledge_level", "value": None},
+                {"attribute_type_id": "biolink:agent_type", "value": "manual_agent"},
+            ]
+        ),
+        v1_6.Edge,
+    )
+    assert out["knowledge_level"] == "not_provided"
+    assert out["agent_type"] == "manual_agent"
+    assert passes_semantic_validation(v2_0.Edge.from_dict(out))

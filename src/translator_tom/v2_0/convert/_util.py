@@ -1,16 +1,18 @@
-"""Supporting core for the TRAPI 1.6 → 2.0 model converter.
+"""Supporting core for the TRAPI 1.6 → 2.0 converter (model and dict layers).
 
-Provides the `@singledispatch` `up_version` generic
-plus the shared helpers the per-model registration modules build on.
+Both layers share one set of pure `dict -> dict` upgrade transforms: the model layer
+`up_version(obj)` builds a 2.0 model from `transform(obj.to_dict())`; the dict layer
+`dict_up_version(data, source)` applies the same transform to a raw dict and stops.
+Transforms are registered once, for both layers, with `@register(source, target)`.
 """
 
 from __future__ import annotations
 
-__all__ = ["up_version"]
+__all__ = ["dict_up_version", "up_version"]
 
 import types
-from functools import singledispatch
-from typing import TYPE_CHECKING, Any, TypeVar, Union, get_args, get_origin
+from collections.abc import Callable
+from typing import TYPE_CHECKING, Any, Union, get_args, get_origin, overload
 
 from translator_tom.utils.biolink import Biolink
 from translator_tom.utils.object_base import TOMBase
@@ -18,7 +20,11 @@ from translator_tom.utils.object_base import TOMBase
 if TYPE_CHECKING:
     from collections.abc import Iterable, Mapping
 
-_Model = TypeVar("_Model", bound=TOMBase)
+    from translator_tom import v1_6, v2_0
+    from translator_tom.v2_0 import model_dicts as v2_0_dicts
+
+_Data = dict[str, Any]
+_Transform = Callable[..., _Data]
 
 _SEQUENCE_ORIGINS = (list, set, tuple, frozenset)
 
@@ -31,16 +37,137 @@ AGENT_TYPE_ATTRIBUTE_ID = Biolink("agent_type")
 DEFAULT_KNOWLEDGE_LEVEL = "not_provided"
 DEFAULT_AGENT_TYPE = "not_provided"
 
+# Populated by `register`: source 1.6 model -> its dict transform / its 2.0 target class.
+_TRANSFORMS: dict[type[TOMBase], _Transform] = {}
+_TARGETS: dict[type[TOMBase], type[TOMBase] | None] = {}
 
-@singledispatch
-def up_version(obj: TOMBase, **kwargs: Any) -> TOMBase:
+
+# Reasonable overload set for commonly-used items, the rest have to be cast()
+@overload
+def up_version(obj: v1_6.Response, **kwargs: Any) -> v2_0.Response: ...
+@overload
+def up_version(obj: v1_6.AsyncQuery, **kwargs: Any) -> v2_0.AsyncQuery: ...
+@overload
+def up_version(obj: v1_6.Query, **kwargs: Any) -> v2_0.Query: ...
+@overload
+def up_version(obj: v1_6.Message, **kwargs: Any) -> v2_0.Message: ...
+@overload
+def up_version(obj: v1_6.KnowledgeGraph, **kwargs: Any) -> v2_0.KnowledgeGraph: ...
+@overload
+def up_version(obj: v1_6.QueryGraph, **kwargs: Any) -> v2_0.QueryGraph: ...
+@overload
+def up_version(obj: v1_6.Result, **kwargs: Any) -> v2_0.Result: ...
+@overload
+def up_version(obj: v1_6.Analysis, **kwargs: Any) -> v2_0.Analysis: ...
+@overload
+def up_version(obj: v1_6.Edge, **kwargs: Any) -> v2_0.Edge: ...
+@overload
+def up_version(obj: v1_6.QEdge, **kwargs: Any) -> v2_0.QEdge: ...
+@overload
+def up_version(obj: v1_6.QualifierConstraint, **kwargs: Any) -> dict[str, str]: ...
+@overload
+def up_version(obj: TOMBase, **kwargs: Any) -> TOMBase: ...
+def up_version(obj: TOMBase, **kwargs: Any) -> Any:
     """Upgrade a TRAPI 1.6 TOM model to its TRAPI 2.0 equivalent.
 
-    Dispatches on the 1.6 model type. Structurally-unchanged models
-    re-parse into same-named 2.0 twin.
-    `**kwargs` passes through recursion for forward compatibility.
+    Dispatches on the 1.6 model type; structurally-unchanged models re-parse into their
+    same-named 2.0 twin. Equivalent to the dict converter plus a `from_dict`.
+    `**kwargs` passes through the recursion for forward compatibility.
+
+    Overloads give the precise 2.0 type for the inputs handled standalone (Response,
+    Query, AsyncQuery, Message, KnowledgeGraph, QueryGraph, Result, Analysis, Edge,
+    QEdge); any other source is typed `TOMBase` and needs a cast to its concrete 2.0
+    class.
     """
-    return _build(_v2_equivalent(type(obj)), obj.to_dict())
+    source = type(obj)
+    data = dict_up_version(obj.to_dict(), source, **kwargs)
+    target = _target_for(source)
+    return target.from_dict(data) if target is not None else data
+
+
+def register(
+    source: type[TOMBase], target: type[TOMBase] | None
+) -> Callable[[_Transform], _Transform]:
+    """Register a pure `dict -> dict` upgrade transform under `source`, for both layers.
+
+    `target` is the 2.0 model class the transform yields, or `None` when it yields a bare
+    mapping (e.g. `QualifierConstraint` → `{type_id: value}`, which stays a dict).
+    """
+
+    def decorator(transform: _Transform) -> _Transform:
+        _TRANSFORMS[source] = transform
+        _TARGETS[source] = target
+        return transform
+
+    return decorator
+
+
+@overload
+def dict_up_version(
+    data: _Data, source: type[v1_6.Response], **kwargs: Any
+) -> v2_0_dicts.ResponseDict: ...
+@overload
+def dict_up_version(
+    data: _Data, source: type[v1_6.AsyncQuery], **kwargs: Any
+) -> v2_0_dicts.AsyncQueryDict: ...
+@overload
+def dict_up_version(
+    data: _Data, source: type[v1_6.Query], **kwargs: Any
+) -> v2_0_dicts.QueryDict: ...
+@overload
+def dict_up_version(
+    data: _Data, source: type[v1_6.Message], **kwargs: Any
+) -> v2_0_dicts.MessageDict: ...
+@overload
+def dict_up_version(
+    data: _Data, source: type[v1_6.KnowledgeGraph], **kwargs: Any
+) -> v2_0_dicts.KnowledgeGraphDict: ...
+@overload
+def dict_up_version(
+    data: _Data, source: type[v1_6.QueryGraph], **kwargs: Any
+) -> v2_0_dicts.QueryGraphDict: ...
+@overload
+def dict_up_version(
+    data: _Data, source: type[v1_6.Result], **kwargs: Any
+) -> v2_0_dicts.ResultDict: ...
+@overload
+def dict_up_version(
+    data: _Data, source: type[v1_6.Analysis], **kwargs: Any
+) -> v2_0_dicts.AnalysisDict: ...
+@overload
+def dict_up_version(
+    data: _Data, source: type[v1_6.Edge], **kwargs: Any
+) -> v2_0_dicts.EdgeDict: ...
+@overload
+def dict_up_version(
+    data: _Data, source: type[v1_6.QEdge], **kwargs: Any
+) -> v2_0_dicts.QEdgeDict: ...
+@overload
+def dict_up_version(data: _Data, source: type[TOMBase], **kwargs: Any) -> _Data: ...
+def dict_up_version(data: _Data, source: type[TOMBase], **kwargs: Any) -> Any:
+    """Upgrade a raw TRAPI 1.6 dict to the 2.0 dict shape, without constructing models.
+
+    `source` is the 1.6 model class that `data` represents. Applies the shared transform
+    (if the source changed) and prunes to canonical 2.0 form; unchanged sources pass
+    through with only the prune.
+
+    Overloads give the precise 2.0 `*Dict` type for the sources handled standalone
+    (Response, Query, AsyncQuery, Message, KnowledgeGraph, QueryGraph, Result, Analysis,
+    Edge, QEdge); any other source is typed `dict[str, Any]` and needs a cast to its
+    concrete 2.0 `*Dict`.
+    """
+    transform = _TRANSFORMS.get(source)
+    if transform is not None:
+        data = transform(data, **kwargs)
+    target = _target_for(source)
+    return _prune(target, data) if target is not None else data
+
+
+def _target_for(model: type[TOMBase]) -> type[TOMBase] | None:
+    """The 2.0 target for a 1.6 source: the registered target, else the same-named twin."""
+    if model in _TARGETS:
+        return _TARGETS[model]
+    return _v2_equivalent(model)
 
 
 def _v2_equivalent(source: type[TOMBase]) -> type[TOMBase]:
@@ -56,29 +183,20 @@ def _v2_equivalent(source: type[TOMBase]) -> type[TOMBase]:
     return twin
 
 
-def _build(model_cls: type[_Model], data: dict[str, Any]) -> _Model:
-    """Validate converted `data` into `model_cls`, first pruning empty arrays.
+def _prune(model_cls: type[TOMBase], data: dict[str, Any]) -> dict[str, Any]:
+    """Recursively canonicalize a 2.0-shaped dict: drop nulls and empty optional arrays.
 
-    `to_dict()` emits empty arrays for 1.6 fields that held them, but TRAPI 2.0 forbids
-    empty arrays on its minItems:1 properties (an absent property is the canonical
-    "no data"), so those must be dropped before validation.
-    """
-    return model_cls.from_dict(_prune_empty_arrays(model_cls, data))
-
-
-def _prune_empty_arrays(
-    model_cls: type[TOMBase], data: dict[str, Any]
-) -> dict[str, Any]:
-    """Recursively drop optional fields whose value is an empty array.
-
-    Only OPTIONAL target fields are dropped, so genuinely-empty required data (e.g. an
-    Attribute whose `value` is `[]`) and valid empty containers on required fields are
-    preserved for pydantic to validate. Recurses into nested models, so deeply-nested
-    empties (e.g. a MetaEdge inside a MetaKnowledgeGraph) are handled too.
+    TRAPI 2.0 forbids `null` (absent is "no data") and forbids empty arrays on its
+    minItems:1 properties. Dropping nulls mirrors `to_dict`'s `exclude_none`, so the dict
+    layer's output matches the model layer's. Empty arrays are dropped only for OPTIONAL
+    target fields, so genuinely-empty required data (e.g. an Attribute whose `value` is
+    `[]`) is preserved for pydantic to validate. Recurses into nested models.
     """
     fields = model_cls.model_fields
     pruned: dict[str, Any] = {}
     for key, value in data.items():
+        if value is None:  # 2.0 forbids null (matches to_dict's exclude_none)
+            continue
         field = fields.get(key)
         if field is None:  # extra (undeclared) property: opaque, leave as-is
             pruned[key] = value
@@ -91,17 +209,16 @@ def _prune_empty_arrays(
 
 
 def _prune_nested(model: type[TOMBase], container: str, value: Any) -> Any:
-    """Apply `_prune_empty_arrays` to the nested-model dict(s) held in `value`."""
+    """Apply `_prune` to the nested-model dict(s) held in `value`."""
     if container == "model" and isinstance(value, dict):
-        return _prune_empty_arrays(model, value)
+        return _prune(model, value)
     if container == "list" and isinstance(value, list):
         return [
-            _prune_empty_arrays(model, item) if isinstance(item, dict) else item
-            for item in value
+            _prune(model, item) if isinstance(item, dict) else item for item in value
         ]
     if container == "dict" and isinstance(value, dict):
         return {
-            key: _prune_empty_arrays(model, item) if isinstance(item, dict) else item
+            key: _prune(model, item) if isinstance(item, dict) else item
             for key, item in value.items()
         }
     return value
@@ -140,17 +257,17 @@ def _binding_dedup(ids: Iterable[str]) -> list[str]:
 
 
 def _collapse_bindings(
-    binding_map: Mapping[str, list[Any]],
+    binding_map: Mapping[str, list[_Data]],
 ) -> dict[str, dict[str, list[str]]] | None:
-    """Collapse a 1.6 `{key: [binding, …]}` map into 2.0 `{key: {"ids": […]}}`.
+    """Collapse a 1.6 `{key: [binding, …]}` dict map into 2.0 `{key: {"ids": […]}}`.
 
-    Each binding's single `id` is unioned into the target binding's `ids`. Keys whose
-    bindings yield no ids are dropped; an empty result is `None` (the container is
+    Each binding dict's single `id` is unioned into the target binding's `ids`. Keys
+    whose bindings yield no ids are dropped; an empty result is `None` (the container is
     optional in 2.0).
     """
     collapsed: dict[str, dict[str, list[str]]] = {}
     for key, bindings in binding_map.items():
-        ids = _binding_dedup(binding.id for binding in bindings)
+        ids = _binding_dedup(binding["id"] for binding in bindings)
         if ids:
             collapsed[key] = {"ids": ids}
 

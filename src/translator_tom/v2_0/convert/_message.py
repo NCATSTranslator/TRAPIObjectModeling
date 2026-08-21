@@ -1,37 +1,44 @@
-"""Converter for Message."""
+"""Transform for Message."""
 
 from __future__ import annotations
 
 from typing import Any
 
 from translator_tom.v1_6.models.message import Message as V16Message
-from translator_tom.v2_0.convert._util import _build, up_version
+from translator_tom.v2_0.convert._auxiliary_graph import _upgrade_auxiliary_graph
+from translator_tom.v2_0.convert._knowledge_graph import _upgrade_knowledge_graph
+from translator_tom.v2_0.convert._query_graph import _upgrade_query_graph
+from translator_tom.v2_0.convert._result import _upgrade_result
+from translator_tom.v2_0.convert._util import register
 from translator_tom.v2_0.models.message import Message
 
 
-@up_version.register(V16Message)
-def _convert_message(obj: V16Message, **kwargs: Any) -> Message:
+@register(V16Message, Message)
+def _upgrade_message(data: dict[str, Any], **kwargs: Any) -> dict[str, Any]:
     """Convert the knowledge/query graphs and results; empty containers → absent."""
-    data = obj.to_dict()
+    data = dict(data)
 
-    if obj.knowledge_graph is not None:
-        data["knowledge_graph"] = up_version(obj.knowledge_graph, **kwargs).to_dict()
-    if obj.query_graph is not None:
-        data["query_graph"] = up_version(obj.query_graph, **kwargs).to_dict()
+    knowledge_graph = data.get("knowledge_graph")
+    if knowledge_graph is not None:
+        data["knowledge_graph"] = _upgrade_knowledge_graph(knowledge_graph, **kwargs)
 
-    if obj.results:
-        data["results"] = [
-            up_version(result, **kwargs).to_dict() for result in obj.results
-        ]
+    query_graph = data.get("query_graph")
+    if query_graph is not None:
+        data["query_graph"] = _upgrade_query_graph(query_graph, **kwargs)
+
+    results = data.get("results")
+    if results:
+        data["results"] = [_upgrade_result(result, **kwargs) for result in results]
     else:
         data.pop("results", None)
 
-    if obj.auxiliary_graphs:
+    auxiliary_graphs = data.get("auxiliary_graphs")
+    if auxiliary_graphs:
         data["auxiliary_graphs"] = {
-            aux_id: up_version(graph, **kwargs).to_dict()
-            for aux_id, graph in obj.auxiliary_graphs.items()
+            aux_id: _upgrade_auxiliary_graph(graph, **kwargs)
+            for aux_id, graph in auxiliary_graphs.items()
         }
     else:
         data.pop("auxiliary_graphs", None)
 
-    return _build(Message, data)
+    return data

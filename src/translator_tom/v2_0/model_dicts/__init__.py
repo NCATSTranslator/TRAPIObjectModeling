@@ -76,9 +76,11 @@ __all__ = [
     "RetrievalSourceDictUtil",
     "SourceConstraintDict",
     "SourceConstraintDictUtil",
+    "dict_up_version",
     "workflow",
 ]
 
+from translator_tom.v2_0.convert import dict_up_version
 from translator_tom.v2_0.model_dicts import workflow_operations as workflow
 from translator_tom.v2_0.model_dicts.analysis import AnalysisDict, AnalysisDictUtil
 from translator_tom.v2_0.model_dicts.asyncquery import (
