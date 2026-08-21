@@ -1,8 +1,9 @@
 """Quick serdes benchmark: one file per size bucket, comparing TOM vs reasoner-pydantic.
 
-Runs against `data/example_trapi/<version>/` (default `2.0`; pass `--version 1.6`).
-Streams per-file timings in an aligned format as they complete, then prints a
-summary table across files at the end.
+Runs against `data/example_trapi/<version>/`. Defaults to `1.6` because the pinned
+reasoner-pydantic models TRAPI 1.x; pass `--version 2.0` for TOM-only 2.0 timings
+(the reasoner-pydantic rows are not meaningful there). Streams per-file timings in an
+aligned format as they complete, then prints a summary table across files at the end.
 """
 
 import time
@@ -12,7 +13,7 @@ from pydantic import TypeAdapter
 
 from utils import corpus_root, import_version, parse_version, read_corpus_file
 
-VERSION = parse_version(__doc__)
+VERSION = parse_version(__doc__, default="1.6")
 CORPUS_ROOT = corpus_root(VERSION)
 
 LABEL_WIDTH = 23
@@ -106,9 +107,7 @@ for response_path in TEST_FILES:
     pair_row("adapter.python", t_vp, t_dp, file_results)
 
     # Combined dict-based pipeline (alternative to adapter.json single-pass).
-    pair_row(
-        "orjson + adapter.python", t_loads + t_vp, t_dp + t_dumps, file_results
-    )
+    pair_row("orjson + adapter.python", t_loads + t_vp, t_dp + t_dumps, file_results)
 
     # --- adapter (json: bytes <-> model) ---
     t0 = time.perf_counter()
@@ -157,8 +156,7 @@ for response_path in TEST_FILES:
 section("Summary (seconds): from / to")
 
 short_labels = {
-    lbl: lbl.split("/")[-1].removesuffix(".gz").removesuffix(".json")
-    for lbl in results
+    lbl: lbl.split("/")[-1].removesuffix(".gz").removesuffix(".json") for lbl in results
 }
 ops = list(next(iter(results.values())).keys())
 

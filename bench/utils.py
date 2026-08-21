@@ -25,15 +25,21 @@ def _package(version: str) -> str:
     return f"v{version.replace('.', '_')}"
 
 
-def parse_version(description: str | None = None) -> str:
-    """Parse the shared ``--version`` CLI arg, returning the selected TRAPI version."""
+def parse_version(
+    description: str | None = None, default: str = DEFAULT_VERSION
+) -> str:
+    """Parse the shared ``--version`` CLI arg, returning the selected TRAPI version.
+
+    ``default`` lets a script pin a different default (e.g. `test_sd.py` defaults to
+    `1.6`, the version its reasoner-pydantic comparand models).
+    """
     parser = argparse.ArgumentParser(description=description)
     parser.add_argument(
         "-v",
         "--version",
         choices=VERSIONS,
-        default=DEFAULT_VERSION,
-        help=f"TRAPI version to bench: corpus dir + models (default: {DEFAULT_VERSION})",
+        default=default,
+        help=f"TRAPI version to bench: corpus dir + models (default: {default})",
     )
     return parser.parse_args().version
 

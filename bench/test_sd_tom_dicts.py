@@ -1,9 +1,10 @@
 """Dict-util-only serdes benchmark across every example response.
 
-The `model_dicts` twin of `bench/test_sd_tom.py`: same corpus walk and output,
-but driving the `*DictUtil` serdes (raw orjson/ormsgpack over the TypedDict form,
-no model construction) instead of the `Response` model. Run both to see the cost
-the model layer adds over operating on plain dicts.
+The `model_dicts` twin of `bench/test_sd_tom.py`: same corpus walk and output
+(default `2.0`; pass `--version 1.6`), but driving the `*DictUtil` serdes (raw
+orjson/ormsgpack over the TypedDict form, no model construction) instead of the
+`Response` model. Run both to see the cost the model layer adds over operating on
+plain dicts.
 
 The `+val` rows re-run the `from` path with `validate=True`, adding a pydantic
 `TypeAdapter` pass over the parsed data; their `from` timing minus the plain
@@ -55,7 +56,9 @@ ResponseDictUtil = import_version(VERSION, "model_dicts").ResponseDictUtil
 t_tom = time.perf_counter() - t0
 
 section("Imports")
-print(f"  translator_tom {VERSION} model_dicts ResponseDictUtil  {VALUE_FMT.format(t_tom)}")
+print(
+    f"  translator_tom {VERSION} model_dicts ResponseDictUtil  {VALUE_FMT.format(t_tom)}"
+)
 
 
 TEST_FILES = discover_files(CORPUS_ROOT)
@@ -109,8 +112,7 @@ for response_path in TEST_FILES:
 section("Summary (seconds): from / to")
 
 short_labels = {
-    lbl: lbl.split("/")[-1].removesuffix(".gz").removesuffix(".json")
-    for lbl in results
+    lbl: lbl.split("/")[-1].removesuffix(".gz").removesuffix(".json") for lbl in results
 }
 ops = list(next(iter(results.values())).keys())
 
