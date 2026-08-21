@@ -1,8 +1,8 @@
 """TOM-only serdes benchmark across every example response.
 
-Walks `data/example_trapi/**` and runs the core (de)serialization paths for
-each file. Streams per-file timings in an aligned format as they complete,
-then prints a summary table across files at the end.
+Walks `data/example_trapi/<version>/**` (default `2.0`; pass `--version 1.6`) and
+runs the core (de)serialization paths for each file. Streams per-file timings in an
+aligned format as they complete, then prints a summary table across files at the end.
 
 For a quicker comparison run that also benches reasoner-pydantic on one file
 per size bucket, see `bench/test_sd.py`.
@@ -10,7 +10,16 @@ per size bucket, see `bench/test_sd.py`.
 
 import time
 
-from utils import CORPUS_ROOT, discover_files, read_corpus_file
+from utils import (
+    corpus_root,
+    discover_files,
+    import_version,
+    parse_version,
+    read_corpus_file,
+)
+
+VERSION = parse_version(__doc__)
+CORPUS_ROOT = corpus_root(VERSION)
 
 LABEL_WIDTH = 10
 VALUE_FMT = "{:>8.4f}s"
@@ -40,12 +49,11 @@ def section(title: str) -> None:
 # --- Import ---
 
 t0 = time.perf_counter()
-from translator_tom import Response  # noqa: E402
-
+Response = import_version(VERSION).Response
 t_tom = time.perf_counter() - t0
 
 section("Imports")
-print(f"  translator_tom Response  {VALUE_FMT.format(t_tom)}")
+print(f"  translator_tom {VERSION} Response  {VALUE_FMT.format(t_tom)}")
 
 
 TEST_FILES = discover_files(CORPUS_ROOT)

@@ -4,19 +4,28 @@ Installed as the ``tom-validate`` command (also runnable via
 ``python -m translator_tom.scripts.validate``)::
 
     tom-validate Response response.json
+    tom-validate Response response_1_6.json --version 1.6
 
-Exits ``0`` when validation finds no errors and ``1`` when it does, so it can be
-used as a check in scripts or CI. Warnings are reported but do not fail the run.
+The file is parsed and semantically validated as ``model`` at the given
+``--version`` (default ``2.0``). Exits ``0`` when validation finds no errors and
+``1`` when it does, so it can be used as a check in scripts or CI. Warnings are
+reported but do not fail the run.
 """
 
 from __future__ import annotations
 
 import argparse
+import importlib
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from translator_tom.scripts.parse import load_parse_or_report
-from translator_tom.validation import semantic_validate
+from translator_tom.scripts._common import (
+    DEFAULT_VERSION,
+    VERSIONS,
+    exported_models,
+    import_version,
+    load_parse_or_report,
+)
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
@@ -43,18 +52,30 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument("model", help="model class name to parse into, e.g. Response")
     parser.add_argument("file", help="path to a JSON file")
+    parser.add_argument(
+        "-V",
+        "--version",
+        choices=VERSIONS,
+        default=DEFAULT_VERSION,
+        help=f"TRAPI version of the input (default: {DEFAULT_VERSION})",
+    )
     return parser
 
 
 def main(argv: Sequence[str] | None = None) -> int:
     """Parse and semantically validate the file named on the command line."""
     args = _build_parser().parse_args(argv)
-    instance, code = load_parse_or_report(args.model, Path(args.file))
+
+    namespace = import_version(args.version)
+    models = exported_models(namespace)
+
+    instance, code = load_parse_or_report(args.model, Path(args.file), models=models)
     if instance is None:
         return code
     print(f"✓ Parsed {args.file} as {args.model}")
 
-    warnings, errors = semantic_validate(instance)
+    validation = importlib.import_module(f"{namespace.__name__}.validation")
+    warnings, errors = validation.semantic_validate(instance)
 
     print(f"\nWarnings ({len(warnings)}):")
     for warning in warnings:

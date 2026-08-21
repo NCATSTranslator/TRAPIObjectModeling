@@ -1,9 +1,9 @@
 """Semantic-validation benchmark across every example response.
 
-Walks `data/example_trapi/**`, deserializes each file, and runs
-`semantic_validate` on the resulting `Response`. Streams per-file timings and
-the error/warning counts as they complete, then prints a summary table across
-files at the end.
+Walks `data/example_trapi/<version>/**` (default `2.0`; pass `--version 1.6`),
+deserializes each file, and runs `semantic_validate` on the resulting `Response`.
+Streams per-file timings and the error/warning counts as they complete, then prints
+a summary table across files at the end.
 
 For the serdes benchmarks see `bench/test_sd_tom.py` (TOM-only, every file) and
 `bench/test_sd.py` (one file per size bucket, TOM vs reasoner-pydantic).
@@ -11,7 +11,16 @@ For the serdes benchmarks see `bench/test_sd_tom.py` (TOM-only, every file) and
 
 import time
 
-from utils import CORPUS_ROOT, discover_files, read_corpus_file
+from utils import (
+    corpus_root,
+    discover_files,
+    import_version,
+    parse_version,
+    read_corpus_file,
+)
+
+VERSION = parse_version(__doc__)
+CORPUS_ROOT = corpus_root(VERSION)
 
 VALUE_FMT = "{:>8.4f}s"
 
@@ -24,13 +33,14 @@ def section(title: str) -> None:
 # --- Import ---
 
 t0 = time.perf_counter()
-from translator_tom import Response  # noqa: E402
-from translator_tom.validation import semantic_validate  # noqa: E402
-
+_ttom = import_version(VERSION)
+_validation = import_version(VERSION, "validation")
 t_tom = time.perf_counter() - t0
+Response = _ttom.Response
+semantic_validate = _validation.semantic_validate
 
 section("Imports")
-print(f"  translator_tom + validation  {VALUE_FMT.format(t_tom)}")
+print(f"  translator_tom {VERSION} + validation  {VALUE_FMT.format(t_tom)}")
 
 
 TEST_FILES = discover_files(CORPUS_ROOT)
