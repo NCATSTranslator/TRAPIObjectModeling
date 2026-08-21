@@ -6,6 +6,37 @@ Models based on Pydantic provide deserialize with basic validation, serialize, a
 
 Allows for easy FastAPI standup.
 
+## TRAPI versions
+
+`translator_tom` provides models for multiple TRAPI versions. When importing directly from `translator_tom`, you automatically import models for the latest version.
+
+```python
+from translator_tom import Response                  # TRAPI 2.0 (latest)
+from translator_tom.model_dicts import ResponseDict  # TRAPI 2.0 (latest)
+```
+
+To pin a specific version, import it from its version subpackage:
+
+```python
+from translator_tom.v2_0 import Response             # TRAPI 2.0
+from translator_tom.v1_6 import Response             # TRAPI 1.6
+from translator_tom.v1_6.model_dicts import ResponseDict
+```
+
+Each version has the same general API: models, model_dicts, diff, semantic validation (WIP). Some items are version-agnostic (Biolink, CURIEs, `TOMBase`, etc.) and shared between the two (`translator_tom.utils`).
+
+### Converting TRAPI versions
+
+The TRAPI 2.0 package provides a utility for converting 1.6 models to 2.0 models:
+
+```python
+from translator_tom import up_version
+
+my_v1_response = ... # Some TRAPI 1.6 response
+
+my_v2_response = up_version(my_v1_response)
+```
+
 ## Model Usage
 
 The main ways you interact with a Model are as follows:
@@ -343,6 +374,15 @@ This returns a list of warnings and errors with clear descriptions and tuples de
 
 > [!WARNING]
 > This feature is WIP and does not do every bit of semantic validation you might expect.
+
+## Scripts
+
+TOM provides some module-level scripts, for your convenience:
+
+- `tom-parse`: Parse a given JSON into a given TOM model to check that it parses.
+- `tom-validate`: Run semantic validation (WIP) against a given JSON/TOM model.
+- `tom-up-version`: Upgrade a TRAPI 1.6 JSON to TRAPI 2.0.
+- `tom-diff`: Diff two JSONs of a given TOM model.
 
 ## Design Decisions
 
