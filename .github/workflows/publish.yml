@@ -21,9 +21,14 @@ jobs:
       - name: Build
         run: uv build
       # Check that basic features work and we didn't miss include crucial files
+      # (both version trees ship in the package, so smoke-test each).
       - name: Smoke test (wheel)
-        run: uv run --isolated --no-project --with dist/*.whl tests/test_models/test_models.py
+        run: |
+          uv run --isolated --no-project --with dist/*.whl tests/v2_0/test_models/test_models.py
+          uv run --isolated --no-project --with dist/*.whl tests/v1_6/test_models/test_models.py
       - name: Smoke test (source distribution)
-        run: uv run --isolated --no-project --with dist/*.tar.gz tests/test_models/test_models.py
+        run: |
+          uv run --isolated --no-project --with dist/*.tar.gz tests/v2_0/test_models/test_models.py
+          uv run --isolated --no-project --with dist/*.tar.gz tests/v1_6/test_models/test_models.py
       - name: Publish
         run: uv publish

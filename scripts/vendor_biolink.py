@@ -11,7 +11,7 @@ so relative imports must be included.
 
 Usage:
     task vendor:biolink              # uses TRAPI_CONFIG.biolink_version
-    task vendor:biolink -- 4.4.3     # explicit version
+    task vendor:biolink -- 4.4.4     # explicit version
 """
 
 from __future__ import annotations
