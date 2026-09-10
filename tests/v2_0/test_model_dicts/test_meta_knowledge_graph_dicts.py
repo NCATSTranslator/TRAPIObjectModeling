@@ -125,6 +125,26 @@ class TestMetaEdge:
         }
         assert merged_values == model_values
 
+    def test_update_new_list_fields_parity(self):
+        edge = _meta_edge(
+            knowledge_levels=["knowledge_assertion"],
+            agent_types=["manual_agent"],
+            sources=["infores:foo"],
+        )
+        other = _meta_edge(
+            knowledge_levels=["prediction"],
+            agent_types=["automated_agent"],
+            sources=["infores:bar"],
+        )
+        edge_dict = edge.to_dict()
+        edge.update(other)
+        MetaEdgeDictUtil.update(edge_dict, other.to_dict())
+        # New list fields merge via sets; compare set-wise.
+        assert set(edge_dict["knowledge_levels"]) == set(edge.knowledge_levels_list)
+        assert set(edge_dict["agent_types"]) == set(edge.agent_types_list)
+        assert set(edge_dict["sources"]) == set(edge.sources_list)
+        assert MetaEdgeDictUtil.hash(edge_dict) == edge.hash()
+
     def test_update_all_allowed_absorbs_concrete_parity(self):
         # applicable_values=None ("all allowed") must survive the merge on both sides,
         # not narrow to the concrete list. Asserts the absolute result, not just parity.

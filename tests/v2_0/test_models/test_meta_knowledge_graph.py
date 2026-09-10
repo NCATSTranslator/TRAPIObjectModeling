@@ -127,6 +127,15 @@ class TestMetaEdgeListProperties:
     def test_qualifiers_list_when_none(self):
         assert _meta_edge().qualifiers_list == []
 
+    def test_knowledge_levels_list_when_none(self):
+        assert _meta_edge().knowledge_levels_list == []
+
+    def test_agent_types_list_when_none(self):
+        assert _meta_edge().agent_types_list == []
+
+    def test_sources_list_when_none(self):
+        assert _meta_edge().sources_list == []
+
 
 class TestMetaEdgeUpdate:
     def test_assigns_knowledge_types_when_self_empty(self):
@@ -251,6 +260,45 @@ class TestMetaEdgeUpdate:
             "biolink:subject_aspect_qualifier",
             "biolink:object_aspect_qualifier",
         }
+
+    def test_assigns_new_list_fields_when_self_empty(self):
+        a = _meta_edge()
+        b = _meta_edge(
+            knowledge_levels=["knowledge_assertion"],
+            agent_types=["manual_agent"],
+            sources=["infores:foo"],
+        )
+        a.update(b)
+        assert a.knowledge_levels == ["knowledge_assertion"]
+        assert a.agent_types == ["manual_agent"]
+        assert a.sources == ["infores:foo"]
+
+    def test_unions_new_list_fields(self):
+        a = _meta_edge(
+            knowledge_levels=["knowledge_assertion"],
+            agent_types=["manual_agent"],
+            sources=["infores:foo"],
+        )
+        b = _meta_edge(
+            knowledge_levels=["prediction"],
+            agent_types=["automated_agent"],
+            sources=["infores:bar"],
+        )
+        a.update(b)
+        assert set(a.knowledge_levels_list) == {"knowledge_assertion", "prediction"}
+        assert set(a.agent_types_list) == {"manual_agent", "automated_agent"}
+        assert set(a.sources_list) == {"infores:foo", "infores:bar"}
+
+    def test_new_list_fields_no_op_when_other_empty(self):
+        a = _meta_edge(
+            knowledge_levels=["knowledge_assertion"],
+            agent_types=["manual_agent"],
+            sources=["infores:foo"],
+        )
+        a.update(_meta_edge())
+        assert a.knowledge_levels == ["knowledge_assertion"]
+        assert a.agent_types == ["manual_agent"]
+        assert a.sources == ["infores:foo"]
 
 
 class TestMetaEdgeMeetsAttributeConstraints:

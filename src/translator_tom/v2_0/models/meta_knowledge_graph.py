@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Annotated, ClassVar
+from typing import Annotated, ClassVar, TypeVar
 
 from pydantic import ConfigDict, Field
 from typing_extensions import Self
@@ -9,6 +9,7 @@ from translator_tom.utils.biolink import Biolink
 from translator_tom.utils.object_base import TOMBase
 from translator_tom.utils.shared import (
     CURIE,
+    Infores,
     KnowledgeType,
 )
 from translator_tom.v2_0.models.attribute import AttributeConstraint
@@ -30,6 +31,20 @@ def merged_applicable_values(
     if a is None or b is None:
         return None
     return list(set(a) | set(b))
+
+
+_ListItemT = TypeVar("_ListItemT", bound=str)
+
+
+def merged_list(
+    current: list[_ListItemT] | None, other: list[_ListItemT] | None
+) -> list[_ListItemT] | None:
+    """Union two optional value lists, treating None/empty as absent (order not preserved)."""
+    if not other:
+        return current
+    if not current:
+        return other
+    return list(set(current) | set(other))
 
 
 class MetaKnowledgeGraph(TOMBase):
@@ -125,6 +140,30 @@ class MetaEdge(TOMBase):
     correctly.
     """
 
+    knowledge_levels: Annotated[list[str], Field(min_length=1)] | None = None
+    """The knowledge levels contributing to this meta edge.
+
+    If provided, this property SHOULD contain all possible
+    knowledge_levels relevant edges might return.
+    (See https://biolink.github.io/biolink-model/KnowledgeLevelEnum/)
+    """
+
+    agent_types: Annotated[list[str], Field(min_length=1)] | None = None
+    """The agent types contributing to this meta edge.
+
+    If provided, this property SHOULD contain all possible
+    agent_types relevant edges might return.
+    (See https://biolink.github.io/biolink-model/AgentTypeEnum/)
+    """
+
+    sources: Annotated[list[Infores], Field(min_length=1)] | None = None
+    """The infores CURIEs for sources contributing to this meta edge.
+
+    If provided, this property SHOULD contain resource_ids for
+    all relevant resource_roles. Services MAY choose to omit
+    their own aggregator resource_ids.
+    """
+
     @property
     def knowledge_types_list(self) -> list[KnowledgeType]:
         """Get the knowledge types as a guaranteed list, even if they are represented as None."""
@@ -140,14 +179,29 @@ class MetaEdge(TOMBase):
         """Get the meta qualifiers as a guaranteed list, even if they are represented as None."""
         return self.qualifiers if self.qualifiers is not None else []
 
+    @property
+    def knowledge_levels_list(self) -> list[str]:
+        """Get the knowledge levels as a guaranteed list, even if they are represented as None."""
+        return self.knowledge_levels if self.knowledge_levels is not None else []
+
+    @property
+    def agent_types_list(self) -> list[str]:
+        """Get the agent types as a guaranteed list, even if they are represented as None."""
+        return self.agent_types if self.agent_types is not None else []
+
+    @property
+    def sources_list(self) -> list[Infores]:
+        """Get the sources as a guaranteed list, even if they are represented as None."""
+        return self.sources if self.sources is not None else []
+
     def update(self, other: MetaEdge) -> None:
         """Update the meta edge in-place with another meta edge."""
-        if (not self.knowledge_types) and other.knowledge_types:
-            self.knowledge_types = other.knowledge_types
-        elif self.knowledge_types and other.knowledge_types:
-            self.knowledge_types = list(
-                set(self.knowledge_types_list) | set(other.knowledge_types_list)
-            )
+        self.knowledge_types = merged_list(self.knowledge_types, other.knowledge_types)
+        self.knowledge_levels = merged_list(
+            self.knowledge_levels, other.knowledge_levels
+        )
+        self.agent_types = merged_list(self.agent_types, other.agent_types)
+        self.sources = merged_list(self.sources, other.sources)
 
         if (not self.attributes) and other.attributes:
             self.attributes = other.attributes
