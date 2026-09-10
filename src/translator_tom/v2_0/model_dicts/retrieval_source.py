@@ -13,8 +13,8 @@ __all__ = ["RetrievalSourceDict", "RetrievalSourceDictUtil"]
 class RetrievalSourceDict(TypedDict):
     resource_id: Infores
     resource_role: ResourceRole
-    upstream_resource_ids: NotRequired[list[Infores] | None]
-    source_record_urls: NotRequired[list[str] | None]
+    upstream_resource_ids: NotRequired[list[Infores]]
+    source_record_urls: NotRequired[list[str]]
 
 
 class RetrievalSourceDictUtil(DictUtil[RetrievalSourceDict]):

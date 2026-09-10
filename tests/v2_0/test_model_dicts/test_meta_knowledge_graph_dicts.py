@@ -2,6 +2,11 @@
 
 from __future__ import annotations
 
+import json
+
+import pytest
+from pydantic import ValidationError
+
 from translator_tom.v2_0.model_dicts.meta_knowledge_graph import (
     MetaEdgeDictUtil,
     MetaKnowledgeGraphDictUtil,
@@ -214,6 +219,24 @@ class TestMetaKnowledgeGraph:
             edges=[_meta_edge()],
         )
         assert MetaKnowledgeGraphDictUtil.hash(mkg.to_dict()) == mkg.hash()
+
+
+_NULL_REJECT_BASE = {
+    "subject": "biolink:Gene",
+    "predicate": "biolink:affects",
+    "object": "biolink:Disease",
+}
+
+
+class TestMetaEdgeNullRejection:
+    def test_validate_accepts_omitted_optional_field(self):
+        MetaEdgeDictUtil.from_json(json.dumps(_NULL_REJECT_BASE), validate=True)
+
+    def test_validate_rejects_explicit_null_on_optional_field(self):
+        # 2.0 canonical form forbids null: an optional field is omitted, never nulled.
+        nulled = {**_NULL_REJECT_BASE, "knowledge_levels": None}
+        with pytest.raises(ValidationError):
+            MetaEdgeDictUtil.from_json(json.dumps(nulled), validate=True)
 
 
 class TestMetaEdgeUpdateKlAtSkip:

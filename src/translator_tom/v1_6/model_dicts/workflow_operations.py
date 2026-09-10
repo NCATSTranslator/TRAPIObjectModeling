@@ -61,8 +61,8 @@ from translator_tom.v1_6.models.workflow_operations import (
     OverlayComputeNgdParameters,
     OverlayFisherExactTestParameters,
     PlusOrMinus,
-    SortResultNodeAttributeParameters,
     SortResultsEdgeAttributeParameters,
+    SortResultsNodeAttributeParameters,
     SortResultsScoreParameters,
     TopOrBottom,
 )
@@ -169,10 +169,10 @@ __all__ = [
     "OverlayFisherExactTestParametersDict",
     "OverlayFisherExactTestParametersDictUtil",
     "RunnerParametersDict",
-    "SortResultNodeAttributeParametersDict",
-    "SortResultNodeAttributeParametersDictUtil",
     "SortResultsEdgeAttributeParametersDict",
     "SortResultsEdgeAttributeParametersDictUtil",
+    "SortResultsNodeAttributeParametersDict",
+    "SortResultsNodeAttributeParametersDictUtil",
     "SortResultsScoreParametersDict",
     "SortResultsScoreParametersDictUtil",
 ]
@@ -783,22 +783,22 @@ class OperationSortResultsEdgeAttributeDictUtil(BaseOperationDictUtil):
     _model = OperationSortResultsEdgeAttribute
 
 
-class SortResultNodeAttributeParametersDict(OperationParametersDict):
+class SortResultsNodeAttributeParametersDict(OperationParametersDict):
     node_attribute: str
     ascending_or_descending: AscendingOrDescending
-    qnode_keys: list[QNodeID] | None
+    qnode_keys: NotRequired[list[QNodeID] | None]
 
 
-class SortResultNodeAttributeParametersDictUtil(
-    DictUtil[SortResultNodeAttributeParametersDict]
+class SortResultsNodeAttributeParametersDictUtil(
+    DictUtil[SortResultsNodeAttributeParametersDict]
 ):
-    """Utility methods for `SortResultNodeAttributeParametersDict`, mirroring the model."""
+    """Utility methods for `SortResultsNodeAttributeParametersDict`, mirroring the model."""
 
-    _model = SortResultNodeAttributeParameters
+    _model = SortResultsNodeAttributeParameters
 
     @staticmethod
     def qnode_keys_list(
-        parameters: SortResultNodeAttributeParametersDict,
+        parameters: SortResultsNodeAttributeParametersDict,
     ) -> list[QNodeID]:
         """Return a guaranteed list of qnode_keys, empty if it is not defined."""
         qnode_keys = parameters.get("qnode_keys")
@@ -807,7 +807,7 @@ class SortResultNodeAttributeParametersDictUtil(
 
 class OperationSortResultsNodeAttributeDict(BaseOperationDict):
     id: Literal["sort_results_node_attribute"]
-    parameters: SortResultNodeAttributeParametersDict
+    parameters: SortResultsNodeAttributeParametersDict
 
 
 class OperationSortResultsNodeAttributeDictUtil(BaseOperationDictUtil):

@@ -10,7 +10,7 @@ __all__ = ["PathConstraintDict", "PathConstraintDictUtil"]
 
 
 class PathConstraintDict(TypedDict):
-    required_intermediate_categories: NotRequired[list[Biolink.Entity] | None]
+    required_intermediate_categories: NotRequired[list[Biolink.Entity]]
 
 
 class PathConstraintDictUtil(DictUtil[PathConstraintDict]):

@@ -120,11 +120,11 @@ class SourceConstraintDictUtil(DictUtil[SourceConstraintDict]):
 
 
 class QEdgeConstraintsDict(TypedDict):
-    knowledge_level: NotRequired[KnowledgeLevelConstraintDict | None]
-    agent_type: NotRequired[AgentTypeConstraintDict | None]
-    attributes: NotRequired[list[AttributeConstraintDict] | None]
-    qualifiers: NotRequired[list[QualifierSetConstraint] | None]
-    sources: NotRequired[SourceConstraintDict | None]
+    knowledge_level: NotRequired[KnowledgeLevelConstraintDict]
+    agent_type: NotRequired[AgentTypeConstraintDict]
+    attributes: NotRequired[list[AttributeConstraintDict]]
+    qualifiers: NotRequired[list[QualifierSetConstraint]]
+    sources: NotRequired[SourceConstraintDict]
 
 
 class QEdgeConstraintsDictUtil(DictUtil[QEdgeConstraintsDict]):

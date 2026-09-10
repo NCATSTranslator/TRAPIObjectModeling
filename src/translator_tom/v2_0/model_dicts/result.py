@@ -19,7 +19,7 @@ __all__ = ["ResultDict", "ResultDictUtil"]
 
 class ResultDict(TypedDict):
     node_bindings: dict[QNodeID, NodeBindingDict]
-    analyses: NotRequired[list[AnalysisDict] | None]
+    analyses: NotRequired[list[AnalysisDict]]
 
 
 class ResultDictUtil(DictUtil[ResultDict]):
@@ -120,4 +120,8 @@ class ResultDictUtil(DictUtil[ResultDict]):
             else:
                 AnalysisDictUtil.update(existing, analysis)
 
-        result["analyses"] = list(merged.values()) or None
+        analyses = list(merged.values())
+        if analyses:
+            result["analyses"] = analyses
+        else:
+            result.pop("analyses", None)

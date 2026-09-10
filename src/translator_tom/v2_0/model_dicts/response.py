@@ -15,15 +15,15 @@ __all__ = ["ResponseDict", "ResponseDictUtil"]
 
 
 class ResponseDict(TypedDict):
-    parameters: NotRequired[QueryParametersDict | None]
+    parameters: NotRequired[QueryParametersDict]
     message: MessageDict
-    status: NotRequired[str | None]
-    description: NotRequired[str | None]
-    logs: NotRequired[list[LogEntryDict] | None]
-    workflow: NotRequired[list[OperationDict] | None]
-    schema_version: NotRequired[str | None]
-    biolink_version: NotRequired[str | None]
-    data_release_versions: NotRequired[dict[str, str] | None]
+    status: NotRequired[str]
+    description: NotRequired[str]
+    logs: NotRequired[list[LogEntryDict]]
+    workflow: NotRequired[list[OperationDict]]
+    schema_version: NotRequired[str]
+    biolink_version: NotRequired[str]
+    data_release_versions: NotRequired[dict[str, str]]
 
 
 class ResponseDictUtil(DictUtil[ResponseDict]):

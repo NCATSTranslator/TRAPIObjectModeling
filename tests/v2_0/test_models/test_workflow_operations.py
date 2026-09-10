@@ -31,7 +31,7 @@ from translator_tom.v2_0.models.workflow_operations import (
     OperationRestate,
     OperationScore,
     PlusOrMinusEnum,
-    SortResultNodeAttributeParameters,
+    SortResultsNodeAttributeParameters,
     TopOrBottomEnum,
 )
 
@@ -197,9 +197,9 @@ class TestFilterKgraphParametersBase:
         assert self._make(qnode_keys=["n0"]).qnode_keys_list == ["n0"]
 
 
-class TestSortResultNodeAttributeParameters:
+class TestSortResultsNodeAttributeParameters:
     def test_qnode_keys_list_when_none(self):
-        p = SortResultNodeAttributeParameters(
+        p = SortResultsNodeAttributeParameters(
             node_attribute="x",
             ascending_or_descending="ascending",
             qnode_keys=None,
@@ -207,7 +207,7 @@ class TestSortResultNodeAttributeParameters:
         assert p.qnode_keys_list == []
 
     def test_qnode_keys_list_when_set(self):
-        p = SortResultNodeAttributeParameters(
+        p = SortResultsNodeAttributeParameters(
             node_attribute="x",
             ascending_or_descending="ascending",
             qnode_keys=["n0"],

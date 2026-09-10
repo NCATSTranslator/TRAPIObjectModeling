@@ -12,10 +12,10 @@ __all__ = ["MetaAttributeDict", "MetaAttributeDictUtil"]
 
 class MetaAttributeDict(TypedDict):
     attribute_type_id: CURIE
-    attribute_source: NotRequired[str | None]
-    original_attribute_names: NotRequired[list[str] | None]
+    attribute_source: NotRequired[str]
+    original_attribute_names: NotRequired[list[str]]
     constraint_use: NotRequired[bool]
-    constraint_name: NotRequired[str | None]
+    constraint_name: NotRequired[str]
 
 
 class MetaAttributeDictUtil(DictUtil[MetaAttributeDict]):

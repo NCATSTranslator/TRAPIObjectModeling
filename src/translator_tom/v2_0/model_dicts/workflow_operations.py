@@ -61,8 +61,8 @@ from translator_tom.v2_0.models.workflow_operations import (
     OverlayComputeNgdParameters,
     OverlayFisherExactTestParameters,
     PlusOrMinus,
-    SortResultNodeAttributeParameters,
     SortResultsEdgeAttributeParameters,
+    SortResultsNodeAttributeParameters,
     SortResultsScoreParameters,
     TopOrBottom,
 )
@@ -169,10 +169,10 @@ __all__ = [
     "OverlayFisherExactTestParametersDict",
     "OverlayFisherExactTestParametersDictUtil",
     "RunnerParametersDict",
-    "SortResultNodeAttributeParametersDict",
-    "SortResultNodeAttributeParametersDictUtil",
     "SortResultsEdgeAttributeParametersDict",
     "SortResultsEdgeAttributeParametersDictUtil",
+    "SortResultsNodeAttributeParametersDict",
+    "SortResultsNodeAttributeParametersDictUtil",
     "SortResultsScoreParametersDict",
     "SortResultsScoreParametersDictUtil",
 ]
@@ -206,7 +206,7 @@ class OperationParametersDict(TypedDict):
 
 
 class BaseOperationDict(TypedDict):
-    runner_parameters: NotRequired[RunnerParametersDict | None]
+    runner_parameters: NotRequired[RunnerParametersDict]
 
 
 class BaseOperationDictUtil(DictUtil[BaseOperationDict]):
@@ -219,7 +219,7 @@ class BaseOperationDictUtil(DictUtil[BaseOperationDict]):
 
 class OperationAnnotateDict(BaseOperationDict):
     id: Literal["annotate"]
-    parameters: NotRequired[dict[str, FastJsonValue] | None]
+    parameters: NotRequired[dict[str, FastJsonValue]]
 
 
 class OperationAnnotateDictUtil(BaseOperationDictUtil):
@@ -230,7 +230,7 @@ class OperationAnnotateDictUtil(BaseOperationDictUtil):
 
 
 class AnnotateEdgesParametersDict(OperationParametersDict):
-    attributes: NotRequired[list[str] | None]
+    attributes: NotRequired[list[str]]
 
 
 class AnnotateEdgesParametersDictUtil(DictUtil[AnnotateEdgesParametersDict]):
@@ -247,7 +247,7 @@ class AnnotateEdgesParametersDictUtil(DictUtil[AnnotateEdgesParametersDict]):
 
 class OperationAnnotateEdgesDict(BaseOperationDict):
     id: Literal["annotate_edges"]
-    parameters: NotRequired[AnnotateEdgesParametersDict | None]
+    parameters: NotRequired[AnnotateEdgesParametersDict]
 
 
 class OperationAnnotateEdgesDictUtil(BaseOperationDictUtil):
@@ -258,7 +258,7 @@ class OperationAnnotateEdgesDictUtil(BaseOperationDictUtil):
 
 
 class AnnotateNodesParametersDict(OperationParametersDict):
-    attributes: NotRequired[list[str] | None]
+    attributes: NotRequired[list[str]]
 
 
 class AnnotateNodesParametersDictUtil(DictUtil[AnnotateNodesParametersDict]):
@@ -275,7 +275,7 @@ class AnnotateNodesParametersDictUtil(DictUtil[AnnotateNodesParametersDict]):
 
 class OperationAnnotateNodesDict(BaseOperationDict):
     id: Literal["annotate_nodes"]
-    parameters: NotRequired[AnnotateNodesParametersDict | None]
+    parameters: NotRequired[AnnotateNodesParametersDict]
 
 
 class OperationAnnotateNodesDictUtil(BaseOperationDictUtil):
@@ -287,7 +287,7 @@ class OperationAnnotateNodesDictUtil(BaseOperationDictUtil):
 
 class OperationBindDict(BaseOperationDict):
     id: Literal["bind"]
-    parameters: NotRequired[dict[str, FastJsonValue] | None]
+    parameters: NotRequired[dict[str, FastJsonValue]]
 
 
 class OperationBindDictUtil(BaseOperationDictUtil):
@@ -298,7 +298,7 @@ class OperationBindDictUtil(BaseOperationDictUtil):
 
 class OperationCompleteResultsDict(BaseOperationDict):
     id: Literal["complete_results"]
-    parameters: NotRequired[dict[str, FastJsonValue] | None]
+    parameters: NotRequired[dict[str, FastJsonValue]]
 
 
 class OperationCompleteResultsDictUtil(BaseOperationDictUtil):
@@ -309,7 +309,7 @@ class OperationCompleteResultsDictUtil(BaseOperationDictUtil):
 
 class EnrichResultsParametersDict(OperationParametersDict):
     pvalue_threshold: NotRequired[int | float]
-    qnode_keys: NotRequired[list[QNodeID] | None]
+    qnode_keys: NotRequired[list[QNodeID]]
 
 
 class EnrichResultsParametersDictUtil(DictUtil[EnrichResultsParametersDict]):
@@ -326,7 +326,7 @@ class EnrichResultsParametersDictUtil(DictUtil[EnrichResultsParametersDict]):
 
 class OperationEnrichResultsDict(BaseOperationDict):
     id: Literal["enrich_results"]
-    parameters: NotRequired[EnrichResultsParametersDict | None]
+    parameters: NotRequired[EnrichResultsParametersDict]
 
 
 class OperationEnrichResultsDictUtil(BaseOperationDictUtil):
@@ -337,7 +337,7 @@ class OperationEnrichResultsDictUtil(BaseOperationDictUtil):
 
 
 class FillAllowListParametersDict(AllowListDict):
-    qedge_keys: NotRequired[list[QEdgeID] | None]
+    qedge_keys: NotRequired[list[QEdgeID]]
 
 
 class FillAllowListParametersDictUtil(DictUtil[FillAllowListParametersDict]):
@@ -353,7 +353,7 @@ class FillAllowListParametersDictUtil(DictUtil[FillAllowListParametersDict]):
 
 
 class FillDenyListParametersDict(DenyListDict):
-    qedge_keys: NotRequired[list[QEdgeID] | None]
+    qedge_keys: NotRequired[list[QEdgeID]]
 
 
 class FillDenyListParametersDictUtil(DictUtil[FillDenyListParametersDict]):
@@ -371,7 +371,7 @@ class FillDenyListParametersDictUtil(DictUtil[FillDenyListParametersDict]):
 class OperationFillDict(BaseOperationDict):
     id: Literal["fill"]
     parameters: NotRequired[
-        FillAllowListParametersDict | FillDenyListParametersDict | None
+        FillAllowListParametersDict | FillDenyListParametersDict
     ]
 
 
@@ -384,7 +384,7 @@ class OperationFillDictUtil(BaseOperationDictUtil):
 
 class OperationFilterKgraphDict(BaseOperationDict):
     id: Literal["filter_kgraph"]
-    parameters: NotRequired[dict[str, FastJsonValue] | None]
+    parameters: NotRequired[dict[str, FastJsonValue]]
 
 
 class OperationFilterKgraphDictUtil(BaseOperationDictUtil):
@@ -394,7 +394,7 @@ class OperationFilterKgraphDictUtil(BaseOperationDictUtil):
 
 
 class FilterKgraphParametersBaseDict(OperationParametersDict):
-    qedge_keys: NotRequired[list[QEdgeID] | None]
+    qedge_keys: NotRequired[list[QEdgeID]]
     qnode_keys: NotRequired[list[QNodeID]]
 
 
@@ -493,7 +493,7 @@ class OperationFilterKgraphDiscreteKnodeAttributeDictUtil(BaseOperationDictUtil)
 
 class OperationFilterKgraphOrphansDict(BaseOperationDict):
     id: Literal["filter_kgraph_orphans"]
-    parameters: NotRequired[dict[str, FastJsonValue] | None]
+    parameters: NotRequired[dict[str, FastJsonValue]]
 
 
 class OperationFilterKgraphOrphansDictUtil(BaseOperationDictUtil):
@@ -574,7 +574,7 @@ class OperationFilterKgraphTopNDictUtil(BaseOperationDictUtil):
 
 class OperationFilterResultsDict(BaseOperationDict):
     id: Literal["filter_results"]
-    parameters: NotRequired[dict[str, FastJsonValue] | None]
+    parameters: NotRequired[dict[str, FastJsonValue]]
 
 
 class OperationFilterResultsDictUtil(BaseOperationDictUtil):
@@ -606,7 +606,7 @@ class OperationFilterResultsTopNDictUtil(BaseOperationDictUtil):
 
 class OperationLookupDict(BaseOperationDict):
     id: Literal["lookup"]
-    parameters: NotRequired[dict[str, FastJsonValue] | None]
+    parameters: NotRequired[dict[str, FastJsonValue]]
 
 
 class OperationLookupDictUtil(BaseOperationDictUtil):
@@ -618,7 +618,7 @@ class OperationLookupDictUtil(BaseOperationDictUtil):
 
 class OperationLookupAndScoreDict(BaseOperationDict):
     id: Literal["lookup_and_score"]
-    parameters: NotRequired[dict[str, FastJsonValue] | None]
+    parameters: NotRequired[dict[str, FastJsonValue]]
 
 
 class OperationLookupAndScoreDictUtil(BaseOperationDictUtil):
@@ -630,7 +630,7 @@ class OperationLookupAndScoreDictUtil(BaseOperationDictUtil):
 
 class OperationOverlayDict(BaseOperationDict):
     id: Literal["overlay"]
-    parameters: NotRequired[dict[str, FastJsonValue] | None]
+    parameters: NotRequired[dict[str, FastJsonValue]]
 
 
 class OperationOverlayDictUtil(BaseOperationDictUtil):
@@ -688,7 +688,7 @@ class OperationOverlayComputeNgdDictUtil(BaseOperationDictUtil):
 
 class OperationOverlayConnectKnodesDict(BaseOperationDict):
     id: Literal["overlay_connect_knodes"]
-    parameters: NotRequired[dict[str, FastJsonValue] | None]
+    parameters: NotRequired[dict[str, FastJsonValue]]
 
 
 class OperationOverlayConnectKnodesDictUtil(BaseOperationDictUtil):
@@ -701,7 +701,7 @@ class OverlayFisherExactTestParametersDict(OperationParametersDict):
     subject_qnode_key: QNodeID
     object_qnode_key: QNodeID
     virtual_relation_label: str
-    rel_edge_key: NotRequired[QEdgeID | None]
+    rel_edge_key: NotRequired[QEdgeID]
 
 
 class OverlayFisherExactTestParametersDictUtil(
@@ -725,7 +725,7 @@ class OperationOverlayFisherExactTestDictUtil(BaseOperationDictUtil):
 
 class OperationRestateDict(BaseOperationDict):
     id: Literal["restate"]
-    parameters: NotRequired[dict[str, FastJsonValue] | None]
+    parameters: NotRequired[dict[str, FastJsonValue]]
 
 
 class OperationRestateDictUtil(BaseOperationDictUtil):
@@ -737,7 +737,7 @@ class OperationRestateDictUtil(BaseOperationDictUtil):
 
 class OperationScoreDict(BaseOperationDict):
     id: Literal["score"]
-    parameters: NotRequired[dict[str, FastJsonValue] | None]
+    parameters: NotRequired[dict[str, FastJsonValue]]
 
 
 class OperationScoreDictUtil(BaseOperationDictUtil):
@@ -749,7 +749,7 @@ class OperationScoreDictUtil(BaseOperationDictUtil):
 
 class OperationSortResultsDict(BaseOperationDict):
     id: Literal["sort_results"]
-    parameters: NotRequired[dict[str, FastJsonValue] | None]
+    parameters: NotRequired[dict[str, FastJsonValue]]
 
 
 class OperationSortResultsDictUtil(BaseOperationDictUtil):
@@ -783,22 +783,22 @@ class OperationSortResultsEdgeAttributeDictUtil(BaseOperationDictUtil):
     _model = OperationSortResultsEdgeAttribute
 
 
-class SortResultNodeAttributeParametersDict(OperationParametersDict):
+class SortResultsNodeAttributeParametersDict(OperationParametersDict):
     node_attribute: str
     ascending_or_descending: AscendingOrDescending
-    qnode_keys: list[QNodeID] | None
+    qnode_keys: NotRequired[list[QNodeID]]
 
 
-class SortResultNodeAttributeParametersDictUtil(
-    DictUtil[SortResultNodeAttributeParametersDict]
+class SortResultsNodeAttributeParametersDictUtil(
+    DictUtil[SortResultsNodeAttributeParametersDict]
 ):
-    """Utility methods for `SortResultNodeAttributeParametersDict`, mirroring the model."""
+    """Utility methods for `SortResultsNodeAttributeParametersDict`, mirroring the model."""
 
-    _model = SortResultNodeAttributeParameters
+    _model = SortResultsNodeAttributeParameters
 
     @staticmethod
     def qnode_keys_list(
-        parameters: SortResultNodeAttributeParametersDict,
+        parameters: SortResultsNodeAttributeParametersDict,
     ) -> list[QNodeID]:
         """Return a guaranteed list of qnode_keys, empty if it is not defined."""
         qnode_keys = parameters.get("qnode_keys")
@@ -807,7 +807,7 @@ class SortResultNodeAttributeParametersDictUtil(
 
 class OperationSortResultsNodeAttributeDict(BaseOperationDict):
     id: Literal["sort_results_node_attribute"]
-    parameters: SortResultNodeAttributeParametersDict
+    parameters: SortResultsNodeAttributeParametersDict
 
 
 class OperationSortResultsNodeAttributeDictUtil(BaseOperationDictUtil):

@@ -28,13 +28,13 @@ __all__ = [
 
 class AttributeDict(TypedDict):
     attribute_type_id: CURIE
-    original_attribute_name: NotRequired[str | None]
+    original_attribute_name: NotRequired[str]
     value: FastJsonValue
-    value_type_id: NotRequired[CURIE | None]
-    attribute_source: NotRequired[str | None]
-    value_url: NotRequired[str | None]
-    description: NotRequired[str | None]
-    attributes: NotRequired[list[AttributeDict] | None]
+    value_type_id: NotRequired[CURIE]
+    attribute_source: NotRequired[str]
+    value_url: NotRequired[str]
+    description: NotRequired[str]
+    attributes: NotRequired[list[AttributeDict]]
 
 
 class AttributeDictUtil(DictUtil[AttributeDict]):
@@ -82,12 +82,12 @@ AttributeConstraintDict = TypedDict(
     "AttributeConstraintDict",
     {
         "id": CURIE,
-        "name": NotRequired[str | None],
+        "name": NotRequired[str],
         "not": NotRequired[bool],
         "operator": Operator,
         "value": FastJsonValue,
-        "unit_id": NotRequired[CURIE | None],
-        "unit_name": NotRequired[str | None],
+        "unit_id": NotRequired[CURIE],
+        "unit_name": NotRequired[str],
     },
 )
 

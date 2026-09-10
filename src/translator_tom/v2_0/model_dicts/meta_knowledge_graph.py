@@ -38,7 +38,7 @@ __all__ = [
 
 class MetaNodeDict(TypedDict):
     id_prefixes: list[str]
-    attributes: NotRequired[list[MetaAttributeDict] | None]
+    attributes: NotRequired[list[MetaAttributeDict]]
 
 
 class MetaNodeDictUtil(DictUtil[MetaNodeDict]):
@@ -71,13 +71,13 @@ class MetaEdgeDict(TypedDict):
     subject: Biolink.Entity
     predicate: Biolink.Predicate
     object: Biolink.Entity
-    knowledge_types: NotRequired[list[KnowledgeType] | None]
-    attributes: NotRequired[list[MetaAttributeDict] | None]
-    qualifiers: NotRequired[list[MetaQualifierDict] | None]
-    association: NotRequired[Biolink.Entity | None]
-    knowledge_levels: NotRequired[list[str] | None]
-    agent_types: NotRequired[list[str] | None]
-    sources: NotRequired[list[Infores] | None]
+    knowledge_types: NotRequired[list[KnowledgeType]]
+    attributes: NotRequired[list[MetaAttributeDict]]
+    qualifiers: NotRequired[list[MetaQualifierDict]]
+    association: NotRequired[Biolink.Entity]
+    knowledge_levels: NotRequired[list[str]]
+    agent_types: NotRequired[list[str]]
+    sources: NotRequired[list[Infores]]
 
 
 class MetaEdgeDictUtil(DictUtil[MetaEdgeDict]):

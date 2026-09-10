@@ -35,8 +35,8 @@ class AsyncQueryDict(QueryDict):
 
 
 class AsyncQueryResponseDict(TypedDict):
-    status: NotRequired[str | None]
-    description: NotRequired[str | None]
+    status: NotRequired[str]
+    description: NotRequired[str]
     job_id: str
 
 
@@ -44,7 +44,7 @@ class AsyncQueryStatusResponseDict(TypedDict):
     status: str
     description: str
     logs: list[LogEntryDict]
-    response_url: NotRequired[str | None]
+    response_url: NotRequired[str]
 
 
 class AsyncQueryDictUtil(DictUtil[AsyncQueryDict]):

@@ -11,7 +11,7 @@ __all__ = ["MetaQualifierDict", "MetaQualifierDictUtil"]
 
 class MetaQualifierDict(TypedDict):
     qualifier_type_id: Biolink.Qualifier
-    applicable_values: NotRequired[list[str] | None]
+    applicable_values: NotRequired[list[str]]
 
 
 class MetaQualifierDictUtil(DictUtil[MetaQualifierDict]):

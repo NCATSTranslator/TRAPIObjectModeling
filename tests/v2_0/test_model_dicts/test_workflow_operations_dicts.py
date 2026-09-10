@@ -21,8 +21,8 @@ from translator_tom.v2_0.model_dicts.workflow_operations import (
     OperationOverlayFisherExactTestDictUtil,
     OperationScoreDictUtil,
     OverlayFisherExactTestParametersDictUtil,
-    SortResultNodeAttributeParametersDict,
-    SortResultNodeAttributeParametersDictUtil,
+    SortResultsNodeAttributeParametersDict,
+    SortResultsNodeAttributeParametersDictUtil,
 )
 from translator_tom.v2_0.models.workflow_operations import (
     AllowList,
@@ -87,12 +87,12 @@ class TestParameterListAccessors:
         ]
 
     def test_sort_node_attribute_qnode_keys(self):
-        params: SortResultNodeAttributeParametersDict = {
+        params: SortResultsNodeAttributeParametersDict = {
             "node_attribute": "x",
             "ascending_or_descending": "ascending",
             "qnode_keys": None,
         }
-        assert SortResultNodeAttributeParametersDictUtil.qnode_keys_list(params) == []
+        assert SortResultsNodeAttributeParametersDictUtil.qnode_keys_list(params) == []
 
 
 class TestOperationHashParity:

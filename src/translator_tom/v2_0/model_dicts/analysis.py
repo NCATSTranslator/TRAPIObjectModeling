@@ -26,12 +26,12 @@ _BindingDictT = TypeVar("_BindingDictT", EdgeBindingDict, PathBindingDict)
 
 class AnalysisDict(TypedDict):
     resource_id: CURIE
-    edge_bindings: NotRequired[dict[QEdgeID, EdgeBindingDict] | None]
-    path_bindings: NotRequired[dict[QPathID, PathBindingDict] | None]
-    score: NotRequired[float | None]
-    support_graphs: NotRequired[list[AuxGraphID] | None]
-    scoring_method: NotRequired[str | None]
-    attributes: NotRequired[list[AttributeDict] | None]
+    edge_bindings: NotRequired[dict[QEdgeID, EdgeBindingDict]]
+    path_bindings: NotRequired[dict[QPathID, PathBindingDict]]
+    score: NotRequired[float]
+    support_graphs: NotRequired[list[AuxGraphID]]
+    scoring_method: NotRequired[str]
+    attributes: NotRequired[list[AttributeDict]]
 
 
 class AnalysisDictUtil(DictUtil[AnalysisDict]):
