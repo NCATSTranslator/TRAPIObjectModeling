@@ -38,11 +38,11 @@ __all__ = [
 
 
 class QNodeDict(TypedDict):
-    ids: NotRequired[list[CURIE] | None]
-    categories: NotRequired[list[Biolink.Entity] | None]
-    set_interpretation: NotRequired[SetInterpretation | None]
-    member_ids: NotRequired[list[CURIE] | None]
-    constraints: NotRequired[list[AttributeConstraintDict] | None]
+    ids: NotRequired[list[CURIE]]
+    categories: NotRequired[list[Biolink.Entity]]
+    set_interpretation: NotRequired[SetInterpretation]
+    member_ids: NotRequired[list[CURIE]]
+    constraints: NotRequired[list[AttributeConstraintDict]]
 
 
 class QNodeDictUtil(DictUtil[QNodeDict]):
@@ -76,11 +76,11 @@ class QNodeDictUtil(DictUtil[QNodeDict]):
 
 
 class QEdgeDict(TypedDict):
-    knowledge_type: NotRequired[KnowledgeType | None]
-    predicates: NotRequired[list[Biolink.Predicate] | None]
+    knowledge_type: NotRequired[KnowledgeType]
+    predicates: NotRequired[list[Biolink.Predicate]]
     subject: QNodeID
     object: QNodeID
-    constraints: NotRequired[QEdgeConstraintsDict | None]
+    constraints: NotRequired[QEdgeConstraintsDict]
 
 
 class QEdgeDictUtil(DictUtil[QEdgeDict]):
@@ -128,8 +128,8 @@ class QEdgeDictUtil(DictUtil[QEdgeDict]):
 class QPathDict(TypedDict):
     subject: QNodeID
     object: QNodeID
-    predicates: NotRequired[list[Biolink.Predicate] | None]
-    constraints: NotRequired[list[PathConstraintDict] | None]
+    predicates: NotRequired[list[Biolink.Predicate]]
+    constraints: NotRequired[list[PathConstraintDict]]
 
 
 class QPathDictUtil(DictUtil[QPathDict]):
@@ -152,8 +152,8 @@ class QPathDictUtil(DictUtil[QPathDict]):
 
 class QueryGraphDict(TypedDict):
     nodes: dict[QNodeID, QNodeDict]
-    edges: NotRequired[dict[QEdgeID, QEdgeDict] | None]
-    paths: NotRequired[dict[QPathID, QPathDict] | None]
+    edges: NotRequired[dict[QEdgeID, QEdgeDict]]
+    paths: NotRequired[dict[QPathID, QPathDict]]
 
 
 class QueryGraphDictUtil(DictUtil[QueryGraphDict]):

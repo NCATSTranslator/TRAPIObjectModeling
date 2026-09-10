@@ -4,7 +4,7 @@ from typing_extensions import NotRequired, TypedDict
 
 from translator_tom.utils.biolink import Biolink
 from translator_tom.utils.dict_util_base import DictUtil
-from translator_tom.utils.shared import KnowledgeType
+from translator_tom.utils.shared import Infores, KnowledgeType
 from translator_tom.v2_0.model_dicts.attribute import (
     AttributeConstraintDict,
     AttributeConstraintDictUtil,
@@ -23,6 +23,7 @@ from translator_tom.v2_0.models.meta_knowledge_graph import (
     MetaKnowledgeGraph,
     MetaNode,
     merged_applicable_values,
+    merged_list,
 )
 
 __all__ = [
@@ -37,7 +38,7 @@ __all__ = [
 
 class MetaNodeDict(TypedDict):
     id_prefixes: list[str]
-    attributes: NotRequired[list[MetaAttributeDict] | None]
+    attributes: NotRequired[list[MetaAttributeDict]]
 
 
 class MetaNodeDictUtil(DictUtil[MetaNodeDict]):
@@ -70,10 +71,13 @@ class MetaEdgeDict(TypedDict):
     subject: Biolink.Entity
     predicate: Biolink.Predicate
     object: Biolink.Entity
-    knowledge_types: NotRequired[list[KnowledgeType] | None]
-    attributes: NotRequired[list[MetaAttributeDict] | None]
-    qualifiers: NotRequired[list[MetaQualifierDict] | None]
-    association: NotRequired[Biolink.Entity | None]
+    knowledge_types: NotRequired[list[KnowledgeType]]
+    attributes: NotRequired[list[MetaAttributeDict]]
+    qualifiers: NotRequired[list[MetaQualifierDict]]
+    association: NotRequired[Biolink.Entity]
+    knowledge_levels: NotRequired[list[str]]
+    agent_types: NotRequired[list[str]]
+    sources: NotRequired[list[Infores]]
 
 
 class MetaEdgeDictUtil(DictUtil[MetaEdgeDict]):
@@ -100,17 +104,47 @@ class MetaEdgeDictUtil(DictUtil[MetaEdgeDict]):
         return qualifiers if qualifiers is not None else []
 
     @staticmethod
+    def knowledge_levels_list(meta_edge: MetaEdgeDict) -> list[str]:
+        """Get the knowledge levels as a guaranteed list, even if they are represented as None."""
+        knowledge_levels = meta_edge.get("knowledge_levels")
+        return knowledge_levels if knowledge_levels is not None else []
+
+    @staticmethod
+    def agent_types_list(meta_edge: MetaEdgeDict) -> list[str]:
+        """Get the agent types as a guaranteed list, even if they are represented as None."""
+        agent_types = meta_edge.get("agent_types")
+        return agent_types if agent_types is not None else []
+
+    @staticmethod
+    def sources_list(meta_edge: MetaEdgeDict) -> list[Infores]:
+        """Get the sources as a guaranteed list, even if they are represented as None."""
+        sources = meta_edge.get("sources")
+        return sources if sources is not None else []
+
+    @staticmethod
     def update(meta_edge: MetaEdgeDict, other: MetaEdgeDict) -> None:
         """Update the meta edge in-place with another meta edge."""
-        edge_kt = meta_edge.get("knowledge_types")
-        other_kt = other.get("knowledge_types")
-        if (not edge_kt) and other_kt:
-            meta_edge["knowledge_types"] = other_kt
-        elif edge_kt and other_kt:
-            meta_edge["knowledge_types"] = list(
-                set(MetaEdgeDictUtil.knowledge_types_list(meta_edge))
-                | set(MetaEdgeDictUtil.knowledge_types_list(other))
-            )
+        knowledge_types = merged_list(
+            meta_edge.get("knowledge_types"), other.get("knowledge_types")
+        )
+        if knowledge_types is not None:
+            meta_edge["knowledge_types"] = knowledge_types
+
+        knowledge_levels = merged_list(
+            meta_edge.get("knowledge_levels"), other.get("knowledge_levels")
+        )
+        if knowledge_levels is not None:
+            meta_edge["knowledge_levels"] = knowledge_levels
+
+        agent_types = merged_list(
+            meta_edge.get("agent_types"), other.get("agent_types")
+        )
+        if agent_types is not None:
+            meta_edge["agent_types"] = agent_types
+
+        sources = merged_list(meta_edge.get("sources"), other.get("sources"))
+        if sources is not None:
+            meta_edge["sources"] = sources
 
         edge_attrs = meta_edge.get("attributes")
         other_attrs = other.get("attributes")
@@ -126,6 +160,11 @@ class MetaEdgeDictUtil(DictUtil[MetaEdgeDict]):
                 attrs[MetaAttributeDictUtil.hash(attr)] = attr
             meta_edge["attributes"] = list(attrs.values())
 
+        MetaEdgeDictUtil._merge_qualifiers(meta_edge, other)
+
+    @staticmethod
+    def _merge_qualifiers(meta_edge: MetaEdgeDict, other: MetaEdgeDict) -> None:
+        """Union `other`'s qualifiers into `meta_edge` in place, merging shared types' values."""
         other_quals = other.get("qualifiers")
         if not other_quals:
             return

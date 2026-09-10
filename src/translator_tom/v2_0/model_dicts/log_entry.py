@@ -12,8 +12,8 @@ __all__ = ["LogEntryDict", "LogEntryDictUtil"]
 
 class LogEntryDict(TypedDict):
     timestamp: str
-    level: NotRequired[LogLevel | None]
-    code: NotRequired[str | None]
+    level: NotRequired[LogLevel]
+    code: NotRequired[str]
     message: str
 
 

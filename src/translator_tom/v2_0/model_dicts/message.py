@@ -27,10 +27,10 @@ __all__ = ["MessageDict", "MessageDictUtil"]
 
 
 class MessageDict(TypedDict):
-    results: NotRequired[list[ResultDict] | None]
-    query_graph: NotRequired[QueryGraphDict | None]
-    knowledge_graph: NotRequired[KnowledgeGraphDict | None]
-    auxiliary_graphs: NotRequired[dict[AuxGraphID, AuxiliaryGraphDict] | None]
+    results: NotRequired[list[ResultDict]]
+    query_graph: NotRequired[QueryGraphDict]
+    knowledge_graph: NotRequired[KnowledgeGraphDict]
+    auxiliary_graphs: NotRequired[dict[AuxGraphID, AuxiliaryGraphDict]]
 
 
 def _query_graph_hash(query_graph: QueryGraphDict | None) -> str | None:

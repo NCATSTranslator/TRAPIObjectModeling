@@ -68,8 +68,8 @@ __all__ = [
     "PlusOrMinus",
     "PlusOrMinusEnum",
     "RunnerParameters",
-    "SortResultNodeAttributeParameters",
     "SortResultsEdgeAttributeParameters",
+    "SortResultsNodeAttributeParameters",
     "SortResultsScoreParameters",
     "TopOrBottom",
     "TopOrBottomEnum",
@@ -714,15 +714,15 @@ class OperationSortResultsEdgeAttribute(BaseOperation):
     parameters: SortResultsEdgeAttributeParameters
 
 
-class SortResultNodeAttributeParameters(OperationParameters):
-    """Parameters for the SortResultNodeAttribute operation."""
+class SortResultsNodeAttributeParameters(OperationParameters):
+    """Parameters for the SortResultsNodeAttribute operation."""
 
     node_attribute: Annotated[str, Field(examples=["normalized_google_distance"])]
     """The name of the node attribute to order by."""
 
     ascending_or_descending: AscendingOrDescending
 
-    qnode_keys: Annotated[list[QNodeID] | None, Field(examples=["[e01]"])]
+    qnode_keys: Annotated[list[QNodeID] | None, Field(examples=["[e01]"])] = None
     """This indicates if you only want to consider nodes with specific node_keys.
 
     If not provided or empty, all nodes will be looked at.
@@ -744,7 +744,7 @@ class OperationSortResultsNodeAttribute(BaseOperation):
     """
 
     id: Literal["sort_results_node_attribute"]
-    parameters: SortResultNodeAttributeParameters
+    parameters: SortResultsNodeAttributeParameters
 
 
 class SortResultsScoreParameters(OperationParameters):

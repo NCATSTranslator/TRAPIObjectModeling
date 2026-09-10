@@ -52,10 +52,10 @@ __all__ = [
 
 
 class NodeDict(TypedDict):
-    name: NotRequired[str | None]
+    name: NotRequired[str]
     categories: list[Biolink.Entity]
-    attributes: NotRequired[list[AttributeDict] | None]
-    is_set: NotRequired[bool | None]
+    attributes: NotRequired[list[AttributeDict]]
+    is_set: NotRequired[bool]
 
 
 class NodeDictUtil(DictUtil[NodeDict]):
@@ -90,7 +90,9 @@ class NodeDictUtil(DictUtil[NodeDict]):
 
         Does not mutate `other`.
         """
-        node["name"] = other.get("name") or node.get("name")
+        name = other.get("name") or node.get("name")
+        if name is not None:
+            node["name"] = name
         node["categories"] = list(set(node["categories"]) | set(other["categories"]))
 
         other_attrs = other.get("attributes")
@@ -108,8 +110,8 @@ class EdgeDict(TypedDict):
     predicate: Biolink.Predicate
     subject: CURIE
     object: CURIE
-    attributes: NotRequired[list[AttributeDict] | None]
-    qualifiers: NotRequired[list[QualifierDict] | None]
+    attributes: NotRequired[list[AttributeDict]]
+    qualifiers: NotRequired[list[QualifierDict]]
     sources: list[RetrievalSourceDict]
     knowledge_level: str
     agent_type: str
@@ -313,7 +315,7 @@ class EdgeDictUtil(DictUtil[EdgeDict]):
 
 class KnowledgeGraphDict(TypedDict):
     nodes: dict[CURIE, NodeDict]
-    edges: NotRequired[dict[EdgeID, EdgeDict] | None]
+    edges: NotRequired[dict[EdgeID, EdgeDict]]
 
 
 class KnowledgeGraphDictUtil(DictUtil[KnowledgeGraphDict]):
@@ -490,9 +492,11 @@ class KnowledgeGraphDictUtil(DictUtil[KnowledgeGraphDict]):
             for aux_graph_id in cast("list[str]", edge_aux_graphs["value"]):
                 edges_to_check.extend(aux_graphs[aux_graph_id]["edges"])
 
-        knowledge_graph["edges"] = {
-            edge_id: edges[edge_id] for edge_id in bound_edges
-        } or None
+        bound = {edge_id: edges[edge_id] for edge_id in bound_edges}
+        if bound:
+            knowledge_graph["edges"] = bound
+        else:
+            knowledge_graph.pop("edges", None)
         knowledge_graph["nodes"] = {
             curie: knowledge_graph["nodes"][curie] for curie in bound_nodes
         }

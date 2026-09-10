@@ -12,8 +12,8 @@ __all__ = ["QueryParametersDict", "QueryParametersDictUtil"]
 
 
 class QueryParametersDict(TypedDict):
-    timeout: NotRequired[float | None]
-    log_level: NotRequired[LogLevel | None]
+    timeout: NotRequired[float]
+    log_level: NotRequired[LogLevel]
     bypass_cache: NotRequired[bool]
 
 

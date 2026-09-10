@@ -27,8 +27,8 @@ from translator_tom.v2_0.models.workflow_operations import (
     OverlayComputeJaccardParameters,
     OverlayComputeNgdParameters,
     OverlayFisherExactTestParameters,
-    SortResultNodeAttributeParameters,
     SortResultsEdgeAttributeParameters,
+    SortResultsNodeAttributeParameters,
 )
 from translator_tom.v2_0.validation._util import (
     Location,
@@ -298,9 +298,9 @@ def _validate_sort_edge_attr_params(
     )
 
 
-@semantic_validate.register(SortResultNodeAttributeParameters)
+@semantic_validate.register(SortResultsNodeAttributeParameters)
 def _validate_sort_node_attr_params(
-    obj: SortResultNodeAttributeParameters,
+    obj: SortResultsNodeAttributeParameters,
     location: Location | None = None,
     *,
     qgraph: QueryGraph | None = None,

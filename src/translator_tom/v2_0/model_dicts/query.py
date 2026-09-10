@@ -12,10 +12,10 @@ __all__ = ["QueryDict", "QueryDictUtil"]
 
 
 class QueryDict(TypedDict):
-    submitter: NotRequired[str | None]
-    parameters: NotRequired[QueryParametersDict | None]
+    submitter: NotRequired[str]
+    parameters: NotRequired[QueryParametersDict]
     message: MessageDict
-    workflow: NotRequired[list[OperationDict] | None]
+    workflow: NotRequired[list[OperationDict]]
 
 
 class QueryDictUtil(DictUtil[QueryDict]):
