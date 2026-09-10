@@ -370,9 +370,7 @@ class FillDenyListParametersDictUtil(DictUtil[FillDenyListParametersDict]):
 
 class OperationFillDict(BaseOperationDict):
     id: Literal["fill"]
-    parameters: NotRequired[
-        FillAllowListParametersDict | FillDenyListParametersDict
-    ]
+    parameters: NotRequired[FillAllowListParametersDict | FillDenyListParametersDict]
 
 
 class OperationFillDictUtil(BaseOperationDictUtil):
