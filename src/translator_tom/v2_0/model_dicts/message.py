@@ -1,12 +1,19 @@
 from __future__ import annotations
 
 from copy import deepcopy
-from typing import Literal
+from typing import Literal, cast
 
 from typing_extensions import NotRequired, TypedDict
 
+from translator_tom.utils import set_interpretation
 from translator_tom.utils.dict_util_base import DictUtil
-from translator_tom.utils.shared import AuxGraphID, EdgeID
+from translator_tom.utils.set_interpretation import (
+    QNodeSpec,
+    QueryStamp,
+    ResultStamp,
+    SolvedResult,
+)
+from translator_tom.utils.shared import CURIE, AuxGraphID, EdgeID, QNodeID
 from translator_tom.v2_0.model_dicts.auxiliary_graph import (
     AuxiliaryGraphDict,
     AuxiliaryGraphDictUtil,
@@ -17,6 +24,7 @@ from translator_tom.v2_0.model_dicts.knowledge_graph import (
     KnowledgeGraphDictUtil,
 )
 from translator_tom.v2_0.model_dicts.query_graph import (
+    QNodeDictUtil,
     QueryGraphDict,
     QueryGraphDictUtil,
 )
@@ -170,3 +178,134 @@ class MessageDictUtil(DictUtil[MessageDict]):
             MessageDictUtil.auxiliary_graphs_dict(message),
             MessageDictUtil.results_list(message),
         )
+
+    @staticmethod
+    def solve_set_interpretation(
+        message: MessageDict,
+        *,
+        skip_many: bool = False,
+        max_collate_candidates: int = 64,
+        max_collate_cliques: int = 4096,
+    ) -> None:
+        """Rewrite `results` in place to obey each QNode's set_interpretation.
+
+        Mirrors `Message.solve_set_interpretation`.
+        Each input Result must be an expanded (one knode per qnode), valid query-graph match.
+        Connectivity is inferred from node bindings + qedge topology.
+
+        BATCH keys the grouping.
+        ALL binds its set node; every member must be edge-connected to its
+        neighbors, else the batch-group is dropped.
+        COLLATE binds every node edge-connected to its neighbors; adjacent
+        COLLATE nodes split into maximal complete-multipartite groups (multiple
+        results).
+        The knowledge_graph is left untouched -- call `prune_kg` afterward.
+
+        Args:
+            message: The message to solve in place.
+            skip_many: Treat MANY nodes as BATCH instead of raising.
+            max_collate_candidates: Reject (raise `ValueError`) an adjacent-COLLATE
+                component with more candidates than this -- a cheap guard before
+                enumeration (0 rejects any adjacent COLLATE, a negative value
+                disables it), which additionally raises past `max_collate_cliques`.
+            max_collate_cliques: Reject (raise `ValueError`) an adjacent-COLLATE
+                component enumerating more maximal cliques than this (a negative
+                value disables it).
+        """
+        query_graph = message.get("query_graph")
+        results = message.get("results")
+        if query_graph is None or not results:
+            return
+
+        query = MessageDictUtil._stamp_query(query_graph)
+        result_stamps = MessageDictUtil._stamp_results(results)
+        kg = message.get("knowledge_graph")
+        kg_node_ids = kg["nodes"].keys() if kg else ()
+        solved_results = set_interpretation.solve(
+            query,
+            result_stamps,
+            kg_node_ids,
+            skip_many=skip_many,
+            max_collate_candidates=max_collate_candidates,
+            max_collate_cliques=max_collate_cliques,
+        )
+        message["results"] = [
+            MessageDictUtil._materialize(results, solved_result)
+            for solved_result in solved_results
+        ]
+
+    @staticmethod
+    def _stamp_query(query_graph: QueryGraphDict) -> QueryStamp:
+        """Stamp the query graph into the plain-string form `solve` operates on.
+
+        Args:
+            query_graph: The query graph to stamp.
+
+        Returns:
+            The `QueryStamp` (each QNode's `QNodeSpec`, and qedge `(subject, object)`).
+        """
+        nodes = {
+            qnode_id: QNodeSpec(
+                qnode.get("set_interpretation") or "BATCH",
+                QNodeDictUtil.ids_list(qnode),
+                QNodeDictUtil.member_ids_list(qnode),
+            )
+            for qnode_id, qnode in query_graph["nodes"].items()
+        }
+        qedges = {
+            qedge_id: (qedge["subject"], qedge["object"])
+            for qedge_id, qedge in QueryGraphDictUtil.edges_dict(query_graph).items()
+        }
+        return QueryStamp(nodes, qedges)
+
+    @staticmethod
+    def _stamp_results(results: list[ResultDict]) -> list[ResultStamp]:
+        """Stamp each Result into a `ResultStamp` (enforcing the contract).
+
+        Args:
+            results: The results to stamp.
+
+        Returns:
+            One `ResultStamp` per input Result, aligned to `results`.
+        """
+        stamps = list[ResultStamp]()
+        for result in results:
+            stamp = dict[QNodeID, CURIE]()
+            for qnode_id, binding in result["node_bindings"].items():
+                if len(binding["ids"]) != 1:
+                    raise ValueError(
+                        "solve_set_interpretation requires expanded results (one knode per QNode); "
+                        f"a result binds '{qnode_id}' to {len(binding['ids'])} ids."
+                    )
+                stamp[qnode_id] = binding["ids"][0]
+            stamps.append(stamp)
+        return stamps
+
+    @staticmethod
+    def _materialize(
+        results: list[ResultDict], solved_result: SolvedResult
+    ) -> ResultDict:
+        """Build a Result from the backing results and the solved set-node bindings.
+
+        Args:
+            results: The full result list (indexed by `solved_result.backing_indices`).
+            solved_result: One solved result (set-node bindings + backing indices).
+
+        Returns:
+            One merged Result with ALL/COLLATE bindings applied.
+        """
+        backing_results = [results[index] for index in solved_result.backing_indices]
+        if len(backing_results) == 1:
+            # Single backing: no merge, so shallow-copy and rewrite only node_bindings
+            first = backing_results[0]
+            base = cast(
+                ResultDict, {**first, "node_bindings": {**first["node_bindings"]}}
+            )
+        else:
+            base = deepcopy(backing_results[0])
+            for other in backing_results[1:]:
+                ResultDictUtil.update(base, other)
+
+        for qnode_id, ids in solved_result.set_bindings.items():
+            base["node_bindings"][qnode_id] = {"ids": ids}
+        return base

@@ -33,11 +33,21 @@ from translator_tom.utils.dict_util_base import DictUtil
 NAMESPACE_MODULES = {"workflow_operations": "workflow"}
 
 # Symbols intentionally in a submodule __all__ but not flattened into the package __all__.
+_SET_INTERP_INTERNAL = (
+    "internal set-interpretation solver core; consumed via "
+    "translator_tom.utils.set_interpretation by the message adapters, not part of "
+    "the flat public API"
+)
 EXPECTED_NOT_REEXPORTED = {
     ("cache", "lru_copy_cache"): (
         "internal caching helper; consumed via translator_tom.utils.cache within the "
         "library, not part of the flat public API"
     ),
+    ("set_interpretation", "solve"): _SET_INTERP_INTERNAL,
+    ("set_interpretation", "QNodeSpec"): _SET_INTERP_INTERNAL,
+    ("set_interpretation", "QueryStamp"): _SET_INTERP_INTERNAL,
+    ("set_interpretation", "ResultStamp"): _SET_INTERP_INTERNAL,
+    ("set_interpretation", "SolvedResult"): _SET_INTERP_INTERNAL,
 }
 
 # Known REAL drift: name in a submodule __all__ but never re-exported -> xfail(strict=False).

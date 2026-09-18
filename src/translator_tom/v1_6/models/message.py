@@ -4,13 +4,21 @@ from typing import ClassVar, Literal
 
 from pydantic import ConfigDict
 
+from translator_tom.utils import set_interpretation
 from translator_tom.utils.object_base import TOMBase
-from translator_tom.utils.shared import EdgeID
+from translator_tom.utils.set_interpretation import (
+    QNodeSpec,
+    QueryStamp,
+    ResultStamp,
+    SolvedResult,
+)
+from translator_tom.utils.shared import CURIE, EdgeID, QNodeID
 from translator_tom.v1_6.models.auxiliary_graph import (
     AuxiliaryGraph,
     AuxiliaryGraphsDict,
 )
 from translator_tom.v1_6.models.knowledge_graph import KnowledgeGraph
+from translator_tom.v1_6.models.node_binding import NodeBinding
 from translator_tom.v1_6.models.query_graph import PathfinderQueryGraph, QueryGraph
 from translator_tom.v1_6.models.result import Result
 
@@ -167,3 +175,107 @@ class Message(TOMBase):
         if self.knowledge_graph is None:
             return
         self.knowledge_graph.prune(self.auxiliary_graphs_dict, self.results_list)
+
+    def solve_set_interpretation(self, *, skip_many: bool = False) -> None:
+        """Rewrite `results` in place to obey each QNode's set_interpretation.
+
+        Each input Result must be an expanded (one knode per qnode), valid query-graph match.
+        Connectivity is inferred from node bindings + qedge topology.
+
+        BATCH keys the grouping.
+        ALL binds its set node; every member must be edge-connected to its
+        neighbors, else the batch-group is dropped.
+        The knowledge_graph is left untouched -- call `prune_kg()` afterward.
+
+        Args:
+            skip_many: Treat MANY nodes as BATCH instead of raising.
+        """
+        if self.query_graph is None or not self.results:
+            return
+
+        query = self._stamp_query(self.query_graph)
+        result_stamps = self._stamp_results(self.results)
+        kg_node_ids = self.knowledge_graph.nodes.keys() if self.knowledge_graph else ()
+        solved_results = set_interpretation.solve(
+            query, result_stamps, kg_node_ids, skip_many=skip_many
+        )
+        self.results = [
+            self._materialize(self.results, solved_result)
+            for solved_result in solved_results
+        ]
+
+    @staticmethod
+    def _stamp_query(
+        query_graph: QueryGraph | PathfinderQueryGraph,
+    ) -> QueryStamp:
+        """Stamp the query graph into the plain-string form `solve` operates on.
+
+        Args:
+            query_graph: The query graph to stamp (Pathfinder has no qedges).
+
+        Returns:
+            The `QueryStamp` (each QNode's `QNodeSpec`, and qedge `(subject, object)`).
+        """
+        nodes = {
+            qnode_id: QNodeSpec(
+                qnode.set_interpretation or "BATCH",
+                qnode.ids_list,
+                qnode.member_ids_list,
+            )
+            for qnode_id, qnode in query_graph.nodes.items()
+        }
+        edges = query_graph.edges if isinstance(query_graph, QueryGraph) else {}
+        qedges = {
+            qedge_id: (qedge.subject, qedge.object) for qedge_id, qedge in edges.items()
+        }
+        return QueryStamp(nodes, qedges)
+
+    @staticmethod
+    def _stamp_results(results: list[Result]) -> list[ResultStamp]:
+        """Stamp each Result into a `ResultStamp` (enforcing the contract).
+
+        Args:
+            results: The results to stamp.
+
+        Returns:
+            One `ResultStamp` per input Result, aligned to `results`.
+        """
+        stamps = list[ResultStamp]()
+        for result in results:
+            stamp = dict[QNodeID, CURIE]()
+            for qnode_id, bindings in result.node_bindings.items():
+                if len(bindings) != 1:
+                    raise ValueError(
+                        "solve_set_interpretation requires expanded results (one knode per QNode); "
+                        f"a result binds '{qnode_id}' with {len(bindings)} node bindings."
+                    )
+                stamp[qnode_id] = bindings[0].id
+            stamps.append(stamp)
+        return stamps
+
+    @staticmethod
+    def _materialize(results: list[Result], solved_result: SolvedResult) -> Result:
+        """Build a Result from the backing results and the solved set-node bindings.
+
+        Args:
+            results: The full result list (indexed by `solved_result.backing_indices`).
+            solved_result: One solved result (set-node bindings + backing indices).
+
+        Returns:
+            One merged Result with ALL bindings applied.
+        """
+        backing_results = [results[index] for index in solved_result.backing_indices]
+        if len(backing_results) == 1:
+            # Single backing: no merge, so shallow-copy and rewrite only node_bindings
+            first = backing_results[0]
+            base = first.model_copy(update={"node_bindings": dict(first.node_bindings)})
+        else:
+            base = backing_results[0].model_copy(deep=True)
+            for other in backing_results[1:]:
+                base.update(other)
+
+        for qnode_id, ids in solved_result.set_bindings.items():
+            base.node_bindings[qnode_id] = [
+                NodeBinding(id=knode, attributes=[]) for knode in ids
+            ]
+        return base
