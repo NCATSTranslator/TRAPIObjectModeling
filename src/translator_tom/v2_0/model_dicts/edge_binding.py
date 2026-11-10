@@ -1,8 +1,6 @@
 from __future__ import annotations
 
-from typing_extensions import TypedDict
-
-from translator_tom.utils.dict_util_base import DictUtil
+from translator_tom.utils.dict_util_base import DictUtil, TOMBaseDict
 from translator_tom.utils.hash import tomhash
 from translator_tom.utils.shared import EdgeID
 from translator_tom.v2_0.models.edge_binding import EdgeBinding
@@ -10,7 +8,7 @@ from translator_tom.v2_0.models.edge_binding import EdgeBinding
 __all__ = ["EdgeBindingDict", "EdgeBindingDictUtil"]
 
 
-class EdgeBindingDict(TypedDict):
+class EdgeBindingDict(TOMBaseDict):
     ids: list[EdgeID]
 
 

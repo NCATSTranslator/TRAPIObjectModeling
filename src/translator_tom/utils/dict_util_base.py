@@ -5,7 +5,12 @@ Provides shared I/O and model-parity hashing over the raw `TypedDict` form.
 
 from __future__ import annotations
 
-__all__ = ["DictUtil", "register_union_discriminator"]
+__all__ = [
+    "DictUtil",
+    "TOMBaseDict",
+    "TOMBaseDictForbid",
+    "register_union_discriminator",
+]
 
 import types
 from collections.abc import Callable, Iterable, Mapping
@@ -25,14 +30,31 @@ from typing import (
 
 import orjson
 import ormsgpack
-from pydantic import TypeAdapter
+from pydantic import ConfigDict, TypeAdapter, with_config
 from pydantic.fields import FieldInfo
 from pydantic_core import PydanticUndefined
+from typing_extensions import TypedDict
 
 from translator_tom.utils.hash import tomhash
 from translator_tom.utils.object_base import TOMBase, _stable_repr
 
 _TD = TypeVar("_TD", bound=Mapping[str, Any])
+
+
+@with_config(ConfigDict(extra="allow"))
+class TOMBaseDict(TypedDict):
+    """Base for TypedDicts with extra="allow".
+
+    Injects decorator config so pydantic validation maintains extra fields.
+    """
+
+
+@with_config(ConfigDict(extra="forbid"))
+class TOMBaseDictForbid(TOMBaseDict):
+    """Base for TypedDicts with extra="forbid".
+
+    Injects decorator config so pydantic validation rejects extra fields.
+    """
 
 
 def _nested_models(annotation: Any) -> set[type[TOMBase]]:
@@ -204,13 +226,12 @@ class DictUtil(Generic[_TD]):
     def from_json(cls, json: str | bytes, validate: bool = False) -> _TD:
         """Deserialize a dict from JSON.
 
-        With `validate=True`, data is validated using pydantic TypeAdapter and raises
-        `pydantic.ValidationError` if it failes validation. The returned dict is not
-        modified by the validation (extra keys preserved, etc).
+        With `validate=True`, the parsed data is validated via the util's
+        cached pydantic `TypeAdapter`, raising `pydantic.ValidationError` on failure.
         """
         data = orjson.loads(json)
         if validate:
-            cls._adapter().validate_python(data)
+            return cast("_TD", cls._adapter().validate_python(data))
         return cast("_TD", data)
 
     @overload
@@ -244,13 +265,12 @@ class DictUtil(Generic[_TD]):
     def from_msgpack(cls, msgpack: bytes, validate: bool = False) -> _TD:
         """Deserialize a dict from MessagePack.
 
-        With `validate=True`, data is validated using pydantic TypeAdapter and raises
-        `pydantic.ValidationError` if it failes validation. The returned dict is not
-        modified by the validation (extra keys preserved, etc).
+        With `validate=True`, the parsed data is validated via the util's
+        cached pydantic `TypeAdapter`, raising `pydantic.ValidationError` on failure.
         """
         data = ormsgpack.unpackb(msgpack)
         if validate:
-            cls._adapter().validate_python(data)
+            return cast("_TD", cls._adapter().validate_python(data))
         return cast("_TD", data)
 
     @classmethod

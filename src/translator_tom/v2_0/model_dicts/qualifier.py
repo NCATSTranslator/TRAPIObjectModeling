@@ -4,10 +4,8 @@ import itertools
 from collections.abc import Iterable
 from typing import cast
 
-from typing_extensions import TypedDict
-
 from translator_tom.utils.biolink import Biolink
-from translator_tom.utils.dict_util_base import DictUtil
+from translator_tom.utils.dict_util_base import DictUtil, TOMBaseDictForbid
 from translator_tom.utils.shared import OBJECT_RE, SUBJECT_RE
 from translator_tom.v2_0.model_dicts.meta_qualifier import MetaQualifierDict
 from translator_tom.v2_0.models.qualifier import Qualifier, QualifierSetConstraint
@@ -19,7 +17,7 @@ __all__ = [
 ]
 
 
-class QualifierDict(TypedDict):
+class QualifierDict(TOMBaseDictForbid):
     qualifier_type_id: Biolink.Qualifier
     qualifier_value: str
 

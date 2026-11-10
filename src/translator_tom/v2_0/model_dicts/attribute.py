@@ -3,9 +3,10 @@ from __future__ import annotations
 import re
 from typing import cast
 
+from pydantic import ConfigDict
 from typing_extensions import NotRequired, TypedDict
 
-from translator_tom.utils.dict_util_base import DictUtil
+from translator_tom.utils.dict_util_base import DictUtil, TOMBaseDictForbid
 from translator_tom.utils.hash import tomhash
 from translator_tom.utils.shared import CURIE, OBJECT_RE, SUBJECT_RE, FastJsonValue
 from translator_tom.v2_0.model_dicts.meta_attribute import (
@@ -26,7 +27,7 @@ __all__ = [
 ]
 
 
-class AttributeDict(TypedDict):
+class AttributeDict(TOMBaseDictForbid):
     attribute_type_id: CURIE
     original_attribute_name: NotRequired[str]
     value: FastJsonValue
@@ -90,6 +91,8 @@ AttributeConstraintDict = TypedDict(
         "unit_name": NotRequired[str],
     },
 )
+# Set config post-hoc for forbid parity.
+AttributeConstraintDict.__pydantic_config__ = ConfigDict(extra="forbid")  # ty: ignore[unresolved-attribute]
 
 
 class AttributeConstraintDictUtil(DictUtil[AttributeConstraintDict]):

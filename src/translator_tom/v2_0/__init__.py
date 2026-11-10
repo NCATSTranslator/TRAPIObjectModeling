@@ -75,6 +75,8 @@ __all__ = [
     "SetInterpretationEnum",
     "SourceConstraint",
     "TOMBase",
+    "TOMBaseDict",
+    "TOMBaseDictForbid",
     "diff",
     "infores",
     "register_union_discriminator",
@@ -87,7 +89,12 @@ __all__ = [
 
 from translator_tom.utils.biolink import Biolink
 from translator_tom.utils.config import TRAPI_CONFIG, HashRepEnum
-from translator_tom.utils.dict_util_base import DictUtil, register_union_discriminator
+from translator_tom.utils.dict_util_base import (
+    DictUtil,
+    TOMBaseDict,
+    TOMBaseDictForbid,
+    register_union_discriminator,
+)
 from translator_tom.utils.hash import tomhash, tomhash_int, tomhash_to_int
 from translator_tom.utils.object_base import TOMBase
 from translator_tom.utils.shared import (

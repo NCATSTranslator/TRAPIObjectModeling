@@ -2,8 +2,9 @@
 
 `from_json`/`from_msgpack` optionally validate the parsed dict against the util's
 `TypedDict` — recursively, and without building model instances — via a cached
-`TypeAdapter`. The *parsed* dict is returned unchanged, so extra keys and original
-values survive even when validation runs.
+`TypeAdapter`. With `validate=True` the coerced dict is returned: unknown keys are
+kept where the mirrored model allows extras (`TOMBaseDict`) and rejected where it
+forbids them (`TOMBaseDictForbid`), mirroring the model layer.
 """
 
 from __future__ import annotations
@@ -18,6 +19,7 @@ from translator_tom.v2_0.model_dicts.attribute import (
     AttributeDict,
     AttributeDictUtil,
 )
+from translator_tom.v2_0.model_dicts.log_entry import LogEntryDictUtil
 from translator_tom.v2_0.models.attribute import Attribute
 
 # ============================================================================
@@ -46,13 +48,25 @@ class TestFromJsonValidate:
             AttributeDictUtil.from_json(orjson.dumps(attr), validate=True) == attr
         )
 
-    def test_returns_loaded_dict_preserving_extras(self):
-        # The validator drops keys not in the TypedDict; from_json must still return
-        # them, since it returns the parsed dict, not the validator's output.
-        attr = {"attribute_type_id": "biolink:foo", "value": 1, "surprise": "kept"}
-        out = AttributeDictUtil.from_json(orjson.dumps(attr), validate=True)
-        # Equality proves the unknown key survived; a dropped key would fail this.
-        assert out == attr
+    def test_allow_type_preserves_extras(self):
+        # LogEntry allows extras (TOMBaseDict); validation keeps the unknown key.
+        entry = {"timestamp": "2024-01-01T00:00:00Z", "message": "hi", "surprise": "kept"}
+        out = LogEntryDictUtil.from_json(orjson.dumps(entry), validate=True)
+        assert out == entry
+
+    def test_forbid_type_rejects_extras(self):
+        # Attribute forbids extras (TOMBaseDictForbid), matching the model.
+        attr = {"attribute_type_id": "biolink:foo", "value": 1, "surprise": "no"}
+        with pytest.raises(ValidationError):
+            AttributeDictUtil.from_json(orjson.dumps(attr), validate=True)
+
+    def test_coerces_scalar(self):
+        # validate=True returns the TypeAdapter's coerced output, not the raw parse.
+        constraint = {"id": "biolink:x", "operator": "==", "value": 1, "not": "true"}
+        out = AttributeConstraintDictUtil.from_json(
+            orjson.dumps(constraint), validate=True
+        )
+        assert out["not"] is True
 
     def test_missing_required_field_raises(self):
         with pytest.raises(ValidationError):
@@ -99,9 +113,9 @@ class TestFromJsonValidate:
 
 class TestFromMsgpackValidate:
     def test_valid_passes_preserving_extras(self):
-        attr = {"attribute_type_id": "biolink:foo", "value": 1, "surprise": "kept"}
-        out = AttributeDictUtil.from_msgpack(ormsgpack.packb(attr), validate=True)
-        assert out == attr
+        entry = {"timestamp": "2024-01-01T00:00:00Z", "message": "hi", "surprise": "kept"}
+        out = LogEntryDictUtil.from_msgpack(ormsgpack.packb(entry), validate=True)
+        assert out == entry
 
     def test_invalid_raises(self):
         with pytest.raises(ValidationError):

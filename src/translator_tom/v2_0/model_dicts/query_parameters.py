@@ -2,16 +2,16 @@ from __future__ import annotations
 
 from typing import overload
 
-from typing_extensions import NotRequired, TypedDict
+from typing_extensions import NotRequired
 
-from translator_tom.utils.dict_util_base import DictUtil
+from translator_tom.utils.dict_util_base import DictUtil, TOMBaseDict
 from translator_tom.v2_0.models.log_entry import LogLevel
 from translator_tom.v2_0.models.query_parameters import QueryParameters
 
 __all__ = ["QueryParametersDict", "QueryParametersDictUtil"]
 
 
-class QueryParametersDict(TypedDict):
+class QueryParametersDict(TOMBaseDict):
     timeout: NotRequired[float]
     log_level: NotRequired[LogLevel]
     bypass_cache: NotRequired[bool]

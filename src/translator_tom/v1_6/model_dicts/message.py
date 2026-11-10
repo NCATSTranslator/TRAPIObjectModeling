@@ -3,10 +3,10 @@ from __future__ import annotations
 from copy import deepcopy
 from typing import Literal, cast
 
-from typing_extensions import NotRequired, TypedDict
+from typing_extensions import NotRequired
 
 from translator_tom.utils import set_interpretation
-from translator_tom.utils.dict_util_base import DictUtil
+from translator_tom.utils.dict_util_base import DictUtil, TOMBaseDictForbid
 from translator_tom.utils.set_interpretation import (
     QNodeSpec,
     QueryStamp,
@@ -36,7 +36,7 @@ from translator_tom.v1_6.models.message import Message
 __all__ = ["MessageDict", "MessageDictUtil"]
 
 
-class MessageDict(TypedDict):
+class MessageDict(TOMBaseDictForbid):
     results: NotRequired[list[ResultDict] | None]
     query_graph: NotRequired[QueryGraphDict | PathfinderQueryGraphDict | None]
     knowledge_graph: NotRequired[KnowledgeGraphDict | None]

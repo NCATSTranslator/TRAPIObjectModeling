@@ -4,10 +4,10 @@ import itertools
 from copy import deepcopy
 from typing import Literal, cast
 
-from typing_extensions import NotRequired, TypedDict
+from typing_extensions import NotRequired
 
 from translator_tom.utils.biolink import Biolink
-from translator_tom.utils.dict_util_base import DictUtil
+from translator_tom.utils.dict_util_base import DictUtil, TOMBaseDict, TOMBaseDictForbid
 from translator_tom.utils.hash import tomhash
 from translator_tom.utils.shared import CURIE, AuxGraphID, EdgeID, Infores
 from translator_tom.v2_0.model_dicts.analysis import AnalysisDictUtil
@@ -51,7 +51,7 @@ __all__ = [
 ]
 
 
-class NodeDict(TypedDict):
+class NodeDict(TOMBaseDictForbid):
     name: NotRequired[str]
     categories: list[Biolink.Entity]
     attributes: NotRequired[list[AttributeDict]]
@@ -106,7 +106,7 @@ class NodeDictUtil(DictUtil[NodeDict]):
             node["attributes"] = list(attrs.values())
 
 
-class EdgeDict(TypedDict):
+class EdgeDict(TOMBaseDictForbid):
     predicate: Biolink.Predicate
     subject: CURIE
     object: CURIE
@@ -313,7 +313,7 @@ class EdgeDictUtil(DictUtil[EdgeDict]):
         )
 
 
-class KnowledgeGraphDict(TypedDict):
+class KnowledgeGraphDict(TOMBaseDict):
     nodes: dict[CURIE, NodeDict]
     edges: NotRequired[dict[EdgeID, EdgeDict]]
 

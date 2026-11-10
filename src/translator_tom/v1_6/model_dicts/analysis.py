@@ -3,9 +3,13 @@ from __future__ import annotations
 import copy
 from collections.abc import Mapping
 
-from typing_extensions import NotRequired, TypedDict
+from typing_extensions import NotRequired
 
-from translator_tom.utils.dict_util_base import DictUtil, register_union_discriminator
+from translator_tom.utils.dict_util_base import (
+    DictUtil,
+    TOMBaseDict,
+    register_union_discriminator,
+)
 from translator_tom.utils.hash import tomhash
 from translator_tom.utils.shared import CURIE, AuxGraphID, QEdgeID, QPathID
 from translator_tom.v1_6.model_dicts.attribute import AttributeDict, AttributeDictUtil
@@ -33,7 +37,7 @@ __all__ = [
 ]
 
 
-class BaseAnalysisDict(TypedDict):
+class BaseAnalysisDict(TOMBaseDict):
     resource_id: CURIE
     score: NotRequired[float | None]
     support_graphs: NotRequired[list[AuxGraphID] | None]

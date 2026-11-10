@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from typing_extensions import NotRequired, TypedDict
+from typing_extensions import NotRequired
 
-from translator_tom.utils.dict_util_base import DictUtil
+from translator_tom.utils.dict_util_base import DictUtil, TOMBaseDict
 from translator_tom.utils.hash import tomhash
 from translator_tom.utils.shared import CURIE
 from translator_tom.v2_0.models.meta_attribute import MetaAttribute
@@ -10,7 +10,7 @@ from translator_tom.v2_0.models.meta_attribute import MetaAttribute
 __all__ = ["MetaAttributeDict", "MetaAttributeDictUtil"]
 
 
-class MetaAttributeDict(TypedDict):
+class MetaAttributeDict(TOMBaseDict):
     attribute_type_id: CURIE
     attribute_source: NotRequired[str]
     original_attribute_names: NotRequired[list[str]]

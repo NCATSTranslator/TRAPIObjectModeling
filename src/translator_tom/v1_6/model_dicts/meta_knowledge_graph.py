@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-from typing_extensions import NotRequired, TypedDict
+from typing_extensions import NotRequired
 
 from translator_tom.utils.biolink import Biolink
-from translator_tom.utils.dict_util_base import DictUtil
+from translator_tom.utils.dict_util_base import DictUtil, TOMBaseDict, TOMBaseDictForbid
 from translator_tom.utils.shared import KnowledgeType
 from translator_tom.v1_6.model_dicts.attribute import (
     AttributeConstraintDict,
@@ -35,7 +35,7 @@ __all__ = [
 ]
 
 
-class MetaNodeDict(TypedDict):
+class MetaNodeDict(TOMBaseDictForbid):
     id_prefixes: list[str]
     attributes: NotRequired[list[MetaAttributeDict] | None]
 
@@ -66,7 +66,7 @@ class MetaNodeDictUtil(DictUtil[MetaNodeDict]):
             MetaAttributeDictUtil.merge_attribute_lists(node_attrs, other_attrs)
 
 
-class MetaEdgeDict(TypedDict):
+class MetaEdgeDict(TOMBaseDictForbid):
     subject: Biolink.Entity
     predicate: Biolink.Predicate
     object: Biolink.Entity
@@ -176,7 +176,7 @@ class MetaEdgeDictUtil(DictUtil[MetaEdgeDict]):
         )
 
 
-class MetaKnowledgeGraphDict(TypedDict):
+class MetaKnowledgeGraphDict(TOMBaseDict):
     nodes: dict[Biolink.Entity, MetaNodeDict]
     edges: list[MetaEdgeDict]
 

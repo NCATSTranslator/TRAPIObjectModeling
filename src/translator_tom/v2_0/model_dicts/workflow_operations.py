@@ -4,9 +4,13 @@ from collections.abc import Mapping
 from typing import Annotated, ClassVar, Literal
 
 from pydantic import Field
-from typing_extensions import NotRequired, TypedDict
+from typing_extensions import NotRequired
 
-from translator_tom.utils.dict_util_base import DictUtil, register_union_discriminator
+from translator_tom.utils.dict_util_base import (
+    DictUtil,
+    TOMBaseDict,
+    register_union_discriminator,
+)
 from translator_tom.utils.shared import FastJsonValue, Infores, QEdgeID, QNodeID
 from translator_tom.v2_0.models.workflow_operations import (
     AboveOrBelow,
@@ -178,7 +182,7 @@ __all__ = [
 ]
 
 
-class AllowListDict(TypedDict):
+class AllowListDict(TOMBaseDict):
     allowlist: list[Infores]
 
 
@@ -188,7 +192,7 @@ class AllowListDictUtil(DictUtil[AllowListDict]):
     _model = AllowList
 
 
-class DenyListDict(TypedDict):
+class DenyListDict(TOMBaseDict):
     denylist: list[Infores]
 
 
@@ -201,11 +205,11 @@ class DenyListDictUtil(DictUtil[DenyListDict]):
 RunnerParametersDict = AllowListDict | DenyListDict
 
 
-class OperationParametersDict(TypedDict):
+class OperationParametersDict(TOMBaseDict):
     pass
 
 
-class BaseOperationDict(TypedDict):
+class BaseOperationDict(TOMBaseDict):
     runner_parameters: NotRequired[RunnerParametersDict]
 
 

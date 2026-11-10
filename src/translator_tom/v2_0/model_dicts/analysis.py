@@ -3,9 +3,9 @@ from __future__ import annotations
 import copy
 from typing import TypeVar
 
-from typing_extensions import NotRequired, TypedDict
+from typing_extensions import NotRequired
 
-from translator_tom.utils.dict_util_base import DictUtil
+from translator_tom.utils.dict_util_base import DictUtil, TOMBaseDict
 from translator_tom.utils.hash import tomhash
 from translator_tom.utils.shared import CURIE, AuxGraphID, QEdgeID, QPathID
 from translator_tom.v2_0.model_dicts.attribute import AttributeDict, AttributeDictUtil
@@ -24,7 +24,7 @@ __all__ = ["AnalysisDict", "AnalysisDictUtil"]
 _BindingDictT = TypeVar("_BindingDictT", EdgeBindingDict, PathBindingDict)
 
 
-class AnalysisDict(TypedDict):
+class AnalysisDict(TOMBaseDict):
     resource_id: CURIE
     edge_bindings: NotRequired[dict[QEdgeID, EdgeBindingDict]]
     path_bindings: NotRequired[dict[QPathID, PathBindingDict]]

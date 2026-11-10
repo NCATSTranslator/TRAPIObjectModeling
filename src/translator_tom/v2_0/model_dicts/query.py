@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from typing_extensions import NotRequired, TypedDict
+from typing_extensions import NotRequired
 
-from translator_tom.utils.dict_util_base import DictUtil
+from translator_tom.utils.dict_util_base import DictUtil, TOMBaseDict
 from translator_tom.v2_0.model_dicts.message import MessageDict
 from translator_tom.v2_0.model_dicts.query_parameters import QueryParametersDict
 from translator_tom.v2_0.model_dicts.workflow_operations import OperationDict
@@ -11,7 +11,7 @@ from translator_tom.v2_0.models.query import Query
 __all__ = ["QueryDict", "QueryDictUtil"]
 
 
-class QueryDict(TypedDict):
+class QueryDict(TOMBaseDict):
     submitter: NotRequired[str]
     parameters: NotRequired[QueryParametersDict]
     message: MessageDict

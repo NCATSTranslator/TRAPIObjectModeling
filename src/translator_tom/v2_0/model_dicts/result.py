@@ -2,9 +2,9 @@ from __future__ import annotations
 
 import copy
 
-from typing_extensions import NotRequired, TypedDict
+from typing_extensions import NotRequired
 
-from translator_tom.utils.dict_util_base import DictUtil
+from translator_tom.utils.dict_util_base import DictUtil, TOMBaseDict
 from translator_tom.utils.hash import tomhash
 from translator_tom.utils.shared import CURIE, EdgeID, QNodeID
 from translator_tom.v2_0.model_dicts.analysis import AnalysisDict, AnalysisDictUtil
@@ -17,7 +17,7 @@ from translator_tom.v2_0.models.result import Result
 __all__ = ["ResultDict", "ResultDictUtil"]
 
 
-class ResultDict(TypedDict):
+class ResultDict(TOMBaseDict):
     node_bindings: dict[QNodeID, NodeBindingDict]
     analyses: NotRequired[list[AnalysisDict]]
 

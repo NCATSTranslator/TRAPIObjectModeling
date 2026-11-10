@@ -2,15 +2,15 @@ from __future__ import annotations
 
 import datetime
 
-from typing_extensions import NotRequired, TypedDict
+from typing_extensions import NotRequired
 
-from translator_tom.utils.dict_util_base import DictUtil
+from translator_tom.utils.dict_util_base import DictUtil, TOMBaseDict
 from translator_tom.v1_6.models.log_entry import LogEntry, LogLevel
 
 __all__ = ["LogEntryDict", "LogEntryDictUtil"]
 
 
-class LogEntryDict(TypedDict):
+class LogEntryDict(TOMBaseDict):
     timestamp: str
     level: NotRequired[LogLevel | None]
     code: NotRequired[str | None]

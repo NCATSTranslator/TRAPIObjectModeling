@@ -1,15 +1,15 @@
 from __future__ import annotations
 
-from typing_extensions import NotRequired, TypedDict
+from typing_extensions import NotRequired
 
 from translator_tom.utils.biolink import Biolink
-from translator_tom.utils.dict_util_base import DictUtil
+from translator_tom.utils.dict_util_base import DictUtil, TOMBaseDict
 from translator_tom.v2_0.models.meta_qualifier import MetaQualifier
 
 __all__ = ["MetaQualifierDict", "MetaQualifierDictUtil"]
 
 
-class MetaQualifierDict(TypedDict):
+class MetaQualifierDict(TOMBaseDict):
     qualifier_type_id: Biolink.Qualifier
     applicable_values: NotRequired[list[str]]
 

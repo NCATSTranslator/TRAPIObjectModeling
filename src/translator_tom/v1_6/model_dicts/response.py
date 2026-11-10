@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-from typing_extensions import NotRequired, TypedDict
+from typing_extensions import NotRequired
 
 from translator_tom.utils.config import TRAPI_CONFIG
-from translator_tom.utils.dict_util_base import DictUtil
+from translator_tom.utils.dict_util_base import DictUtil, TOMBaseDict
 from translator_tom.v1_6._version import SCHEMA_VERSION
 from translator_tom.v1_6.model_dicts.log_entry import LogEntryDict
 from translator_tom.v1_6.model_dicts.message import MessageDict
@@ -13,7 +13,7 @@ from translator_tom.v1_6.models.response import Response
 __all__ = ["ResponseDict", "ResponseDictUtil"]
 
 
-class ResponseDict(TypedDict):
+class ResponseDict(TOMBaseDict):
     message: MessageDict
     status: NotRequired[str | None]
     description: NotRequired[str | None]

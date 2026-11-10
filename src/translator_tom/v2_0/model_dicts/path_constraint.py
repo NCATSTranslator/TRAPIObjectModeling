@@ -1,15 +1,15 @@
 from __future__ import annotations
 
-from typing_extensions import NotRequired, TypedDict
+from typing_extensions import NotRequired
 
 from translator_tom.utils.biolink import Biolink
-from translator_tom.utils.dict_util_base import DictUtil
+from translator_tom.utils.dict_util_base import DictUtil, TOMBaseDict
 from translator_tom.v2_0.models.path_constraint import PathConstraint
 
 __all__ = ["PathConstraintDict", "PathConstraintDictUtil"]
 
 
-class PathConstraintDict(TypedDict):
+class PathConstraintDict(TOMBaseDict):
     required_intermediate_categories: NotRequired[list[Biolink.Entity]]
 
 

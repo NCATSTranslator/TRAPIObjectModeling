@@ -2,10 +2,14 @@ from __future__ import annotations
 
 from collections.abc import Mapping
 
-from typing_extensions import NotRequired, TypedDict
+from typing_extensions import NotRequired
 
 from translator_tom.utils.biolink import Biolink
-from translator_tom.utils.dict_util_base import DictUtil, register_union_discriminator
+from translator_tom.utils.dict_util_base import (
+    DictUtil,
+    TOMBaseDict,
+    register_union_discriminator,
+)
 from translator_tom.utils.shared import (
     CURIE,
     KnowledgeType,
@@ -46,7 +50,7 @@ __all__ = [
 ]
 
 
-class QNodeDict(TypedDict):
+class QNodeDict(TOMBaseDict):
     ids: NotRequired[list[CURIE] | None]
     categories: NotRequired[list[Biolink.Entity] | None]
     set_interpretation: NotRequired[SetInterpretation | None]
@@ -84,7 +88,7 @@ class QNodeDictUtil(DictUtil[QNodeDict]):
         return constraints if constraints is not None else []
 
 
-class QEdgeDict(TypedDict):
+class QEdgeDict(TOMBaseDict):
     knowledge_type: NotRequired[KnowledgeType | None]
     predicates: NotRequired[list[Biolink.Predicate] | None]
     subject: QNodeID
@@ -156,7 +160,7 @@ class QEdgeDictUtil(DictUtil[QEdgeDict]):
         return inverted
 
 
-class QPathDict(TypedDict):
+class QPathDict(TOMBaseDict):
     subject: QNodeID
     object: QNodeID
     predicates: NotRequired[list[Biolink.Predicate] | None]
@@ -181,7 +185,7 @@ class QPathDictUtil(DictUtil[QPathDict]):
         return constraints if constraints is not None else []
 
 
-class BaseQueryGraphDict(TypedDict):
+class BaseQueryGraphDict(TOMBaseDict):
     nodes: dict[QNodeID, QNodeDict]
 
 

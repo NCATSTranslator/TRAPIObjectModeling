@@ -2,10 +2,10 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, cast
 
-from typing_extensions import NotRequired, TypedDict
+from typing_extensions import NotRequired
 
 from translator_tom.utils.biolink import Biolink
-from translator_tom.utils.dict_util_base import DictUtil
+from translator_tom.utils.dict_util_base import DictUtil, TOMBaseDict
 from translator_tom.utils.shared import CURIE
 from translator_tom.v2_0.model_dicts.attribute import (
     AttributeConstraintDict,
@@ -43,7 +43,7 @@ __all__ = [
 ]
 
 
-class AllowDenyConstraintDict(TypedDict):
+class AllowDenyConstraintDict(TOMBaseDict):
     behavior: AllowDenyConstraintBehavior
     values: list[str]
 
@@ -119,7 +119,7 @@ class SourceConstraintDictUtil(DictUtil[SourceConstraintDict]):
         return present if constraint["behavior"] == "ALLOW" else not present
 
 
-class QEdgeConstraintsDict(TypedDict):
+class QEdgeConstraintsDict(TOMBaseDict):
     knowledge_level: NotRequired[KnowledgeLevelConstraintDict]
     agent_type: NotRequired[AgentTypeConstraintDict]
     attributes: NotRequired[list[AttributeConstraintDict]]

@@ -1,8 +1,6 @@
 from __future__ import annotations
 
-from typing_extensions import TypedDict
-
-from translator_tom.utils.dict_util_base import DictUtil
+from translator_tom.utils.dict_util_base import DictUtil, TOMBaseDict
 from translator_tom.utils.hash import tomhash
 from translator_tom.utils.shared import AuxGraphID, EdgeID
 from translator_tom.v1_6.model_dicts.attribute import AttributeDict, AttributeDictUtil
@@ -11,7 +9,7 @@ from translator_tom.v1_6.models.auxiliary_graph import AuxiliaryGraph
 __all__ = ["AuxiliaryGraphDict", "AuxiliaryGraphDictUtil", "AuxiliaryGraphsDict"]
 
 
-class AuxiliaryGraphDict(TypedDict):
+class AuxiliaryGraphDict(TOMBaseDict):
     edges: list[EdgeID]
     attributes: list[AttributeDict]
 

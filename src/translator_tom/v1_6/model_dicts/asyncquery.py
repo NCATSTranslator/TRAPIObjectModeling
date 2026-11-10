@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from typing_extensions import NotRequired, TypedDict
+from typing_extensions import NotRequired
 
-from translator_tom.utils.dict_util_base import DictUtil
+from translator_tom.utils.dict_util_base import DictUtil, TOMBaseDict
 from translator_tom.v1_6.model_dicts.log_entry import LogEntryDict
 
 # MessageDict/LogLevel are in scope so pydantic can resolve QueryDict's inherited
@@ -31,13 +31,13 @@ class AsyncQueryDict(QueryDict):
     callback: str
 
 
-class AsyncQueryResponseDict(TypedDict):
+class AsyncQueryResponseDict(TOMBaseDict):
     status: NotRequired[str | None]
     description: NotRequired[str | None]
     job_id: str
 
 
-class AsyncQueryStatusResponseDict(TypedDict):
+class AsyncQueryStatusResponseDict(TOMBaseDict):
     status: str
     description: str
     logs: list[LogEntryDict]

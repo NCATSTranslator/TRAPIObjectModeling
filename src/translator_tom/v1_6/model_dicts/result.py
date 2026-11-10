@@ -3,9 +3,7 @@ from __future__ import annotations
 import itertools
 from typing import cast
 
-from typing_extensions import TypedDict
-
-from translator_tom.utils.dict_util_base import DictUtil
+from translator_tom.utils.dict_util_base import DictUtil, TOMBaseDict
 from translator_tom.utils.hash import tomhash
 from translator_tom.utils.shared import CURIE, EdgeID, QNodeID
 from translator_tom.v1_6.model_dicts.analysis import (
@@ -23,7 +21,7 @@ from translator_tom.v1_6.models.result import Result
 __all__ = ["ResultDict", "ResultDictUtil"]
 
 
-class ResultDict(TypedDict):
+class ResultDict(TOMBaseDict):
     node_bindings: dict[QNodeID, list[NodeBindingDict]]
     analyses: list[AnalysisDict | PathfinderAnalysisDict]
 

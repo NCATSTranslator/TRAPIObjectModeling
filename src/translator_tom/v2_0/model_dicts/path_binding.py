@@ -1,8 +1,6 @@
 from __future__ import annotations
 
-from typing_extensions import TypedDict
-
-from translator_tom.utils.dict_util_base import DictUtil
+from translator_tom.utils.dict_util_base import DictUtil, TOMBaseDict
 from translator_tom.utils.hash import tomhash
 from translator_tom.utils.shared import AuxGraphID
 from translator_tom.v2_0.models.path_binding import PathBinding
@@ -10,7 +8,7 @@ from translator_tom.v2_0.models.path_binding import PathBinding
 __all__ = ["PathBindingDict", "PathBindingDictUtil"]
 
 
-class PathBindingDict(TypedDict):
+class PathBindingDict(TOMBaseDict):
     ids: list[AuxGraphID]
 
 
