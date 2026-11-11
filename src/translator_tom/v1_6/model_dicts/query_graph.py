@@ -159,6 +159,15 @@ class QEdgeDictUtil(DictUtil[QEdgeDict]):
             inverted["qualifier_constraints"] = inverse_qualifier_constraints
         return inverted
 
+    @staticmethod
+    def get_qualifier_value(qedge: QEdgeDict, type_id: Biolink.Qualifier) -> str | None:
+        """Return the value for a qualifier type from this QEdge's qualifier constraints, if present."""
+        for constraint in QEdgeDictUtil.qualifier_constraints_list(qedge):
+            for qualifier in constraint["qualifier_set"]:
+                if qualifier["qualifier_type_id"] == type_id:
+                    return qualifier["qualifier_value"]
+        return None
+
 
 class QPathDict(TOMBaseDict):
     subject: QNodeID
@@ -194,9 +203,31 @@ class QueryGraphDict(BaseQueryGraphDict):
 
 
 class QueryGraphDictUtil(DictUtil[QueryGraphDict]):
-    """Registration-only util for `QueryGraphDict`."""
+    """Utility methods for `QueryGraphDict`, mirroring those on the `QueryGraph` model."""
 
     _model = QueryGraph
+
+    @staticmethod
+    def get_unpinned(
+        query_graph: QueryGraphDict, qedge_id: QEdgeID | None = None
+    ) -> list[tuple[QNodeID, QNodeDict]]:
+        """Return the unpinned (answer) qnodes as (id, qnode) pairs.
+
+        Args:
+            query_graph: The query graph whose qnodes to consider.
+            qedge_id: Only consider the given qedge's nodes.
+        """
+        nodes = query_graph["nodes"]
+        if qedge_id is None:
+            candidate_ids = list(nodes)
+        else:
+            qedge = query_graph["edges"][qedge_id]
+            candidate_ids = [qedge["subject"], qedge["object"]]
+        return [
+            (qid, qnode)
+            for qid in candidate_ids
+            if (qnode := nodes.get(qid)) is not None and not qnode.get("ids")
+        ]
 
 
 class PathfinderQueryGraphDict(BaseQueryGraphDict):

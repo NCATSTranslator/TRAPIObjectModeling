@@ -78,6 +78,25 @@ class QueryGraph(TOMBase):
         """Return an empty instance, without having to pass required containers."""
         return cls.model_construct(nodes={})
 
+    def get_unpinned(
+        self, qedge_id: QEdgeID | None = None
+    ) -> list[tuple[QNodeID, QNode]]:
+        """Return the unpinned (answer) qnodes as (id, qnode) pairs.
+
+        Args:
+            qedge_id: Only consider the given qedge's nodes.
+        """
+        if qedge_id is None:
+            candidate_ids = list(self.nodes)
+        else:
+            qedge = self.edges_dict[qedge_id]
+            candidate_ids = [qedge.subject, qedge.object]
+        return [
+            (qid, qnode)
+            for qid in candidate_ids
+            if (qnode := self.nodes.get(qid)) is not None and not qnode.ids
+        ]
+
 
 class SetInterpretationEnum(str, Enum):
     """Indicates how multiple CURIEs in the ids property MUST be interpreted."""
@@ -248,6 +267,15 @@ class QEdge(TOMBase):
                 self.constraints.get_inverse() if self.constraints is not None else None
             ),
         )
+
+    def get_qualifier_value(self, type_id: Biolink.Qualifier) -> str | None:
+        """Return the value for a qualifier type from this QEdge's constraints, if present."""
+        if self.constraints is None:
+            return None
+        for qualifier_set in self.constraints.qualifiers_list:
+            if type_id in qualifier_set:
+                return qualifier_set[type_id]
+        return None
 
 
 class QPath(TOMBase):

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import itertools
 from collections.abc import Iterable
-from typing import Annotated, ClassVar
+from typing import TYPE_CHECKING, Annotated, ClassVar
 
 from pydantic import ConfigDict, Field
 
@@ -10,6 +10,9 @@ from translator_tom.utils.biolink import Biolink
 from translator_tom.utils.object_base import TOMBase
 from translator_tom.utils.shared import OBJECT_RE, SUBJECT_RE
 from translator_tom.v2_0.models.meta_qualifier import MetaQualifier
+
+if TYPE_CHECKING:
+    from translator_tom.v2_0.models.query_graph import QEdge
 
 __all__ = [
     "Qualifier",
@@ -38,6 +41,17 @@ class Qualifier(TOMBase):
     type is generally constrained by the category of the edge
     (i.e. biolink:Association subtype).
     """
+
+    @staticmethod
+    def set_from_qedge(qedge: QEdge) -> list[Qualifier]:
+        """Build KEdge Qualifiers from the qualifier-set constraints on a QEdge."""
+        if qedge.constraints is None:
+            return []
+        return [
+            Qualifier(qualifier_type_id=type_id, qualifier_value=value)
+            for qualifier_set in qedge.constraints.qualifiers_list
+            for type_id, value in qualifier_set.items()
+        ]
 
     @staticmethod
     def constraint_met_by(

@@ -101,6 +101,13 @@ class Message(TOMBase):
         """Get the auxiliary_graphs as a guaranteed dict, even if they are represented as None."""
         return self.auxiliary_graphs if self.auxiliary_graphs is not None else {}
 
+    @property
+    def query_graph_or_new(self) -> QueryGraph | PathfinderQueryGraph:
+        """Get the query_graph, or a new empty (non-pathfinder) one if it is None."""
+        if self.query_graph is not None:
+            return self.query_graph
+        return QueryGraph.model_construct(nodes={}, edges={})
+
     def update(
         self,
         other: Message,

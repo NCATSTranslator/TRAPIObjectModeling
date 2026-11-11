@@ -124,6 +124,17 @@ class QEdgeDictUtil(DictUtil[QEdgeDict]):
             inverted["constraints"] = QEdgeConstraintsDictUtil.get_inverse(constraints)
         return inverted
 
+    @staticmethod
+    def get_qualifier_value(qedge: QEdgeDict, type_id: Biolink.Qualifier) -> str | None:
+        """Return the value for a qualifier type from this QEdge's constraints, if present."""
+        constraints = qedge.get("constraints")
+        if constraints is None:
+            return None
+        for qualifier_set in QEdgeConstraintsDictUtil.qualifiers_list(constraints):
+            if type_id in qualifier_set:
+                return qualifier_set[type_id]
+        return None
+
 
 class QPathDict(TOMBaseDict):
     subject: QNodeID
@@ -177,3 +188,25 @@ class QueryGraphDictUtil(DictUtil[QueryGraphDict]):
     def new() -> QueryGraphDict:
         """Return an empty instance, without having to pass required containers."""
         return {"nodes": {}}
+
+    @staticmethod
+    def get_unpinned(
+        query_graph: QueryGraphDict, qedge_id: QEdgeID | None = None
+    ) -> list[tuple[QNodeID, QNodeDict]]:
+        """Return the unpinned (answer) qnodes as (id, qnode) pairs.
+
+        Args:
+            query_graph: The query graph whose qnodes to consider.
+            qedge_id: Only consider the given qedge's nodes.
+        """
+        nodes = query_graph["nodes"]
+        if qedge_id is None:
+            candidate_ids = list(nodes)
+        else:
+            qedge = QueryGraphDictUtil.edges_dict(query_graph)[qedge_id]
+            candidate_ids = [qedge["subject"], qedge["object"]]
+        return [
+            (qid, qnode)
+            for qid in candidate_ids
+            if (qnode := nodes.get(qid)) is not None and not qnode.get("ids")
+        ]

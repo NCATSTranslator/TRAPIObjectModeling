@@ -2,13 +2,16 @@ from __future__ import annotations
 
 import itertools
 from collections.abc import Iterable
-from typing import cast
+from typing import TYPE_CHECKING, cast
 
 from translator_tom.utils.biolink import Biolink
 from translator_tom.utils.dict_util_base import DictUtil, TOMBaseDictForbid
 from translator_tom.utils.shared import OBJECT_RE, SUBJECT_RE
 from translator_tom.v1_6.model_dicts.meta_qualifier import MetaQualifierDict
 from translator_tom.v1_6.models.qualifier import Qualifier, QualifierConstraint
+
+if TYPE_CHECKING:
+    from translator_tom.v1_6.model_dicts.query_graph import QEdgeDict
 
 __all__ = [
     "QualifierConstraintDict",
@@ -24,9 +27,21 @@ class QualifierDict(TOMBaseDictForbid):
 
 
 class QualifierDictUtil(DictUtil[QualifierDict]):
-    """Registration-only util for `QualifierDict`."""
+    """Utility methods for `QualifierDict`, mirroring those on the `Qualifier` model."""
 
     _model = Qualifier
+
+    @staticmethod
+    def set_from_qedge(qedge: QEdgeDict) -> list[QualifierDict]:
+        """Build KEdge Qualifiers from the qualifier-set constraints on a QEdge."""
+        return [
+            QualifierDict(
+                qualifier_type_id=qualifier["qualifier_type_id"],
+                qualifier_value=qualifier["qualifier_value"],
+            )
+            for constraint in (qedge.get("qualifier_constraints") or [])
+            for qualifier in constraint["qualifier_set"]
+        ]
 
 
 def _qualifier_values(

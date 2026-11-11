@@ -145,7 +145,9 @@ class TestUpdate:
                                     "resource_role": "primary_knowledge_source",
                                 }
                             ],
-                            "attributes": [{"attribute_type_id": "biolink:a", "value": 1}],
+                            "attributes": [
+                                {"attribute_type_id": "biolink:a", "value": 1}
+                            ],
                         },
                         "k2": {
                             "subject": "n0",
@@ -157,7 +159,9 @@ class TestUpdate:
                                     "resource_role": "primary_knowledge_source",
                                 }
                             ],
-                            "attributes": [{"attribute_type_id": "biolink:b", "value": 2}],
+                            "attributes": [
+                                {"attribute_type_id": "biolink:b", "value": 2}
+                            ],
                         },
                     },
                 },
@@ -258,7 +262,9 @@ class TestUpdate:
         other = Message(
             knowledge_graph=KnowledgeGraph(
                 nodes={
-                    "CHEBI:2": Node(categories=["biolink:ChemicalEntity"], attributes=[])
+                    "CHEBI:2": Node(
+                        categories=["biolink:ChemicalEntity"], attributes=[]
+                    )
                 },
                 edges={"kg1": _edge("CHEBI:2", "MONDO:2")},
             ),
@@ -281,3 +287,20 @@ class TestUpdate:
         m.update(other)
         MessageDictUtil.update(m_dict, other.to_dict())
         assert MessageDictUtil.hash(m_dict) == m.hash()
+
+
+class TestQueryGraphOrNew:
+    def test_returns_existing_parity(self):
+        qg = QueryGraph(nodes={"n1": QNode()}, edges={})
+        m = Message(query_graph=qg)
+        assert (
+            MessageDictUtil.query_graph_or_new(m.to_dict())
+            == m.query_graph_or_new.to_dict()
+        )
+
+    def test_returns_blank_when_none_parity(self):
+        m = Message()
+        assert (
+            MessageDictUtil.query_graph_or_new(m.to_dict())
+            == m.query_graph_or_new.to_dict()
+        )

@@ -47,9 +47,7 @@ def _result(node_id: str = "A:1", edge_id: str = "e1") -> Result:
         analyses=[
             Analysis(
                 resource_id="infores:test",
-                edge_bindings={
-                    "e0": [EdgeBinding(id=edge_id, attributes=[])]
-                },
+                edge_bindings={"e0": [EdgeBinding(id=edge_id, attributes=[])]},
             )
         ],
     )
@@ -135,7 +133,11 @@ class TestMessagePruneKg:
 
 class TestMessageUpdate:
     def test_raises_when_query_graphs_differ(self):
-        a = Message(query_graph=QueryGraph(nodes={}, edges={"q1": QEdge(subject="n1", object="n2")}))
+        a = Message(
+            query_graph=QueryGraph(
+                nodes={}, edges={"q1": QEdge(subject="n1", object="n2")}
+            )
+        )
         b = Message(query_graph=QueryGraph(nodes={"n1": QNode()}, edges={}))
         with pytest.raises(NotImplementedError):
             a.update(b)
@@ -201,8 +203,23 @@ class TestMessageUpdate:
         # update deepcopies `other` before normalizing.
         edge = _edge()
         a = Message()
-        b = Message(
-            knowledge_graph=KnowledgeGraph(nodes={}, edges={"old": edge})
-        )
+        b = Message(knowledge_graph=KnowledgeGraph(nodes={}, edges={"old": edge}))
         a.update(b, pre_normalized="self")  # forces other to be normalized
         assert "old" in b.knowledge_graph.edges  # type: ignore[union-attr]
+
+
+class TestQueryGraphOrNew:
+    def test_returns_existing(self):
+        qg = QueryGraph(nodes={"n1": QNode()}, edges={})
+        assert Message(query_graph=qg).query_graph_or_new is qg
+
+    def test_returns_blank_when_none(self):
+        qg = Message().query_graph_or_new
+        assert isinstance(qg, QueryGraph)
+        assert qg.nodes == {}
+        assert qg.edges == {}
+
+    def test_does_not_mutate_message(self):
+        m = Message()
+        _ = m.query_graph_or_new
+        assert m.query_graph is None

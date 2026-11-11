@@ -84,6 +84,12 @@ class MessageDictUtil(DictUtil[MessageDict]):
         return results if results is not None else []
 
     @staticmethod
+    def query_graph_or_new(message: MessageDict) -> QueryGraphDict:
+        """Get the query_graph, or a new empty one if it is None."""
+        query_graph = message.get("query_graph")
+        return query_graph if query_graph is not None else QueryGraphDictUtil.new()
+
+    @staticmethod
     def auxiliary_graphs_dict(message: MessageDict) -> AuxiliaryGraphsDict:
         """Get the auxiliary_graphs as a guaranteed dict, even if they are represented as None."""
         auxiliary_graphs = message.get("auxiliary_graphs")

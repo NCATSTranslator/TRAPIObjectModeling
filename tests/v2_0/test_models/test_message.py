@@ -205,3 +205,19 @@ class TestMessageUpdate:
         assert b.knowledge_graph is not None
         assert b.knowledge_graph.edges is not None
         assert "old" in b.knowledge_graph.edges
+
+
+class TestQueryGraphOrNew:
+    def test_returns_existing(self):
+        qg = QueryGraph(nodes={"n1": QNode()})
+        assert Message(query_graph=qg).query_graph_or_new is qg
+
+    def test_returns_blank_when_none(self):
+        qg = Message().query_graph_or_new
+        assert isinstance(qg, QueryGraph)
+        assert qg.nodes == {}
+
+    def test_does_not_mutate_message(self):
+        m = Message()
+        _ = m.query_graph_or_new
+        assert m.query_graph is None

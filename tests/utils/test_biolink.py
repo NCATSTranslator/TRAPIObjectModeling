@@ -73,6 +73,41 @@ class TestGetAncestors:
     def test_returns_list(self):
         assert isinstance(Biolink.get_ancestors("biolink:Gene"), list)
 
+    def test_non_reflexive_excludes_self(self):
+        ancestors = Biolink.get_ancestors("biolink:Gene", reflexive=False)
+        assert "biolink:Gene" not in ancestors
+        assert "biolink:NamedThing" in ancestors
+
+    def test_mixin_false_is_subset_of_default(self):
+        default = set(Biolink.get_ancestors("biolink:SmallMolecule"))
+        no_mixin = set(Biolink.get_ancestors("biolink:SmallMolecule", mixin=False))
+        assert no_mixin <= default
+
+
+class TestIsA:
+    def test_descendant_is_a_ancestor(self):
+        assert Biolink.is_a("biolink:SmallMolecule", "biolink:ChemicalEntity") is True
+
+    def test_reflexive(self):
+        assert Biolink.is_a("biolink:ChemicalEntity", "biolink:ChemicalEntity") is True
+
+    def test_unrelated_returns_false(self):
+        assert Biolink.is_a("biolink:Gene", "biolink:ChemicalEntity") is False
+
+    def test_accepts_unprefixed_ancestor(self):
+        assert Biolink.is_a("biolink:SmallMolecule", "ChemicalEntity") is True
+
+
+class TestGetMostSpecificCategory:
+    def test_returns_most_specific(self):
+        result = Biolink.get_most_specific_category(
+            ["biolink:ChemicalEntity", "biolink:SmallMolecule", "biolink:Drug"]
+        )
+        assert result == "biolink:Drug"
+
+    def test_single_category(self):
+        assert Biolink.get_most_specific_category(["biolink:Gene"]) == "biolink:Gene"
+
 
 class TestGetFormatted:
     def test_returns_formatted_string_for_real_element(self):

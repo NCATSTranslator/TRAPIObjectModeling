@@ -293,3 +293,20 @@ class TestUpdate:
         m.update(other)
         MessageDictUtil.update(m_dict, other.to_dict())
         assert MessageDictUtil.hash(m_dict) == m.hash()
+
+
+class TestQueryGraphOrNew:
+    def test_returns_existing_parity(self):
+        qg = QueryGraph(nodes={"n1": QNode()})
+        m = Message(query_graph=qg)
+        assert (
+            MessageDictUtil.query_graph_or_new(m.to_dict())
+            == m.query_graph_or_new.to_dict()
+        )
+
+    def test_returns_blank_when_none_parity(self):
+        m = Message()
+        assert (
+            MessageDictUtil.query_graph_or_new(m.to_dict())
+            == m.query_graph_or_new.to_dict()
+        )

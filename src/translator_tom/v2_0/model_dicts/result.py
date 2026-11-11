@@ -6,8 +6,12 @@ from typing_extensions import NotRequired
 
 from translator_tom.utils.dict_util_base import DictUtil, TOMBaseDict
 from translator_tom.utils.hash import tomhash
-from translator_tom.utils.shared import CURIE, EdgeID, QNodeID
+from translator_tom.utils.shared import CURIE, EdgeID, QEdgeID, QNodeID
 from translator_tom.v2_0.model_dicts.analysis import AnalysisDict, AnalysisDictUtil
+from translator_tom.v2_0.model_dicts.edge_binding import (
+    EdgeBindingDict,
+    EdgeBindingDictUtil,
+)
 from translator_tom.v2_0.model_dicts.node_binding import (
     NodeBindingDict,
     NodeBindingDictUtil,
@@ -125,3 +129,21 @@ class ResultDictUtil(DictUtil[ResultDict]):
             result["analyses"] = analyses
         else:
             result.pop("analyses", None)
+
+    @staticmethod
+    def edge_bindings(result: ResultDict, qedge_id: QEdgeID) -> list[EdgeBindingDict]:
+        """Return the edge bindings for a qedge across all analyses, deduped by hash."""
+        by_hash = dict[str, EdgeBindingDict]()
+        for analysis in ResultDictUtil.analyses_list(result):
+            binding = AnalysisDictUtil.edge_bindings_dict(analysis).get(qedge_id)
+            if binding is not None:
+                by_hash.setdefault(EdgeBindingDictUtil.hash(binding), binding)
+        return list(by_hash.values())
+
+    @staticmethod
+    def bound_kedges(result: ResultDict) -> set[QEdgeID]:
+        """Return the qedge ids bound by any analysis in this result."""
+        keys = set[QEdgeID]()
+        for analysis in ResultDictUtil.analyses_list(result):
+            keys.update(AnalysisDictUtil.edge_bindings_dict(analysis).keys())
+        return keys

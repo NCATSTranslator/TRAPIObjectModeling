@@ -7,8 +7,9 @@ from pydantic import Field
 from typing_extensions import override
 
 from translator_tom.utils.object_base import TOMBase
-from translator_tom.utils.shared import EdgeID, Infores, QNodeID
+from translator_tom.utils.shared import EdgeID, Infores, QEdgeID, QNodeID
 from translator_tom.v1_6.models.analysis import Analysis, PathfinderAnalysis
+from translator_tom.v1_6.models.edge_binding import EdgeBinding
 from translator_tom.v1_6.models.node_binding import NodeBinding
 
 __all__ = ["Result"]
@@ -114,3 +115,22 @@ class Result(TOMBase):
                 existing.update(analysis)  # ty: ignore[invalid-argument-type] key includes type, so they match
 
         self.analyses = list(merged.values())
+
+    def edge_bindings(self, qedge_id: QEdgeID) -> list[EdgeBinding]:
+        """Return the edge bindings for a qedge across all analyses, deduped by hash."""
+        by_hash = dict[str, EdgeBinding]()
+        for analysis in self.analyses:
+            if not isinstance(analysis, Analysis):
+                continue
+            for binding in analysis.edge_bindings.get(qedge_id, []):
+                by_hash.setdefault(binding.hash(), binding)
+        return list(by_hash.values())
+
+    def bound_kedges(self) -> set[QEdgeID]:
+        """Return the qedge ids bound by any analysis in this result."""
+        keys = set[QEdgeID]()
+        for analysis in self.analyses:
+            if not isinstance(analysis, Analysis):
+                continue
+            keys.update(analysis.edge_bindings.keys())
+        return keys

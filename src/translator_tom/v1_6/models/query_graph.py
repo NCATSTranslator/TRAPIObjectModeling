@@ -58,6 +58,25 @@ class QueryGraph(BaseQueryGraph):
     on bound edges, in addition to specifying the subject and object QNodes.
     """
 
+    def get_unpinned(
+        self, qedge_id: QEdgeID | None = None
+    ) -> list[tuple[QNodeID, QNode]]:
+        """Return the unpinned (answer) qnodes as (id, qnode) pairs.
+
+        Args:
+            qedge_id: Only consider the given qedge's nodes.
+        """
+        if qedge_id is None:
+            candidate_ids = list(self.nodes)
+        else:
+            qedge = self.edges[qedge_id]
+            candidate_ids = [qedge.subject, qedge.object]
+        return [
+            (qid, qnode)
+            for qid in candidate_ids
+            if (qnode := self.nodes.get(qid)) is not None and not qnode.ids
+        ]
+
 
 class PathfinderQueryGraph(BaseQueryGraph):
     """A Pathfinder query SHOULD have paths following the QPath schema and SHOULD NOT have edges."""
@@ -257,6 +276,14 @@ class QEdge(TOMBase):
                 or None
             ),
         )
+
+    def get_qualifier_value(self, type_id: Biolink.Qualifier) -> str | None:
+        """Return the value for a qualifier type from this QEdge's qualifier constraints, if present."""
+        for constraint in self.qualifier_constraints_list:
+            for qualifier in constraint.qualifier_set:
+                if qualifier.qualifier_type_id == type_id:
+                    return qualifier.qualifier_value
+        return None
 
 
 class QPath(TOMBase):
