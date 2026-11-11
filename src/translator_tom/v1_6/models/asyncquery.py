@@ -34,7 +34,7 @@ class AsyncQuery(Query):
     @classmethod
     @override
     # `callback` is required, so this intentionally can't match Query.new's signature
-    def new(cls, callback: str) -> Self:  # ty: ignore[invalid-method-override]
+    def new(cls, callback: str) -> Self:  # ty: ignore[incompatible-method-override]
         """Return an empty instance, without having to pass optional containers."""
         return cls.model_construct(message=Message.model_construct(), callback=callback)
 

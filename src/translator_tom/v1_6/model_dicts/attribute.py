@@ -92,7 +92,7 @@ AttributeConstraintDict = TypedDict(
     },
 )
 # Set config post-hoc for forbid parity.
-AttributeConstraintDict.__pydantic_config__ = ConfigDict(extra="forbid")  # ty: ignore[unresolved-attribute]
+AttributeConstraintDict.__pydantic_config__ = ConfigDict(extra="forbid")  # ty: ignore[missing-attribute]
 
 
 class AttributeConstraintDictUtil(DictUtil[AttributeConstraintDict]):

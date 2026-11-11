@@ -26,10 +26,10 @@ def lru_copy_cache(
 
         @wraps(func)
         def wrapper(*args: _P.args, **kwargs: _P.kwargs) -> _R:
-            return copier(cached(*args, **kwargs))
+            return copier(cached(*args, **kwargs))  # ty: ignore[invalid-argument-type] lru_cache stub types args as Hashable; ParamSpec can't prove it
 
-        wrapper.cache_clear = cached.cache_clear  # ty: ignore[unresolved-attribute]
-        wrapper.cache_info = cached.cache_info  # ty: ignore[unresolved-attribute]
+        wrapper.cache_clear = cached.cache_clear  # ty: ignore[missing-attribute]
+        wrapper.cache_info = cached.cache_info  # ty: ignore[missing-attribute]
         return wrapper
 
     return decorator

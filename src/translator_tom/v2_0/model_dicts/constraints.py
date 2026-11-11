@@ -157,13 +157,11 @@ class QEdgeConstraintsDictUtil(DictUtil[QEdgeConstraintsDict]):
         """
         inverted = cast("QEdgeConstraintsDict", {})
         if (knowledge_level := constraints.get("knowledge_level")) is not None:
-            inverted["knowledge_level"] = cast(
-                "KnowledgeLevelConstraintDict", {**knowledge_level}
-            )
+            inverted["knowledge_level"] = {**knowledge_level}
         if (agent_type := constraints.get("agent_type")) is not None:
-            inverted["agent_type"] = cast("AgentTypeConstraintDict", {**agent_type})
+            inverted["agent_type"] = {**agent_type}
         if (sources := constraints.get("sources")) is not None:
-            inverted["sources"] = cast("SourceConstraintDict", {**sources})
+            inverted["sources"] = {**sources}
         if attributes := constraints.get("attributes"):
             inverted["attributes"] = [
                 AttributeConstraintDictUtil.get_inverse(ac) for ac in attributes

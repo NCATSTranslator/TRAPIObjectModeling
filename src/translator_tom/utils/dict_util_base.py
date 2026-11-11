@@ -290,6 +290,23 @@ class DictUtil(Generic[_TD]):
         """Serialize a dict to MessagePack."""
         return ormsgpack.packb(obj)
 
+    @classmethod
+    def from_dict(
+        cls, original: dict[Any, Any], validate: bool = False, strict: bool = False
+    ) -> _TD:
+        """Cast or validate an existing dictionary.
+
+        Args:
+            original: The dictionary to cast or validate.
+            validate: When true, the data is validated using pydantic.TypeAdapter
+                Otherwise the dict is cast as-is, without any validation.
+            strict: When true, disallow type coercion like "123" -> 123 if validate=True
+
+        """
+        if validate:
+            return cast("_TD", cls._adapter().validate_python(original, strict=strict))
+        return cast("_TD", original)
+
     ##### Hashing #####
 
     @classmethod
