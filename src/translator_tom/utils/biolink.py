@@ -143,6 +143,15 @@ class Biolink(metaclass=_BiolinkMeta):
         return Biolink.toolkit.get_element(name)
 
     @staticmethod
+    def get_most_specific_category(
+        categories: list[str], formatted: bool = True
+    ) -> str:
+        """Return the most specific of the given categories (bmt passthrough)."""
+        return Biolink.toolkit.get_most_specific_category(
+            categories, formatted=formatted
+        )
+
+    @staticmethod
     def rmprefix(element: str) -> str:
         """Remove the `biolink:` prefix from a given element."""
         return Curie.rmprefix(element, "biolink")
@@ -182,9 +191,24 @@ class Biolink(metaclass=_BiolinkMeta):
             return False
 
     @staticmethod
-    def get_ancestors(element_str: str) -> list[str]:
-        """Get the ancestors of a given element."""
-        return Biolink.toolkit.get_ancestors(element_str, formatted=True)
+    def is_a(element: str, ancestor: str) -> bool:
+        """Whether `element` is `ancestor` or one of its descendants."""
+        return Biolink(ancestor) in Biolink.get_ancestors(element)
+
+    @staticmethod
+    def get_ancestors(
+        element: str, reflexive: bool = True, mixin: bool = True
+    ) -> list[str]:
+        """Get the ancestors of a given element.
+
+        Args:
+            element: The element to get ancestors of.
+            reflexive: Include self in ancestors.
+            mixin: Include mixins.
+        """
+        return Biolink.toolkit.get_ancestors(
+            element, reflexive=reflexive, formatted=True, mixin=mixin
+        )
 
     @staticmethod
     def get_formatted(element_str: str) -> str | None:
