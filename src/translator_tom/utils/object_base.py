@@ -47,9 +47,14 @@ class TOMBase(BaseModel):
     ###### I/O methods #####
 
     @classmethod
-    def from_dict(cls, obj: dict[str, Any]) -> Self:
-        """Deserialize an instance from a python dictionary representation."""
-        return cls.model_validate(obj)
+    def from_dict(cls, obj: dict[str, Any], strict: bool = False) -> Self:
+        """Deserialize an instance from a python dictionary representation.
+
+        Args:
+            obj: The obj to parse.
+            strict: When true, disallow type coercion like "123" -> 123
+        """
+        return cls.model_validate(obj, strict=strict)
 
     def to_dict(self) -> dict[str, Any]:
         """Serialize an instance to python dictionary representation.
@@ -59,12 +64,17 @@ class TOMBase(BaseModel):
         return self.model_dump(mode="json", exclude_none=True, exclude_defaults=True)
 
     @classmethod
-    def from_json(cls, json: str | bytes) -> Self:
-        """Deserialize an instance from JSON."""
+    def from_json(cls, json: str | bytes, strict: bool = False) -> Self:
+        """Deserialize an instance from JSON.
+
+        Args:
+            json: The json to parse.
+            strict: When true, disallow type coercion like "123" -> 123
+        """
         # orjson.loads + model_validate beats model_validate_json by 10-30% due to TOM
         # complexities: extra="allow" everywhere, deep model recursion, Any fields, etc.
         # Revisit as pydantic updates
-        return cls.model_validate(orjson.loads(json))
+        return cls.model_validate(orjson.loads(json), strict=strict)
 
     @overload
     def to_json(self) -> bytes: ...
@@ -92,9 +102,14 @@ class TOMBase(BaseModel):
         return json
 
     @classmethod
-    def from_msgpack(cls, msgpack: bytes) -> Self:
-        """Deserialize an instance from MessagePack."""
-        return cls.model_validate(ormsgpack.unpackb(msgpack))
+    def from_msgpack(cls, msgpack: bytes, strict: bool = False) -> Self:
+        """Deserialize an instance from MessagePack.
+
+        Args:
+            msgpack: The obj to parse.
+            strict: When true, disallow type coercion like "123" -> 123
+        """
+        return cls.model_validate(ormsgpack.unpackb(msgpack), strict=strict)
 
     def to_msgpack(self) -> bytes:
         """Serialize an instance to MessagePack."""

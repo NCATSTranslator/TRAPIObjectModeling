@@ -223,15 +223,21 @@ class DictUtil(Generic[_TD]):
         return adapter
 
     @classmethod
-    def from_json(cls, json: str | bytes, validate: bool = False) -> _TD:
+    def from_json(
+        cls, json: str | bytes, validate: bool = False, strict: bool = False
+    ) -> _TD:
         """Deserialize a dict from JSON.
 
-        With `validate=True`, the parsed data is validated via the util's
-        cached pydantic `TypeAdapter`, raising `pydantic.ValidationError` on failure.
+        Args:
+            json: The json to parse.
+            validate: When true, parsed data is validated using pydantic.TypeAdapter
+                Otherwise the JSON is just parsed and cast, without any validation.
+            strict: When true, disallow type coercion like "123" -> 123 if validate=True
+
         """
         data = orjson.loads(json)
         if validate:
-            return cast("_TD", cls._adapter().validate_python(data))
+            return cast("_TD", cls._adapter().validate_python(data, strict=strict))
         return cast("_TD", data)
 
     @overload
@@ -262,15 +268,21 @@ class DictUtil(Generic[_TD]):
         return json
 
     @classmethod
-    def from_msgpack(cls, msgpack: bytes, validate: bool = False) -> _TD:
+    def from_msgpack(
+        cls, msgpack: bytes, validate: bool = False, strict: bool = False
+    ) -> _TD:
         """Deserialize a dict from MessagePack.
 
-        With `validate=True`, the parsed data is validated via the util's
-        cached pydantic `TypeAdapter`, raising `pydantic.ValidationError` on failure.
+        Args:
+            msgpack: The msgpack to parse.
+            validate: When true, parsed data is validated using pydantic.TypeAdapter
+                Otherwise the msgpack is just parsed and cast, without any validation.
+            strict: When true, disallow type coercion like "123" -> 123 if validate=True
+
         """
         data = ormsgpack.unpackb(msgpack)
         if validate:
-            return cast("_TD", cls._adapter().validate_python(data))
+            return cast("_TD", cls._adapter().validate_python(data, strict=strict))
         return cast("_TD", data)
 
     @classmethod
