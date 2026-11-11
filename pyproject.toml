@@ -147,7 +147,7 @@ select = [
     # Ruff-specific
     'RUF',
 ]
-ignore = ['D100', 'D206', 'D300']
+ignore = ['D100', 'D206', 'D300', "PLR0917"]
 
 [tool.ruff.lint.pydocstyle]
 convention = 'google'
