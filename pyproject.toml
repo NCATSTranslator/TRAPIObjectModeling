@@ -93,6 +93,8 @@ deptry src &&
 echo "✅ All set!"
 """
 
+upgrade = 'uv lock --upgrade' # Ensure we get security updates
+
 # Changelog / release
 'changelog:preview' = 'git-cliff --unreleased'
 changelog = """
