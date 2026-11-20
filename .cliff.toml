@@ -1,0 +1,49 @@
+[changelog]
+# Templates from the example keepachangelog config
+header = """
+# Changelog\n
+All notable changes to this project will be documented in this file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).\n
+"""
+
+body = """
+{% if version -%}
+    ## [{{ version | trim_start_matches(pat="v") }}] - {{ timestamp | date(format="%Y-%m-%d") }}
+{% else -%}
+    ## [Unreleased]
+{% endif -%}
+[{{ version | trim_start_matches(pat="v") }}]: https://github.com/{{ remote.github.owner }}/{{ remote.github.repo }}{% if prev %}/compare/{{ prev }}...{{ version }}{% else %}/releases/tag/{{ version }}{% endif %}
+{% for group, commits in commits | group_by(attribute="group") %}
+    ### {{ group | upper_first }}
+    {% for commit in commits %}
+        - {{ commit.message | split(pat="\n") | first | upper_first | trim }}\
+    {% endfor %}
+{% endfor %}
+{% if version %}
+{% set prev = get_env(name="PREV_TAG", default="") -%}
+{% endif -%}
+"""
+trim = true # Trim whitespace
+
+[git]
+conventional_commits = true # Use conventional commits (See https://www.conventionalcommits.org)
+filter_unconventional = false # Don't filter out unconventional commits
+commit_parsers = [
+    { message = "^[a|A]dd", group = "Added" },
+    { message = "^[s|S]upport", group = "Added" },
+    { message = "^[r|R]emove", group = "Removed" },
+    { message = "^.*: add", group = "Added" },
+    { message = "^.*: support", group = "Added" },
+    { message = "^.*: remove", group = "Removed" },
+    { message = "^.*: delete", group = "Removed" },
+    { message = "^test", group = "Fixed" },
+    { message = "^fix", group = "Fixed" },
+    { message = "^.*: fix", group = "Fixed" },
+    { message = "^.*", group = "Changed" },
+]
+# Prevent commits that are breaking from being excluded by commit parsers.
+filter_commits = false
+topo_order = false # Don't use commit graph topological order
+sort_commits = "oldest"

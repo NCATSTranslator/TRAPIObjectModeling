@@ -1,5 +1,5 @@
 [build-system]
-requires = ["uv_build>=0.11.16,<0.12.0"]
+requires = ["uv_build>=0.13.7,<0.14.0"]
 build-backend = "uv_build"
 
 [project]
@@ -47,6 +47,7 @@ tom-diff = "translator_tom.scripts.diff:main"
 dev = [
     "bpython>=0.26",
     "deptry>=0.23.1",
+    "git-cliff>=2,<3",
     "pre-commit>=4.3.0",
     "pyinstrument>=5.1.1",
     "pytest>=9.1.1",
@@ -92,6 +93,20 @@ deptry src &&
 echo "✅ All set!"
 """
 
+# Changelog / release
+'changelog:preview' = 'git-cliff --unreleased'
+changelog = """
+    v=$(uv version --short) \
+    && PREV_TAG=$(git describe --tags --match "v[0-9]*" --abbrev=0 2>/dev/null) \
+    git-cliff \
+        --unreleased \
+        --tag "v$v" \
+        --prepend CHANGELOG.md \
+    && echo "Drafted CHANGELOG.md v$v, review and commit to release."
+"""
+release = 'uv version --bump patch --no-sync && task changelog'
+'release:minor' = 'uv version --bump minor --no-sync && task changelog'
+'release:major' = 'uv version --bump major --no-sync && task changelog'
 
 [tool.ruff]
 include = ["src/*.py"]

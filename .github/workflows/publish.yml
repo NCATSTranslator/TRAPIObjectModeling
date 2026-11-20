@@ -1,21 +1,51 @@
 ---
-name: Publish
+name: Auto-Publish with approval
+
 on:
   push:
-    tags: [v*]  # Publish on any tag starting with a `v`, e.g., v0.1.0
+    branches: [main]
+
 jobs:
-  run:
+  detect:
+    runs-on: ubuntu-latest
+    outputs:
+      is-new: ${{ steps.detect-state.outputs.is-new }}
+      version: ${{ steps.detect-state.outputs.version }}
+      changelog: ${{ steps.detect-state.outputs.changelog }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - id: detect-state
+        uses: tokebe/pyproject-gh-release@v1
+        with:
+          create-release: false
+
+  release:
+    needs: detect
+    if: needs.detect.outputs.is-new == 'true'
     runs-on: ubuntu-latest
     environment:
       name: pypi
     permissions:
       id-token: write
-      contents: read
+      contents: write
     steps:
       - name: Checkout
         uses: actions/checkout@v6
+
+        # Make gh release
+      - uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ needs.detect.outputs.version }}
+          name: v${{ needs.detect.outputs.version }}
+          body: ${{ needs.detect.outputs.changelog }}
+
+        # Build + publish package
       - name: Install uv
-        uses: astral-sh/setup-uv@v9.0.0
+        uses: astral-sh/setup-uv@v10.4.0
+        with:
+          enable-cache: false # Protect against cache poisoning
       - name: Install Python 3.10
         run: uv python install 3.10
       - name: Build
