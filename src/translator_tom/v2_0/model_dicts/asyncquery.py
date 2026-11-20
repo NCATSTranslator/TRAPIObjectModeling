@@ -9,9 +9,7 @@ from translator_tom.v2_0.model_dicts.log_entry import LogEntryDict
 # TypeAdapter[AsyncQueryDict] (validate=True).
 from translator_tom.v2_0.model_dicts.message import MessageDict  # noqa: F401
 from translator_tom.v2_0.model_dicts.query import QueryDict
-from translator_tom.v2_0.model_dicts.query_parameters import (  # noqa: F401
-    QueryParametersDict,
-)
+from translator_tom.v2_0.model_dicts.query_parameters import QueryParametersDict
 from translator_tom.v2_0.model_dicts.workflow_operations import OperationDict
 from translator_tom.v2_0.models.asyncquery import (
     AsyncQuery,
@@ -57,6 +55,12 @@ class AsyncQueryDictUtil(DictUtil[AsyncQueryDict]):
         """Get the workflow operations as a guaranteed list, even if they are represented as None."""
         workflow = query.get("workflow")
         return workflow if workflow is not None else []
+
+    @staticmethod
+    def get_parameters(query: AsyncQueryDict) -> QueryParametersDict:
+        """Get the parameters, or an empty QueryParametersDict if they are represented as None."""
+        parameters = query.get("parameters")
+        return parameters if parameters is not None else {}
 
     @staticmethod
     def new(callback: str) -> AsyncQueryDict:
