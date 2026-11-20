@@ -13,13 +13,12 @@ New models/DictUtils are covered automatically.
 
 from __future__ import annotations
 
+import importlib
 import typing
 from typing import Any
 
 import pytest
-from _sweep_helpers import sweep_id, DICTUTILS, MODELS, build
-
-import importlib
+from _sweep_helpers import DICTUTILS, MODELS, build, sweep_id
 
 from translator_tom import TOMBase
 from translator_tom.utils.dict_util_base import DictUtil
@@ -114,3 +113,28 @@ def test_to_dict_validates_typeddict(
         pytest.xfail(reason)
     adapter = dictutil._adapter()  # must resolve the (possibly inherited) TypedDict
     adapter.validate_python(build(model).to_dict())  # must not raise
+
+
+@pytest.mark.parametrize(
+    ("model", "dictutil"),
+    DICTUTILS,
+    ids=[sweep_id(du) for _, du in DICTUTILS],
+)
+def test_dictutil_adapter_targets_own_typeddict(
+    model: type[TOMBase], dictutil: type[DictUtil[Any]]
+) -> None:
+    """`_adapter()` validates against the util's OWN TypedDict, not an inherited base's.
+
+    A util that subclasses another util (e.g. `OperationAnnotateDictUtil`) must still
+    resolve its own fields; resolving the base's TypedDict would silently skip them.
+    """
+    schema = dictutil._adapter().json_schema(mode="validation")
+    if "$ref" in schema:  # self-referential dict: body lives under $defs
+        schema = schema["$defs"][schema["$ref"].rsplit("/", 1)[-1]]
+    adapter_keys = set(schema.get("properties", {}))
+    model_keys = _model_field_keys(model)
+    assert adapter_keys == model_keys, (
+        f"{dictutil.__name__}._adapter() exposes {sorted(adapter_keys)} but "
+        f"{model.__name__} declares {sorted(model_keys)} — the adapter is resolving the "
+        f"wrong TypedDict (likely an inherited base's), so validate=True skips fields."
+    )

@@ -12,6 +12,7 @@ __all__ = [
     "register_union_discriminator",
 ]
 
+import sys
 import types
 from collections.abc import Callable, Iterable, Mapping
 from dataclasses import dataclass
@@ -206,17 +207,15 @@ class DictUtil(Generic[_TD]):
         cached = cls.__dict__.get("_adapter_cache")
         if cached is not None:
             return cached
-        typed_dict = next(
-            (
-                arg
-                for base in getattr(cls, "__orig_bases__", ())
-                for arg in get_args(base)
-            ),
-            None,
+
+        # Use _model to infer name
+        typed_dict = getattr(
+            sys.modules[cls.__module__], f"{cls._model.__name__}Dict", None
         )
         if typed_dict is None:
             raise TypeError(
-                f"{cls.__name__}: cannot resolve the TypedDict type parameter for validation."
+                f"{cls.__name__}: cannot resolve its TypedDict for validation "
+                f"(expected {cls._model.__name__}Dict in {cls.__module__})."
             )
         adapter: TypeAdapter[Any] = TypeAdapter(typed_dict)
         cls._adapter_cache = adapter
